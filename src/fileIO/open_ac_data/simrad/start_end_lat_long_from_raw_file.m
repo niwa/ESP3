@@ -1,6 +1,6 @@
 function [lat_s,lat_e,long_s,long_e] = start_end_lat_long_from_raw_file(filename)
 
-fid = fopen(filename,'r','n','US-ASCII');
+fid = fopen(filename,'r','l','US-ASCII');
 lat_s = 0;
 lat_e = 0;
 long_s = 0;
@@ -12,11 +12,12 @@ if fid == -1
 end
 
 [path_f,fileN,~] = fileparts(filename);
+echo_folder = get_esp3_file_folder(path_f,false);
+fileIdx = fullfile(echo_folder,[fileN '_echoidx.mat']);
 
-fileIdx = fullfile(path_f,'echoanalysisfiles',[fileN '_echoidx.mat']);
-
-if exist(fileIdx,'file') == 2
-    load(fileIdx);
+if isfile(fileIdx)
+    obj_load = load(fileIdx);
+    idx_raw_obj = obj_load.idx_raw_obj;
 else
     fprintf('File %s not indexed\n',fileN);
     fclose(fid);
@@ -34,8 +35,8 @@ i = 1;
 start_found = 0;
 while start_found==0 && i<=length(idx_nme0)
     pos = ftell(fid);
-    fread(fid,idx_raw_obj.pos_dg(idx_nme0(i))-pos+HEADER_LEN,'uchar', 'l');
-    str_temp = fread(fid,idx_raw_obj.len_dg(idx_nme0(i))-HEADER_LEN,'*char', 'l')';
+    fread(fid,idx_raw_obj.pos_dg(idx_nme0(i))-pos+HEADER_LEN,'uchar');
+    str_temp = fread(fid,idx_raw_obj.len_dg(idx_nme0(i))-HEADER_LEN,'*char')';
     [gps_data,~,~] = nmea_to_attitude_gps_v2({str_temp},idx_raw_obj.time_dg(idx_nme0(i)),1);
     if ~isempty(gps_data.Lat)
         start_found = 1;
@@ -51,7 +52,7 @@ end_found = 0;
 
 while end_found==0 && i>1
     fseek(fid,idx_raw_obj.pos_dg(idx_nme0(i))+HEADER_LEN,'bof');
-    str_temp = fread(fid,idx_raw_obj.len_dg(idx_nme0(i))-HEADER_LEN,'*char', 'l')';
+    str_temp = fread(fid,idx_raw_obj.len_dg(idx_nme0(i))-HEADER_LEN,'*char')';
     [gps_data,~,~] = nmea_to_attitude_gps_v2({str_temp},idx_raw_obj.time_dg(idx_nme0(i)),1);
     if ~isempty(gps_data.Lat)
         end_found = 1;

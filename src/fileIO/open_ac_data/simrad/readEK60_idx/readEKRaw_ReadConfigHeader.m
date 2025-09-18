@@ -23,8 +23,13 @@ function configheader = readEKRaw_ReadConfigHeader(fid)
 
 %-
 
-configheader.surveyname = char(fread(fid,128,'uchar', 'l')');
-configheader.transectname = char(fread(fid,128,'uchar', 'l')');
-configheader.soundername = char(fread(fid,128,'uchar', 'l')');
-configheader.spare = char(fread(fid,128,'uchar', 'l')');
-configheader.transceivercount = fread(fid,1,'int32', 'l');
+configheader.surveyname = char(fread(fid,128,'uchar')');
+configheader.transectname = char(fread(fid,128,'uchar')');
+configheader.soundername = char(fread(fid,128,'uchar')');
+configheader.version = deblank(char(fread(fid,30,'uchar')'));
+configheader.multiplexing = fread(fid,1,'short');
+configheader.TimeBias = fread(fid,1,'long');
+configheader.SVmean = fread(fid,1,'float');
+configheader.SVtrans = fread(fid,1,'float');
+configheader.spare = char(fread(fid,84,'uchar')');
+configheader.transceivercount = fread(fid,1,'long');

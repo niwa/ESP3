@@ -1,7 +1,7 @@
 function add_ts_curves_from_tracks_cback(~,~,main_figure,uid)
 curr_disp=get_esp3_prop('curr_disp');
 layer=get_current_layer();
-[trans_obj,~]=layer.get_trans(curr_disp);
+[trans_obj,idx_freq]=layer.get_trans(curr_disp);
 tracks = trans_obj.Tracks;
 if ~iscell(uid)&&~isempty(uid)
     uid={uid};
@@ -30,17 +30,20 @@ end
 if isempty(uid)
     uid=tracks.uid;
 end
-show_status_bar(main_figure); 
+show_status_bar(main_figure);
 load_bar_comp=getappdata(main_figure,'Loading_bar');
 
 load_bar_comp.progress_bar.setText('Copying tracks across frequencies');
 reg_obj=trans_obj.create_track_regs('uid',uid,'Add',false);
 
 set(load_bar_comp.progress_bar, 'Minimum',0, 'Maximum',length(reg_obj), 'Value',0);
-
+[cal_fm_cell,~]=layer.get_fm_cal([]);
+update_algos('algo_name',{'SingleTarget'});
 for k=1:length(reg_obj)
     load_bar_comp.progress_bar.setText(sprintf('Processing TS(f) for tracks %d',reg_obj(k).ID));
-    TS_freq_response_func(main_figure,reg_obj(k),false) ;
+    
+    layer.TS_freq_response_func('reg_obj',reg_obj(k),'idx_freq',idx_freq,'cal',cal_fm_cell);
+    
     set(load_bar_comp.progress_bar, 'Minimum',0, 'Maximum',length(reg_obj),'Value',k);
 end
 

@@ -40,11 +40,12 @@ function zoom_in_callback_mini_ax(~,evt,main_figure)
 
 mini_ax_comp=getappdata(main_figure,'Mini_axes');
 curr_disp=get_esp3_prop('curr_disp');
+%disp('We made it here')
+ cmap_struct = init_cmap(curr_disp.Cmap,curr_disp.ReverseCmap);
+ 
+ah=mini_ax_comp.echo_obj.main_ax;
 
- [cmap,col_ax,col_lab,col_grid,col_bot,col_txt,~]=init_cmap(curr_disp.Cmap);
-ah=mini_ax_comp.mini_ax;
-
-current_fig=gcf;
+current_fig=ancestor(ah,'figure');
 
 switch current_fig.SelectionType
     case 'normal'
@@ -53,13 +54,12 @@ switch current_fig.SelectionType
         return;
 end
 
-
 clear_lines(ah);
 
-xdata=get(mini_ax_comp.mini_echo,'XData');
-ydata=get(mini_ax_comp.mini_echo,'YData');
+xdata=get(mini_ax_comp.echo_obj.echo_surf,'XData');
+ydata=get(mini_ax_comp.echo_obj.echo_surf,'YData');
 
-cp = ah.CurrentPoint;
+cp = evt.IntersectionPoint;
 
 switch mode
     case 'rectangular'
@@ -73,47 +73,55 @@ switch mode
         yinit = ydata(1);
 end
 
-
 if xinit<xdata(1)||xinit>xdata(end)||yinit<ydata(1)||yinit>ydata(end)
+   %disp('Out of here')
     return;
 end
 
 x_box=xinit;
 y_box=yinit;
+last_x = xinit;
+last_y = yinit;
+
 set(mini_ax_comp.patch_obj,'ButtonDownFcn','');
 
-hp=line(x_box,y_box,'color',col_lab,'linewidth',1,'parent',ah);
+hp=line(x_box,y_box,'color',cmap_struct.col_lab,'linewidth',1,'parent',ah);
 %replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',1);
 replace_interaction(current_fig,'interaction','WindowButtonMotionFcn','id',2,'interaction_fcn',@wbmcb);
 replace_interaction(current_fig,'interaction','WindowButtonUpFcn','id',2,'interaction_fcn',@wbucb);
 
-    function wbmcb(~,~)
-        cp = ah.CurrentPoint;
-              
+    function wbmcb(~,evt_n)
+        cp = evt_n.IntersectionPoint;
+        if ~isnan(cp(1,1))
+            last_x = cp(1,1);
+        end
+        if ~isnan(cp(1,2))
+            last_y = cp(1,2);
+        end
         switch mode
             case 'rectangular'
-                X = [xinit,cp(1,1)];
-                Y = [yinit,cp(1,2)];
+                X = [xinit,last_x];
+                Y = [yinit,last_y];
             case 'horizontal'
                 X = [xinit,xdata(end)];
-                Y = [yinit,cp(1,2)];
+                Y = [yinit,last_y];
             case 'vertical'
-                X = [xinit,cp(1,1)];
+                X = [xinit,last_x];
                 Y = [yinit,ydata(end)];
                 
         end
         
-        x_min=nanmin(X);
-        x_min=nanmax(xdata(1),x_min);
+        x_min=min(X,[],'all','omitnan');
+        x_min=max(xdata(1),x_min,'omitnan');
         
-        x_max=nanmax(X);
-        x_max=nanmin(xdata(end),x_max);
+        x_max=max(X,[],'all','omitnan');
+        x_max=min(xdata(end),x_max,'omitnan');
         
-        y_min=nanmin(Y);
-        y_min=nanmax(y_min,ydata(1));
+        y_min=min(Y,[],'all','omitnan');
+        y_min=max(y_min,ydata(1),'omitnan');
         
-        y_max=nanmax(Y);
-        y_max=nanmin(y_max,ydata(end));
+        y_max=max(Y,[],'all','omitnan');
+        y_max=min(y_max,ydata(end),'omitnan');
         
         x_box=([x_min x_max  x_max x_min x_min]);
         y_box=([y_max y_max y_min y_min y_max]);
@@ -130,21 +138,21 @@ replace_interaction(current_fig,'interaction','WindowButtonUpFcn','id',2,'intera
         replace_interaction(current_fig,'interaction','WindowButtonUpFcn','id',2);
 
        
-        if length(x_box)==1&&length(y_box)==1
+        if isscalar(x_box)&&isscalar(y_box)
             move_patch_mini_axis(src,evt,main_figure);        
         else
         
-        y_min=nanmin(y_box);
-        y_max=nanmax(y_box);
+        y_min=min(y_box);
+        y_max=max(y_box);
         
-        y_min=nanmax(y_min,ydata(1));
-        y_max=nanmin(y_max,ydata(end));
+        y_min=max(y_min,ydata(1));
+        y_max=min(y_max,ydata(end));
         
-        x_min=nanmin(x_box);
-        x_min=nanmax(xdata(1),x_min);
+        x_min=min(x_box);
+        x_min=max(xdata(1),x_min);
         
-        x_max=nanmax(x_box);
-        x_max=nanmin(xdata(end),x_max);
+        x_max=max(x_box);
+        x_max=min(xdata(end),x_max);
         
         
         if x_max==x_min||y_max==y_min
@@ -170,8 +178,8 @@ replace_interaction(current_fig,'interaction','WindowButtonUpFcn','id',2,'intera
         
        
         axes_panel_comp=getappdata(main_figure,'Axes_panel');
-        set(axes_panel_comp.main_axes,'XLim',x_lim);
-        set(axes_panel_comp.main_axes,'YLim',y_lim);
+        set(axes_panel_comp.echo_obj.main_ax,'XLim',x_lim);
+        set(axes_panel_comp.echo_obj.main_ax,'YLim',y_lim);
         set(patch_obj,'Vertices',new_vert);
         
         end

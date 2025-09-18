@@ -35,7 +35,7 @@
 % Yoann Ladroit, NIWA. Type |help EchoAnalysis.m| for copyright information.
 
 %% Function
-function zoom_in_callback(src,~,main_figure)
+function zoom_in_callback(~,~,main_figure)
 
 if check_axes_tab(main_figure)==0
     return;
@@ -44,7 +44,7 @@ layer=get_current_layer();
 axes_panel_comp=getappdata(main_figure,'Axes_panel');
 curr_disp=get_esp3_prop('curr_disp');
 
-ah=axes_panel_comp.main_axes;
+ah=axes_panel_comp.echo_obj.main_ax;
 
 switch main_figure.SelectionType
     case 'normal'
@@ -56,7 +56,7 @@ switch main_figure.SelectionType
     otherwise
         return;
 end
- [cmap,col_ax,col_line,col_grid,col_bot,col_txt,~]=init_cmap(curr_disp.Cmap);
+ cmap_struct = init_cmap(curr_disp.Cmap,curr_disp.ReverseCmap);
 
 clear_lines(ah);
 trans_obj=layer.get_trans(curr_disp);
@@ -79,7 +79,7 @@ switch mode
         xinit = cp(1,1);
         yinit = cp(1,2);
     case 'horizontal'
-        xinit = ceil(xx(1));
+        xinit = round(xx(1));
         yinit = cp(1,2);
     case 'vertical'
         xinit = cp(1,1);
@@ -97,7 +97,7 @@ x_box=xinit;
 y_box=yinit;
 
 
-hp=line(x_box,y_box,'color',col_line,'linewidth',1,'parent',ah,'tag','zoom_box_temp');
+hp=line(x_box,y_box,'color',cmap_struct.col_lab,'linewidth',1,'parent',ah,'tag','zoom_box_temp');
 
 replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2,'interaction_fcn',@wbmcb);
 replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',2,'interaction_fcn',@wbucb);
@@ -121,17 +121,17 @@ replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',2,'intera
         
         
         
-        x_min=nanmin(X);
-        x_min=nanmax(xdata(1),x_min);
+        x_min=min(X-1/2);
+        x_min=max(xdata(1),x_min);
         
-        x_max=nanmax(X);
-        x_max=nanmin(xdata(end),x_max);
+        x_max=max(X+1/2);
+        x_max=min(xdata(end),x_max);
         
-        y_min=nanmin(Y);
-        y_min=nanmax(y_min,ydata(1));
+        y_min=min(Y-1/2);
+        y_min=max(y_min,ydata(1));
         
-        y_max=nanmax(Y);
-        y_max=nanmin(y_max,ydata(end));
+        y_max=max(Y+1/2);
+        y_max=min(y_max,ydata(end));
         
         x_box=([x_min x_max  x_max x_min x_min]);
         y_box=([y_max y_max y_min y_min y_max]);
@@ -139,7 +139,7 @@ replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',2,'intera
         if isvalid(hp)
             set(hp,'XData',x_box,'YData',y_box);
         else
-            hp=line(x_box,y_box,'color',col_line,'linewidth',1,'parent',ah,'tag','zoom_box_temp');
+            hp=line(x_box-1/2,y_box,'color',cmap_struct.col_lab,'linewidth',1,'parent',ah,'tag','zoom_box_temp');
         end
         
         
@@ -151,17 +151,17 @@ replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',2,'intera
         replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2);
         replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',2);
 
-        y_min=nanmin(y_box);
-        y_max=nanmax(y_box);
+        y_min=min(y_box);
+        y_max=max(y_box);
         
-        y_min=nanmax(y_min,ydata(1));
-        y_max=nanmin(y_max,ydata(end));
+        y_min=max(y_min,ydata(1));
+        y_max=min(y_max,ydata(end));
         
-        x_min=nanmin(x_box);
-        x_min=nanmax(xdata(1),x_min);
+        x_min=min(x_box);
+        x_min=max(xdata(1),x_min);
         
-        x_max=nanmax(x_box);
-        x_max=nanmin(xdata(end),x_max);
+        x_max=max(x_box);
+        x_max=min(xdata(end),x_max);
         
         
         if x_max==x_min||y_max==y_min

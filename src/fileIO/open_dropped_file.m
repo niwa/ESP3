@@ -40,13 +40,15 @@ switch p.Results.fType
         ftype{1}={p.Results.fType};
         files{1}=evt.Data;
 end
+
 layer=get_current_layer();
 
 for ifi=1:length(ftype)
     try
         switch ftype{ifi}
             case {'acoustic' 'logbook'}
-                open_file([],[],files{ifi},main_figure);
+                esp3_obj=getappdata(groot,'esp3_obj');
+                esp3_obj.open_file('file_id',files{ifi});
             case 'line'
                 if isempty(layer)
                     continue
@@ -78,8 +80,7 @@ for ifi=1:length(ftype)
                 
                 
                 if ~isempty(idx_gps)
-                    gps_data=gps_data_cl.load_gps_from_file(files{ifi}(idx_gps));
-                    layer.replace_gps_data_layer(gps_data);
+                    layer.get_gps_data_from_csv(files{ifi}(idx_gps),0);
                 end
                 
                 if ~isempty(idx_line)
@@ -93,7 +94,7 @@ for ifi=1:length(ftype)
         end
         
     catch err
-         warndlg_perso(main_figure,'','Could not open file');
+         dlg_perso(main_figure,'','Could not open file');
 
         print_errors_and_warnings([],err.message);
         loadEcho(main_figure);

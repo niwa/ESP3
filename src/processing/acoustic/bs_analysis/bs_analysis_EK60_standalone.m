@@ -26,7 +26,7 @@ if ~strcmp(p.Results.Filename_SVP, '')
     c   = u.data(:,2);
 else
     z_c = 1:2*1e4;
-    c   = layer.Env.SoundSpeed*ones(size(z_c));
+    c   = layer.EnvData.SoundSpeed*ones(size(z_c));
 end
 
 z_interp = z_c(1):1:z_c(end);

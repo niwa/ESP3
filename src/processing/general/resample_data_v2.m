@@ -1,4 +1,4 @@
-function ydata_new=resample_data_v2(ydata,xdata,xdata_n,varargin)
+function [ydata_new,xdata_n]=resample_data_v2(ydata,xdata,xdata_n,varargin)
 p = inputParser;
 
 addRequired(p,'ydata',@isnumeric);
@@ -16,8 +16,9 @@ ydata(idx_nan)=[];
 [xdata,IA,~] = unique(xdata);
 ydata=ydata(IA);
 
+xdata_n = sort(xdata_n);
 
-if length(ydata)==1
+if isscalar(ydata)
     ydata_new=repmat(ydata,size(xdata_n,1),size(xdata_n,2));
     return;
 end
@@ -46,28 +47,17 @@ if p.Results.IgnoreNans>0
     if isempty(X)
         return;
     end
-    idx_nan=find(isnan(ydata_new)&xdata_n>=X(1)&xdata_n<=X(end));
+
+    idx_nan=isnan(ydata_new) & xdata_n>=X(1)&xdata_n<=X(end);
 else
-    idx_nan=find(isnan(ydata_new));
+    idx_nan=isnan(ydata_new);
 end
 
-if ~isempty(idx_nan)
-    
-    nb=nanmin(10,numel(xdata));
-    if nb==1
-        return;
-    end
-    
-    
-    for ij=1:length(idx_nan)        
-        [~,idx_tp]= topkrows(abs(xdata-xdata_n(idx_nan(ij))),nb,'ascend');
-        idx=[idx_tp(1) idx_tp(end)];
-        a=diff(ydata(idx))/diff(xdata(idx));
-        b=1/2*(sum(ydata(idx))-a*sum(xdata(idx)));
-        ydata_new(idx_nan(ij))=a*xdata_n(idx_nan(ij))+b;
-        
-    end
+if all(size(xdata_n) == size(unique(xdata_n)))
+    ydata_new = fillmissing(ydata_new,lower(p.Results.Opt),"SamplePoints",xdata_n,"MissingLocations",idx_nan);
 end
+
+
 % 
 % figure();
 % plot(xdata,ydata,'k');

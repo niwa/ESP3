@@ -35,9 +35,7 @@
 % Yoann Ladroit, NIWA. Type |help EchoAnalysis.m| for copyright information.
 
 %% Function
-function tog_units(src,~,main_figure,reglist_tab_comp)
-
-
+function tog_units(src,~,~,reglist_tab_comp)
 
 
 switch get(src,'tag')

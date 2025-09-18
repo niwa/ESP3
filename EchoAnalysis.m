@@ -38,6 +38,7 @@
 %
 % *NEW FEATURES*
 %
+% * 2020-10: New version using esp3_cl objects (Yoann Ladroit)
 % * 2017-03-22: reformatting header according to new template (Alex Schimel)
 % * 2017-03-17: reformatting comment and header for compatibility with publish (Alex Schimel)
 % * 2017-03-02: commented and header added (Alex Schimel)
@@ -77,19 +78,12 @@
 %% Function
 function esp3_obj=EchoAnalysis(varargin)
 
-%% Debug
-global DEBUG;
-global PROF;
-PROF = false & ~isdeployed();
-DEBUG = false &~isdeployed();
-
 %% Software main path
 if ~isdeployed
     update_path();
-    update_java_path();
 end
 
-%% Remove Javaframe warning
+%% Remove warnings
 
 warning('off','MATLAB:ui:javacomponent:FunctionToBeRemoved');
 warning('off','MATLAB:ui:javaframe:PropertyToBeRemoved');
@@ -98,6 +92,15 @@ warning('off','MATLAB:polyshape:repairedBySimplify');
 warning('off','MATLAB:polyshape:boundaryLessThan2Points');
 warning('off','MATLAB:polyshape:boundary3Points');
 warning('off','MATLAB:chckxy:IgnoreNaN');
+warning('off','curvefit:prepareFittingData:removingNaNAndInf');
+warning('off','MATLAB:connector:connector:ConnectorNotRunning');
+warning('off','MATLAB:uitogglesplittool:DeprecatedFunction');
+warning('off','MATLAB:uitreenode:DeprecatedFunction');
+warning('off','MATLAB:scatteredInterpolant:DupPtsAvValuesWarnId');
+warning('off','curvefit:fit:iterationLimitReached');
+warning('error', 'MATLAB:DELETE:Permission');
+
+setdbprefs('DataReturnFormat','Table');
 
 %% Checking and parsing input variables
 p = inputParser;
@@ -106,17 +109,22 @@ addOptional(p,'SaveEcho',0,@isnumeric);
 parse(p,varargin{:});
 
 files_to_load=p.Results.Filenames;
+scripts={};
 
 if ~isempty(files_to_load)
     if ischar(files_to_load)
         files_to_load=cellstr(files_to_load);
     end
+    
     [~,~,tmp]=cellfun(@fileparts,files_to_load,'un',0);
+    
     idx_xml=strcmpi(tmp,'.xml');
     scripts_tmp=files_to_load(idx_xml);
+    
     [folder_xml,f_name,~]=cellfun(@fileparts,scripts_tmp,'un',0);
     files_to_load(idx_xml)=[];
-    scripts={};
+    
+    
     for ifo=1:numel(folder_xml)
         if contains(f_name{ifo},'*')
             tmp_scr=dir(fullfile(folder_xml{ifo},[f_name{ifo} '.xml']));
@@ -126,37 +134,24 @@ if ~isempty(files_to_load)
             scripts=union(scripts,fullfile(folder_xml{ifo},[f_name{ifo} '.xml']));
         end
     end
-    
-    if ~isempty(scripts)
-        process_surveys(scripts,'discard_loaded_layers',1,'update_display_at_loading',0) ;
-    end
-    
-    if isempty(files_to_load)
-        return;
-    end
+
 end
 
 %% Default font size for Controls and Panels and db prefs
-set(0,'DefaultUipanelFontSize',9,'defaultUipanelFontSizeMode','auto');
+set(0,'DefaultUipanelFontSize',8,'defaultUipanelFontSizeMode','auto');
 set(0,'defaultAxesFontSize',9,'defaultAxesFontSizeMode','auto');
 set(0,'defaultTextFontSize',8,'DefaultTextFontSizeMode','auto');
 set(0,'defaultLegendFontSize',9,'DefaultLegendFontSizeMode','auto');
 set(0,'defaultUicontrolFontSize',9,'defaultUicontrolFontSizeMode','auto');
-set(0,'DefaultAxesLooseInset',[0.02,0.02,0.02,0.02]);
+set(0,'DefaultAxesLooseInset',[0.15,0.15,0.15,0.15]);
 set(0,'defaultAxesCreateFcn',@axDefaultCreateFcn);
+set(0,'DefaultLegendAutoUpdate','off');
 
-
-if ~isdeployed()
-    desktop = com.mathworks.mde.desk.MLDesktop.getInstance;
-    desktop.addGroup('ESP3');
-    desktop.addGroup('Regions');
-    desktop.addGroup('Logbook');
-end
 
 %% Do not Launch a third instance ESP3...
 if ispc()
     [~,str]=system('tasklist');
-    nb_esp3_instances=nansum(contains(strsplit(str,'\n'),'ESP3.exe'));
+    nb_esp3_instances=sum(contains(strsplit(str,'\n'),'ESP3.exe'));
     if nb_esp3_instances>2
         QuestFig=new_echo_figure([],'units','pixels','position',[200 200 200 100],...
             'WindowStyle','modal','Visible','on','resize','off','tag','doyouwanttoquit');
@@ -181,7 +176,17 @@ if ~isdeployed()&&isappdata(groot,'esp3_obj')
     end
 end
 
-esp3_obj=esp3_cl('nb_esp3_instances',nb_esp3_instances,'files_to_load',files_to_load,'SaveEcho',p.Results.SaveEcho);
+if (~isempty(scripts)||~isempty(files_to_load))&&p.Results.SaveEcho==1
+    nodisplay = true;
+else
+    nodisplay = false;
+end
+
+esp3_obj=esp3_cl('nb_esp3_instances',nb_esp3_instances,...
+    'files_to_load',files_to_load,...
+    'scripts_to_run',scripts,...
+    'nodisplay',nodisplay,...
+    'SaveEcho',p.Results.SaveEcho);
 
 % profile off;
 % profile viewer;
@@ -195,24 +200,6 @@ addpath(path_src);
 addpath(genpath(path_src));
 end
 
-function update_java_path()
-main_path = whereisEcho();
-if ~isdeployed()
-    jpath=fullfile(main_path,'java');
-    jars=dir(jpath);
-    java_dyn_path=javaclasspath('-dynamic');
-    
-    for ij=length(jars):-1:1
-        if ~jars(ij).isdir
-            [~,~,fileext]=fileparts(jars(ij).name);
-            if ~any(strcmp(java_dyn_path,fullfile(jpath,jars(ij).name)))&&isfile(fullfile(jpath,jars(ij).name))
-                if strcmpi(fileext,'.jar')
-                    javaaddpath(fullfile(jpath,jars(ij).name));
-                    fprintf('%s added to java path\n',jars(ij).name);
-                end
-            end
-        end
-    end
-end
-end
+
+
 

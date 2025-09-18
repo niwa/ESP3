@@ -55,6 +55,7 @@ cursor_tools_comp=getappdata(main_figure,'Cursor_mode_tool');
 
  childs=[findobj(cursor_tools_comp.cursor_mode_tool,'type','uitoggletool');...
      findobj(cursor_tools_comp.cursor_mode_tool,'type','uitogglesplittool')];
+ 
  for i=1:length(childs)
      if ~strcmp(get(childs(i),'tag'),tag)
          set(childs(i),'state','off');
@@ -79,10 +80,10 @@ replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',2);
 switch state
     case'on'
         %iptPointerManager(main_figure,'disable');
-        delete(axes_panel_comp.bad_transmits.UIContextMenu);
-        delete(axes_panel_comp.bottom_plot.UIContextMenu);
-        axes_panel_comp.bad_transmits.UIContextMenu=[];
-        axes_panel_comp.bottom_plot.UIContextMenu=[];
+        delete(axes_panel_comp.echo_obj.echo_bt_surf.UIContextMenu);
+        delete(axes_panel_comp.echo_obj.bottom_line_plot.UIContextMenu);
+        axes_panel_comp.echo_obj.echo_bt_surf.UIContextMenu=[];
+        axes_panel_comp.echo_obj.bottom_line_plot.UIContextMenu=[];
         
         switch tag
             case 'pan'
@@ -96,24 +97,24 @@ switch state
             case 'ed_bot'
                 replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@edit_bottom,main_figure});
             case 'ed_bot_sup'
-                context_menu=uicontextmenu(ancestor(axes_panel_comp.bad_transmits,'figure'),'Tag','btCtxtMenu');
-                axes_panel_comp.bad_transmits.UIContextMenu=context_menu;
-                uimenu(context_menu,'Label','Small','userdata',5,'Callback',@check_only_one);
-                uimenu(context_menu,'Label','Medium','userdata',10,'Callback',@check_only_one,'checked','on');
-                uimenu(context_menu,'Label','Large','userdata',25,'Callback',@check_only_one);
-                uimenu(context_menu,'Label','Extra','userdata',50,'Callback',@check_only_one);
+                context_menu=uicontextmenu(ancestor(axes_panel_comp.echo_obj.echo_bt_surf,'figure'),'Tag','btCtxtMenu');
+                axes_panel_comp.echo_obj.echo_bt_surf.UIContextMenu=context_menu;
+                uimenu(context_menu,'Label','Small','userdata',5,'MenuSelectedFcn',@check_only_one);
+                uimenu(context_menu,'Label','Medium','userdata',10,'MenuSelectedFcn',@check_only_one,'checked','on');
+                uimenu(context_menu,'Label','Large','userdata',25,'MenuSelectedFcn',@check_only_one);
+                uimenu(context_menu,'Label','Extra','userdata',50,'MenuSelectedFcn',@check_only_one);
                 
                 replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@detect_bottom_supervised,main_figure});
                 %replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',3,'interaction_fcn',{@display_rectangle_bot_brush,main_figure});
             case 'ed_bot_spline'
                 
-                context_menu=uicontextmenu(ancestor(axes_panel_comp.bad_transmits,'figure'),'Tag','btCtxtMenu');
-                axes_panel_comp.bad_transmits.UIContextMenu=context_menu;
-                uimenu(context_menu,'Label','Small radius (2px)','userdata',2,'Callback',@check_only_one);
-                uimenu(context_menu,'Label','Medium radius (5px)','userdata',5,'Callback',@check_only_one,'checked','on');
-                uimenu(context_menu,'Label','Large radius (10px)','userdata',10,'Callback',@check_only_one);
-                uimenu(context_menu,'Label','Extra Large radius (50px)','userdata',50,'Callback',@check_only_one);
-                uimenu(context_menu,'Label','Stupidly Large radius (100px)','userdata',100,'Callback',@check_only_one);
+                context_menu=uicontextmenu(ancestor(axes_panel_comp.echo_obj.echo_bt_surf,'figure'),'Tag','btCtxtMenu');
+                axes_panel_comp.echo_obj.echo_bt_surf.UIContextMenu=context_menu;
+                uimenu(context_menu,'Label','Small radius (2px)','userdata',2,'MenuSelectedFcn',@check_only_one);
+                uimenu(context_menu,'Label','Medium radius (5px)','userdata',5,'MenuSelectedFcn',@check_only_one,'checked','on');
+                uimenu(context_menu,'Label','Large radius (10px)','userdata',10,'MenuSelectedFcn',@check_only_one);
+                uimenu(context_menu,'Label','Extra Large radius (50px)','userdata',50,'MenuSelectedFcn',@check_only_one);
+                uimenu(context_menu,'Label','Stupidly Large radius (100px)','userdata',100,'MenuSelectedFcn',@check_only_one);
                 
                 replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@push_bottom,main_figure});
             case 'loc'
@@ -121,17 +122,19 @@ switch state
             case 'meas'
                 replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@measure_distance,main_figure});
             case 'create_reg_rect'
-                replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@create_region,main_figure,'','rectangular'});
+                replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@create_region,main_figure,'Rectangular','rectangular'});
             case 'create_reg_horz'
-                replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@create_region,main_figure,'','horizontal'});
+                replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@create_region,main_figure,'Rectangular','horizontal'});
             case 'create_reg_vert'
-                replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@create_region,main_figure,'','vertical'});
+                replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@create_region,main_figure,'Rectangular','vertical'});
             case 'create_reg_poly'
                 replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@create_region,main_figure,'Polygon',''});
             case 'create_reg_hd'
                 replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@create_region,main_figure,'Hand Drawn',''});
             case 'draw_line'
                 replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@draw_line,main_figure});
+            case 'edit_line'
+                replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@edit_line,main_figure});   
             case 'add_st'
                 replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@add_st,main_figure});
             case 'erase_soundings'
@@ -141,14 +144,14 @@ switch state
                 cursor_tools_comp.pointer.State='on';
 %                 iptPointerManager(main_figure,'enable');
                 create_context_menu_main_echo(main_figure);
-                create_context_menu_bottom(main_figure,axes_panel_comp.bottom_plot);
+                create_context_menu_bottom(main_figure,axes_panel_comp.echo_obj.bottom_line_plot);
         end
     case 'off'
         replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@select_area_cback,main_figure});
         cursor_tools_comp.pointer.State='on';
         %iptPointerManager(main_figure,'enable');    
         create_context_menu_main_echo(main_figure);
-        create_context_menu_bottom(main_figure,axes_panel_comp.bottom_plot);
+        create_context_menu_bottom(main_figure,axes_panel_comp.echo_obj.bottom_line_plot);
         
 end
 order_stacks_fig(main_figure,curr_disp);

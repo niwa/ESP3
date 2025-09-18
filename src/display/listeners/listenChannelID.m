@@ -15,17 +15,17 @@ layer=get_current_layer();
 curr_disp.Freq=layer.Frequencies(idx_freq);
 
 %names={'BottomDetection' 'BottomDetectionV2' 'BadPingsV2' 'SpikeRemoval' 'SchoolDetection' 'TrackTarget'};
-update_algo_panels(main_figure,{});
+%update_algo_panels(main_figure,{});
 update_processing_tab(main_figure);
 update_display_tab(main_figure);
 update_calibration_tab(main_figure);
 update_environnement_tab(main_figure,1);
 update_st_tracks_tab(main_figure);
 
-load_info_panel(main_figure);
+load_info_panel(main_figure,[]);
 
-range=trans_obj.get_transceiver_range();
-[~,y_lim]=nanmin(abs(range-curr_disp.R_disp'));
+range=trans_obj.get_samples_range();
+[~,y_lim]=min(abs(range-curr_disp.R_disp'),[],'omitnan');
 
 if curr_disp.R_disp(2)==Inf
     y_lim(2)=numel(range);
@@ -54,13 +54,13 @@ if found_ori==0
     return;
 end
 
-delete(findobj(axes_panel_comp.main_axes,'Tag','SelectLine','-or','Tag','SelectArea'));
+delete(findobj(axes_panel_comp.echo_obj.main_ax,'Tag','SelectLine','-or','Tag','SelectArea'));
 
 update_axis(main_figure,0,'main_or_mini','mini');
 set_alpha_map(main_figure,'main_or_mini','mini');
-display_regions(main_figure,'both');
-display_lines(main_figure);
-set(axes_panel_comp.main_axes,'ylim',y_lim);
+display_regions('both');
+display_lines();
+set(axes_panel_comp.echo_obj.main_ax,'ylim',y_lim);
 
 curr_disp.setActive_reg_ID({});
 update_reglist_tab(main_figure,1);

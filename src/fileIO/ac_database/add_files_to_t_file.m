@@ -81,7 +81,7 @@ for ifi=1:numel(fields)
             struct_in.(fields{ifi})(idx_rem)=[];            
         elseif ischar(p.Results.(fields{ifi}))
             struct_in.(fields{ifi})=repmat({p.Results.(fields{ifi})},numel(struct_in.file_name),1);            
-        elseif isnumeric(p.Results.(fields{ifi}))&&numel(p.Results.(fields{ifi}))==1
+        elseif isnumeric(p.Results.(fields{ifi}))&&isscalar(p.Results.(fields{ifi}))
             struct_in.(fields{ifi})=repmat(p.Results.(fields{ifi}),numel(struct_in.file_name),1);
         end                
     end
@@ -95,15 +95,6 @@ else
     struct_in.file_end_time=cellfun(@(x) datestr(x,'yyyy-mm-dd HH:MM:SS'),num2cell(struct_in.file_end_time),'un',0);
 end
 
-% t=struct2table(struct_in);
-% dbconn=connect_to_db(ac_db_filename);  
-% dbconn.insert('t_file',fieldnames(struct_in),t);
-% 
-% sql_query=sprintf('SELECT file_pkey FROM t_file WHERE file_name IN ("%s") AND file_path IN ("%s")',strjoin(struct_in.file_name,'","'),strjoin(struct_in.file_path,'","'));
-% file_pkeys=dbconn.fetch(sql_query);
-% dbconn.close();
-
-% struct_in_minus_key=rmfield(struct_in,{'file_comments'});
 struct_in_minus_key=struct_in;
 file_pkeys=insert_data_controlled(ac_db_filename,'t_file',struct_in,struct_in_minus_key,'file_pkey');
 

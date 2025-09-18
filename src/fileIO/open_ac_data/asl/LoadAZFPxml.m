@@ -38,7 +38,7 @@ Parameters.Y_c = str2double(xDoc.getElementsByTagName('Y_c').item(0).getFirstChi
 Parameters.Y_d = str2double(xDoc.getElementsByTagName('Y_d').item(0).getFirstChild.getData);
 
 % get parameters for each transducer freq
-for(jj=1:Parameters.NumFreq)
+for jj=1:Parameters.NumFreq
     Parameters.DigRate(jj) = str2double(xDoc.getElementsByTagName('DigRate').item(jj-1).getFirstChild.getData);
     Parameters.LockOutIndex(jj) = str2double(xDoc.getElementsByTagName('LockOutIndex').item(jj-1).getFirstChild.getData);
     Parameters.Gain(jj) = str2double(xDoc.getElementsByTagName('Gain').item(jj-1).getFirstChild.getData);

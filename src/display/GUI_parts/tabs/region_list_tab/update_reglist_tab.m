@@ -72,7 +72,7 @@ else
     units_w= {'meters','pings','seconds'};
   
 end
-ref={'Surface','Bottom','Transducer'};
+ref=list_echo_int_ref;
 columnformat = {'char' 'numeric','char',{'Data','Bad Data'},ref,'numeric',units_w,'numeric',{'meters'},'numeric'};
 
 set(reglist_tab_comp.cell_w_unit,'String',units_w);

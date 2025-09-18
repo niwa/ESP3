@@ -15,7 +15,7 @@ pos=create_pos_3(8,2,gui_fmt.x_sep,gui_fmt.y_sep,gui_fmt.txt_w,gui_fmt.box_w,gui
 p_button=pos{6,1}{1};
 p_button(3)=gui_fmt.txt_w+gui_fmt.x_sep+gui_fmt.box_w;
 
-calibration_tab_comp.cal_group=uipanel(calibration_tab_comp.calibration_tab,'Position',[0 0.0 0.325 1],'title','','units','norm','BackgroundColor','white');
+calibration_tab_comp.cal_group=uipanel(calibration_tab_comp.calibration_tab,'Position',[0 0.0 0.4 1],'title','','units','norm','BackgroundColor','white');
 
 calibration_tab_comp.calibration_txt=uicontrol(calibration_tab_comp.cal_group,gui_fmt.txtTitleStyle,...
     'String',sprintf('Current Channel: %.0f kHz',curr_disp.Freq/1e3),'Position',pos{1,1}{1}+[0 0 gui_fmt.txt_w 0]);
@@ -38,16 +38,19 @@ calibration_tab_comp.SACORRECT=uicontrol(calibration_tab_comp.cal_group,gui_fmt.
 
 uicontrol(calibration_tab_comp.cal_group,gui_fmt.pushbtnStyle,'String','Process TS Cal','callback',{@reprocess_TS_calibration,main_figure},'position',p_button);
 calibration_tab_comp.cw_proc(1)=uicontrol(calibration_tab_comp.cal_group,gui_fmt.pushbtnStyle,'String','Save CW  Cal','callback',{@save_CW_calibration_cback},'position',p_button+[0 -gui_fmt.box_h 0 0]);
-calibration_tab_comp.fm_proc(1)=uicontrol(calibration_tab_comp.cal_group,gui_fmt.pushbtnStyle,'String','Disp.Cal.','callback',{@display_cal,main_figure},'position',p_button+[p_button(3) -gui_fmt.box_h 0 0]);
+calibration_tab_comp.fm_proc(1)=uicontrol(calibration_tab_comp.cal_group,gui_fmt.pushbtnStyle,'String','Load FM Cal from .xml','callback',{@load_FM_cal_cback,'xml'},'position',p_button+[p_button(3) 0 0 0]);
+calibration_tab_comp.fm_proc(2)=uicontrol(calibration_tab_comp.cal_group,gui_fmt.pushbtnStyle,'String','Load FM Cal from file','callback',{@load_FM_cal_cback,'file'},'position',p_button+[p_button(3) -p_button(4) 0 0]);
+calibration_tab_comp.fm_proc(3)=uicontrol(calibration_tab_comp.cal_group,gui_fmt.pushbtnStyle,'String','Disp. Cal.','callback',{@display_cal_cback,main_figure},'position',p_button+[0 -2*p_button(4) 0 0],'TooltipString','From cal_echo.csv and Calibration_FM_*.xml file');
+calibration_tab_comp.fm_proc(3)=uicontrol(calibration_tab_comp.cal_group,gui_fmt.pushbtnStyle,'String','Disp. Cal. from db','callback',{@display_cal_db_cback,main_figure},'position',p_button+[p_button(3) -2*p_button(4) 0 0],'TooltipString','From cal_echo.dB file');
 
 uicontrol(calibration_tab_comp.cal_group,gui_fmt.txtStyle,'string','Sphere:','position',pos{5,1}{1});
 sphere_struct=list_spheres();
 calibration_tab_comp.sphere=uicontrol(calibration_tab_comp.cal_group,gui_fmt.popumenuStyle,'string',{sphere_struct(:).name},'position',pos{5,1}{2}+[0 0 gui_fmt.txt_w/2 0]);
 
-calibration_tab_comp.ax_group=uipanel(calibration_tab_comp.calibration_tab,'Position',[0.325 0.0 0.675 1],'title','','units','norm','BackgroundColor','white');
+calibration_tab_comp.ax_group=uipanel(calibration_tab_comp.calibration_tab,'Position',[0.4 0.0 0.6 1],'title','','units','norm','BackgroundColor','white');
 
 field={'EQA','SACORRECT','G0'};
-label={'EQA (dB)','Sa_{corr} (dB)','G0 (dB)'};
+label={'EQA (dB)','Sa_{corr} (dB)','G (dB)'};
 y_sep=0.0  ;
 ll=(0.80-(numel(field))*y_sep)/numel(field);
 for iax=1:numel(field)
@@ -92,13 +95,17 @@ end
 function apply_calibration(~,~,main_figure)
 curr_disp=get_esp3_prop('curr_disp');
 layer=get_current_layer();
+
 if ~isempty(layer)
     calibration_tab_comp=getappdata(main_figure,'Calibration_tab');
     
     [trans_obj,~]=layer.get_trans(curr_disp);
+    if trans_obj.ismb
+        return;
+    end
     
+    old_cal=trans_obj.get_transceiver_cw_cal();
     
-    old_cal=trans_obj.get_cal();
     
     if ~isnan(str2double(get(calibration_tab_comp.G0,'string')))
         new_cal.G0=str2double(get(calibration_tab_comp.G0,'string'));
@@ -118,10 +125,15 @@ if ~isempty(layer)
         new_cal.EQA=old_cal.EQA;
     end
     
-    trans_obj.apply_cw_cal(new_cal);
+    %     [cal_fm,origin_cal_fm]=layer.get_fm_cal(idx_freq);
+    
+    %     if ~isempty(cal_fm{1})&&strcmpi(origin_cal_fm{1},'th')
+    %          trans_obj.apply_transceiver_cw_cal(new_cal);
+    %     end
+    
+    trans_obj.apply_transceiver_cw_cal(new_cal);
+    
     update_calibration_tab(main_figure);
-    
-    
     update_axis(main_figure,0,'main_or_mini',union({'main','mini'},curr_disp.ChannelID,'stable'),'force_update',1);
     set_alpha_map(main_figure,'update_bt',0);
     
@@ -132,3 +144,65 @@ end
 function save_CW_calibration_cback(~,~)
 save_cal_echo_file();
 end
+
+
+function load_FM_cal_cback(~,~,ori)
+
+layer = get_current_layer();
+if isempty(layer)
+    return;
+end
+[path_file,~] = fileparts(layer.Filename{1});
+[cal_fm_cell,~]=layer.get_fm_cal([]);
+for uui  = 1:numel(layer.Transceivers)
+    trans_obj = layer.Transceivers(uui);
+ 
+    if strcmpi(trans_obj.Mode,'FM')
+        cal_struct = cal_fm_cell{uui};
+        switch ori
+            case 'xml'
+                
+                
+               [filename, path_f] = uigetfile({fullfile(path_file,'*.xml')},sprintf('Select XML calibration file for channel %s',layer.ChannelID{uui}));
+                
+                if isequal(filename,0)
+                    continue;
+                end
+                
+                if isfile(fullfile(path_f,filename))
+                    calibration_results = parse_simrad_xml_calibration_file(fullfile(path_f,filename));
+                end
+                
+            case 'file'
+                
+                if all(isnan(cal_struct.Gain_file))
+                    dlg_perso([],'No data',sprintf('No calibration data for %s in the .raw file',layer.ChannelID{uui}));
+                    continue;
+                end
+                answer = question_dialog_fig(get_esp3_prop('main_figure'),'Replace Calibration',sprintf('Are you sure you want to overwrite the calibration XML file with the one contained in the .raw file for channel %s?',layer.ChannelID{uui}));
+                if strcmpi(answer,'no')||isempty(answer)
+                    continue;
+                end
+                cal_struct.Gain = cal_struct.Gain_file;
+                fields_to_copy = {'Gain' 'BeamWidthAlongship' 'BeamWidthAthwartship'};
+                
+                for ifi = 1:numel(fields_to_copy)
+                    calibration_results.(fields_to_copy{ifi}) = cal_struct.(sprintf('%s_file',fields_to_copy{ifi}));
+                end
+                
+                calibration_results.Frequency = cal_struct.Frequency;
+        end
+        
+        if ~isempty(calibration_results.Frequency)&&~isempty(intersect(floor(calibration_results.Frequency(1):calibration_results.Frequency(end)),floor(cal_struct.Frequency(1):cal_struct.Frequency(end))))            
+            file_cal=fullfile(path_file,generate_valid_filename(['Calibration_FM_' layer.ChannelID{uui} '.xml']));
+            save_cal_to_xml(calibration_results,file_cal);
+        else
+           dlg_perso([],'No data',sprintf('No calibration data for %s here...',layer.ChannelID{uui}));
+        end
+    end
+end
+
+update_calibration_tab(get_esp3_prop('main_figure'));
+
+end
+

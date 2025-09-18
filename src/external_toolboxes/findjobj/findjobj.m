@@ -313,7 +313,7 @@ function [handles,levels,parentIdx,listing] = findjobj(container,varargin) %#ok<
         processArgs(varargin{:});
 
         % De-cell and trim listing, if only one element was found (no use for indented listing in this case)
-        if iscell(listing) && length(listing)==1
+        if iscell(listing) && isscalar(listing)
             listing = strtrim(listing{1});
         end
 
@@ -961,7 +961,7 @@ function [handles,levels,parentIdx,listing] = findjobj(container,varargin) %#ok<
                 % Simple processing: slower since it does extra processing within opaque.char()
                 for componentIdx = 1 : length(handles)
                     % Note: using @toChar is faster but returns java String, not a Matlab char
-                    foundIdx(componentIdx) = ~isempty(regexpi(char(handles(componentIdx).getClass),classFilter));
+                    foundIdx(componentIdx) = ~isempty(regexpi(char(handles(componentIdx).getClass),classFilter, 'once'));
                 end
             end
 
@@ -979,7 +979,7 @@ function [handles,levels,parentIdx,listing] = findjobj(container,varargin) %#ok<
                 if length(propertyName) == 2
                     propertyVal  = propertyName{2};
                     propertyName = propertyName{1};
-                elseif length(propertyName) == 1
+                elseif isscalar(propertyName)
                     propertyName = propertyName{1};
                 else
                     error('YMA:findjobj:IllegalPropertyFilter','Property filter must be a string (case insensitive name of property) or cell array {propName,propValue}');
@@ -1999,7 +1999,7 @@ function [handles,levels,parentIdx,listing] = findjobj(container,varargin) %#ok<
                             callbacksTableModel = eval('com.jidesoft.grid.PropertyTableModel(list);');  %#ok prevent JIDE alert by run-time (not load-time) evaluation
                             
                             % Expand if only one category
-                            if length(callbacksTableModel.getCategories)==1
+                            if isscalar(callbacksTableModel.getCategories)
                                 callbacksTableModel.expandFirstLevel;
                             end
                         catch
@@ -2120,7 +2120,7 @@ function [handles,levels,parentIdx,listing] = findjobj(container,varargin) %#ok<
                             callbacksTableModel = eval('com.jidesoft.grid.PropertyTableModel(list);');  %#ok prevent JIDE alert by run-time (not load-time) evaluation
                             
                             % Expand if only one category
-                            if length(callbacksTableModel.getCategories)==1
+                            if isscalar(callbacksTableModel.getCategories)
                                 callbacksTableModel.expandFirstLevel;
                             end
                         catch
@@ -2176,7 +2176,7 @@ function [handles,levels,parentIdx,listing] = findjobj(container,varargin) %#ok<
                 return;
             end
             dataFieldsStr = evalc('disp(dataFields)');
-            if dataFieldsStr(end)==char(10),  dataFieldsStr=dataFieldsStr(1:end-1);  end
+            if dataFieldsStr(end)==newline,  dataFieldsStr=dataFieldsStr(1:end-1);  end
 
             % Strip out callbacks
             dataFieldsStr = regexprep(dataFieldsStr,'^\s*\w*Callback(Data)?:[^\n]*$','','lineanchors');
@@ -2195,8 +2195,8 @@ function [handles,levels,parentIdx,listing] = findjobj(container,varargin) %#ok<
             end
             try
                 [fieldNames, sortedIdx] = sort(fieldNames);
-                s = strsplit(dataFieldsStr, sprintf('\n'))';
-                dataFieldsStr = strjoin(s(sortedIdx), sprintf('\n'));
+                s = strsplit(dataFieldsStr, newline)';
+                dataFieldsStr = strjoin(s(sortedIdx), newline);
             catch
                 % never mind... - ignore, leave unsorted
             end
@@ -2319,7 +2319,7 @@ function [handles,levels,parentIdx,listing] = findjobj(container,varargin) %#ok<
                 try
                     % Inform the user - bail out on error
                     err = lasterror;  %#ok
-                    dataFieldsStr = ['<p>' strrep(err.message, char(10), '<br>')];
+                    dataFieldsStr = ['<p>' strrep(err.message, newline, '<br>')];
                 catch
                     % forget it...
                 end
@@ -2354,7 +2354,7 @@ function [handles,levels,parentIdx,listing] = findjobj(container,varargin) %#ok<
             end
 
             % If we have a single child handle, wrap it within a javaArray for tree.add() to "swallow"
-            if (length(childnodes) == 1)
+            if (isscalar(childnodes))
                 chnodes = childnodes;
                 childnodes = javaArray('com.mathworks.hg.peer.UITreeNode', 1);
                 childnodes(1) = java(chnodes);
@@ -2783,7 +2783,7 @@ function [handles,levels,parentIdx,listing] = findjobj(container,varargin) %#ok<
     function btInspect_Callback(src, evd, varargin)  %#ok
         try
             % Inspect the specified object
-            if length(varargin) == 1
+            if isscalar(varargin)
                 object = varargin{1};
             else
                 object = getTopSelectedObject(varargin{:});
@@ -3164,7 +3164,7 @@ function [handles,levels,parentIdx,listing] = findjobj(container,varargin) %#ok<
         msg = err.message;
         for idx = 1 : length(err.stack)
             filename = err.stack(idx).file;
-            if ~isempty(regexpi(filename,mfilename))
+            if ~isempty(regexpi(filename,mfilename, 'once'))
                 funcname = err.stack(idx).name;
                 line = num2str(err.stack(idx).line);
                 msg = [msg ' at <a href="matlab:opentoline(''' filename ''',' line ');">' funcname ' line #' line '</a>']; %#ok grow

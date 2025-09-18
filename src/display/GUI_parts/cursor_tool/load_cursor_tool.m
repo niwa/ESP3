@@ -35,7 +35,7 @@ end
 
 
 
-function set_curr_disp_mode(src,~,main_figure)
+function set_curr_disp_mode(src,~,~)
 
 curr_disp=get_esp3_prop('curr_disp');
 

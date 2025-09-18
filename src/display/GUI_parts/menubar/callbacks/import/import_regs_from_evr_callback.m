@@ -52,14 +52,14 @@ if ~ischar(Filename)
     return;
 end
 
-regions=create_regions_from_evr(fullfile(PathToFile,Filename),trans_obj.get_transceiver_range(),trans_obj.Time);
+regions=create_regions_from_evr(fullfile(PathToFile,Filename),trans_obj.get_samples_range(),trans_obj.Time);
 
 if ~isempty(regions)
     trans_obj.add_region(regions);
     
     display_bottom(main_figure);
     
-    display_regions(main_figure,'both');
+    display_regions('both');
     curr_disp=get_esp3_prop('curr_disp');
     curr_disp.setActive_reg_ID({});
 

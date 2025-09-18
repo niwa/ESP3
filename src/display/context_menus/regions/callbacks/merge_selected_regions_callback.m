@@ -42,21 +42,28 @@ if isempty(layer)
 end
 
 curr_disp=get_esp3_prop('curr_disp');
+map_tab_comp = getappdata(main_figure,'Map_tab');
+gax = map_tab_comp.ax;
 
 [trans_obj,~]=layer.get_trans(curr_disp);
 selected_regs_ids=curr_disp.Active_reg_ID;
 
 if ~isempty(trans_obj.Regions)&&~isempty(selected_regs_ids)
-     idx_regs=trans_obj.find_regions_Unique_ID(selected_regs_ids);
-
+    idx_regs=trans_obj.find_regions_Unique_ID(selected_regs_ids);
+    
     old_regs=trans_obj.Regions;
-
-    new_regions=trans_obj.Regions(idx_regs).merge_regions('overlap_only',overlap);
+    switch overlap
+        case -1
+            new_regions=trans_obj.Regions(idx_regs).split_regions();
+        otherwise
+            new_regions=trans_obj.Regions(idx_regs).merge_regions('overlap_only',overlap);
+    end
 
     layer.delete_regions_from_uid(curr_disp,selected_regs_ids);
+    cellfun(@(x) rem_reg_tag_lim(gax,x),selected_regs_ids);
     IDs=trans_obj.add_region(new_regions);
    
-    display_regions(main_figure,'both');
+    display_regions('both');
    
     add_undo_region_action(main_figure,trans_obj,old_regs,trans_obj.Regions);
 

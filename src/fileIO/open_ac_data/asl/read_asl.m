@@ -30,7 +30,7 @@ if ~iscell(Filename_cell)
     Filename_cell={Filename_cell};
 end
 
-[def_path_m,~,~]=fileparts(Filename_cell{1});
+def_path_m = fullfile(tempdir,'data_echo');
 
 addRequired(p,'Filename_cell',@(x) ischar(x)||iscell(x));
 addParameter(p,'PathToMemmap',def_path_m,@ischar);
@@ -45,7 +45,8 @@ if isempty(calParms)
 end
 
 dir_data=p.Results.PathToMemmap;
-enc='ieee-be';
+b_ordering = 'b';
+enc='UTF-8';
 nb_files=length(Filename_cell);
 load_bar_comp=p.Results.load_bar_comp;
 flag_start=hex2dec('FD02');
@@ -53,6 +54,8 @@ flag_start=hex2dec('FD02');
 for i_cell=1:length(Filename_cell)
         
     Filename=Filename_cell{i_cell};
+            s=dir(Filename);
+    f_size_bytes=s.bytes;
 
     str_disp=sprintf('Opening File %d/%d : %s',i_cell,nb_files,Filename);
     if ~isempty(load_bar_comp)
@@ -61,23 +64,23 @@ for i_cell=1:length(Filename_cell)
     else
         disp(str_disp)
     end
-        fid=fopen(Filename,'r',enc);
+        fid=fopen(Filename,'r',b_ordering,enc);
     
     if fid==-1
         continue;
     end
-    flag=fread(fid,1,'uint16',enc);
+    flag=fread(fid,1,'uint16',b_ordering);
     if (flag~=flag_start)
        disp_perso([],sprintf('Cannot open file %s, it dos not look like an ASL file...',Filename));
        fclose(fid);
        continue;
     end
     
-    fread(fid,1,'uint16',enc);
-    serial=fread(fid,1,'uint16',enc);
+    fread(fid,1,'uint16',b_ordering);
+    serial=fread(fid,1,'uint16',b_ordering);
     
     frewind(fid);
-    dd=fread(fid,'uint8=>uint8',enc);
+    dd=fread(fid,'uint8=>uint8',b_ordering);
     
     nb_bytes=numel(dd);
     
@@ -109,12 +112,15 @@ for i_cell=1:length(Filename_cell)
     ip=0;
     for ipp=1:length(id_flag)
         pos=ftell(fid);
+        if ~isempty(load_bar_comp) 
+            set(load_bar_comp.progress_bar, 'Minimum',0, 'Maximum',f_size_bytes,'Value',pos);
+        end
         
         if pos~=pos_id(ipp)
             fseek(fid,pos_id(ipp)-pos,'cof');
         end
         
-        flag=fread(fid,1,'uint16',enc);
+        flag=fread(fid,1,'uint16',b_ordering);
         
         if flag_start~=flag
             continue;
@@ -124,8 +130,8 @@ for i_cell=1:length(Filename_cell)
             break;
         end
         
-        burst_num=fread(fid,1,'uint16',enc);
-        serial_tmp=fread(fid,1,'uint16',enc);
+        burst_num=fread(fid,1,'uint16',b_ordering);
+        serial_tmp=fread(fid,1,'uint16',b_ordering);
         
         if serial_tmp~=serial
             continue;
@@ -135,43 +141,43 @@ for i_cell=1:length(Filename_cell)
         data.burst_num(ip)=burst_num;
         data.serial(ip)=serial_tmp;
         
-        data.status(ip)=fread(fid,1,'uint16',enc);
-        data.interval(ip)=fread(fid,1,'uint32',enc);
-        date=fread(fid,7,'uint16',enc);
+        data.status(ip)=fread(fid,1,'uint16',b_ordering);
+        data.interval(ip)=fread(fid,1,'uint32',b_ordering);
+        date=fread(fid,7,'uint16',b_ordering);
         data.time(ip)=datenum(date(1),date(2),date(3),date(4),date(5),date(6)+date(7)/100);
-        data.f_s(:,ip)=fread(fid,4,'uint16',enc);
-        data.sample_start(:,ip)=fread(fid,4,'uint16',enc);
-        data.nb_bins(:,ip)=fread(fid,4,'uint16',enc);
-        data.range_sple_bin(:,ip)=fread(fid,4,'uint16',enc);
-        data.ping_per_profile(ip)=fread(fid,1,'uint16',enc);
-        data.average_ping_flag(ip)=fread(fid,1,'uint16',enc);
-        data.nb_pings_in_burst(ip)=fread(fid,1,'uint16',enc);
-        data.ping_period(ip)=fread(fid,1,'uint16',enc);
-        data.first_ping(ip)=fread(fid,1,'uint16',enc);
-        data.last_ping(ip)=fread(fid,1,'uint16',enc);
-        data.data_type(:,ip)=fread(fid,4,'uint8',enc);
-        data.err_num(ip)=fread(fid,1,'uint16',enc);
-        data.phase_num(ip)=fread(fid,1,'uint8',enc);
-        data.over_run(ip)=fread(fid,1,'uint8',enc);
-        data.nb_channel(ip)=fread(fid,1,'uint8',enc);
-        data.gains(:,ip)=fread(fid,4,'uint8',enc);
-        fread(fid,1,'uint8',enc);
-        data.pulse_length(:,ip)=double(fread(fid,4,'uint16',enc))/1e6;
-        data.board_num(:,ip)=fread(fid,4,'uint16',enc);
-        data.freq(:,ip)=double(fread(fid,4,'uint16',enc)*1e3);
-        data.sensor_flag(ip)=fread(fid,1,'uint16',enc);
+        data.f_s(:,ip)=fread(fid,4,'uint16',b_ordering);
+        data.sample_start(:,ip)=fread(fid,4,'uint16',b_ordering);
+        data.nb_bins(:,ip)=fread(fid,4,'uint16',b_ordering);
+        data.range_sple_bin(:,ip)=fread(fid,4,'uint16',b_ordering);
+        data.ping_per_profile(ip)=fread(fid,1,'uint16',b_ordering);
+        data.average_ping_flag(ip)=fread(fid,1,'uint16',b_ordering);
+        data.nb_pings_in_burst(ip)=fread(fid,1,'uint16',b_ordering);
+        data.ping_period(ip)=fread(fid,1,'uint16',b_ordering);
+        data.first_ping(ip)=fread(fid,1,'uint16',b_ordering);
+        data.last_ping(ip)=fread(fid,1,'uint16',b_ordering);
+        data.data_type(:,ip)=fread(fid,4,'uint8',b_ordering);
+        data.err_num(ip)=fread(fid,1,'uint16',b_ordering);
+        data.phase_num(ip)=fread(fid,1,'uint8',b_ordering);
+        data.over_run(ip)=fread(fid,1,'uint8',b_ordering);
+        data.nb_channel(ip)=fread(fid,1,'uint8',b_ordering);
+        data.gains(:,ip)=fread(fid,4,'uint8',b_ordering);
+        fread(fid,1,'uint8',b_ordering);
+        data.pulse_length(:,ip)=double(fread(fid,4,'uint16',b_ordering))/1e6;
+        data.board_num(:,ip)=fread(fid,4,'uint16',b_ordering);
+        data.freq(:,ip)=double(fread(fid,4,'uint16',b_ordering)*1e3);
+        data.sensor_flag(ip)=fread(fid,1,'uint16',b_ordering);
         
         
         
-        tmp_x=double(fread(fid,1,'uint16',enc));%Tilt_x (degrees) = X_a + X_b (NX) + X_c (NX)2 + X_d (NX)3
+        tmp_x=double(fread(fid,1,'uint16',b_ordering));%Tilt_x (degrees) = X_a + X_b (NX) + X_c (NX)2 + X_d (NX)3
         data.tilt_x(ip) = computeTilt(tmp_x,calParms.X_a,calParms.X_b,calParms.X_c,calParms.X_d);
-        tmp_y=double(fread(fid,1,'uint16',enc));%Tilt_y (degrees) = Y_a + Y_b (NY) + Y_c (NY)2 + Y_d (NY)3
+        tmp_y=double(fread(fid,1,'uint16',b_ordering));%Tilt_y (degrees) = Y_a + Y_b (NY) + Y_c (NY)2 + Y_d (NY)3
         data.tilt_y(ip) = computeTilt(tmp_y,calParms.Y_a,calParms.Y_b,calParms.Y_c,calParms.Y_d);
         
         
-        data.battery(ip)=fread(fid,1,'uint16',enc);
+        data.battery(ip)=fread(fid,1,'uint16',b_ordering);
         
-        tmp=fread(fid,1,'uint16',enc);
+        tmp=fread(fid,1,'uint16',b_ordering);
         tmp=2.5*(double(tmp)/65535);
         data.pressure(ip)=tmp;
         % Vin=2.5*(counts/65535). Then calculate the equivalent pressure in dBar:
@@ -179,12 +185,12 @@ for i_cell=1:length(Filename_cell)
         
         
         
-        counts_T=fread(fid,1,'uint16',enc);
+        counts_T=fread(fid,1,'uint16',b_ordering);
         data.temperature(ip) = computeTemperature(counts_T,calParms);
         
         
-        data.ad_chan_6(ip)=fread(fid,1,'uint16',enc);
-        data.ad_chan_7(ip)=fread(fid,1,'uint16',enc);
+        data.ad_chan_6(ip)=fread(fid,1,'uint16',b_ordering);
+        data.ad_chan_7(ip)=fread(fid,1,'uint16',b_ordering);
         
         %The following lines have been modified based on code provided by ASL
         % Ver 1.1 October 31, 2016
@@ -198,14 +204,14 @@ for i_cell=1:length(Filename_cell)
                 else
                     divisor = data.range_sple_bin(ic,ip);
                 end
-                ls = fread(fid,data.nb_bins(ic,ip),'uint32',enc);
-                lso = fread(fid,data.nb_bins(ic,ip),'uchar',enc);
+                ls = fread(fid,data.nb_bins(ic,ip),'uint32',b_ordering);
+                lso = fread(fid,data.nb_bins(ic,ip),'uchar',b_ordering);
                 v = (ls + lso*4294967295)/divisor;
                 v = (log10(v)-2.5)*(8*65535)*calParms.DS(ic);
                 v(isinf(v)) = 0;
                 counts = v;
             else
-                counts = fread(fid,data.nb_bins(ic,ip),'uint16','ieee-be');
+                counts = fread(fid,data.nb_bins(ic,ip),'uint16',b_ordering);
             end
             EL = calParms.EL(ic) - 2.5/calParms.DS(ic) + counts/(65535/2.5*calParms.DS(ic));
             power = db2pow_perso(EL);
@@ -218,61 +224,55 @@ for i_cell=1:length(Filename_cell)
     
     fclose(fid);
     
-    transceiver(data.nb_channel)=transceiver_cl();
+    trans_obj_tot = []; 
     att=attitude_nav_cl('Heading',zeros(size(data.time)),'Pitch',data.tilt_y,'Roll',data.tilt_x,'Heave',zeros(size(data.time)),'Time',data.time);
     
     for ic=1:max(data.nb_channel)
         
         [nb_samples,nb_pings]=size(data.(sprintf('chan_%.0f',ic)));
-        sample_number=(nanmean(data.sample_start(ic,:))+1:nb_samples+nanmean(data.sample_start(ic,:)))';
+        sample_number=(mean(data.sample_start(ic,:))+1:nb_samples+mean(data.sample_start(ic,:)))';
         c=1500;
-        time=sample_number/nanmean(data.f_s(ic,:)./data.range_sple_bin(ic,:));
+        time=sample_number/mean(data.f_s(ic,:)./data.range_sple_bin(ic,:));
         range=c*time/2;
         
-        
-        config_obj=config_cl();
-        config_obj.ChannelID=num2str(nanmean(data.freq(ic,:)));
-        params_obj=params_cl(nb_pings);
         envdata=env_data_cl('SoundSpeed',calParms.SoundSpeed);
-        config_obj.EthernetAddress='';
-        config_obj.IPAddress='';
-        config_obj.SerialNumber=num2str(calParms.SerialNumber);
-        
+        params_obj=params_cl(nb_pings);  
+        params_obj.Frequency(:)=data.freq(ic,:);
+        params_obj.FrequencyEnd(:)=data.freq(ic,:);
+        params_obj.FrequencyStart(:)=data.freq(ic,:);
+        params_obj.PulseLength(:)=mean(data.pulse_length(ic,:));
+        params_obj.SampleInterval(:)=1./mean(data.f_s(ic,:)./data.range_sple_bin(ic,:));
+        params_obj.TransmitPower(:)=45;
         SvOffset = CalcSvOffset(data.freq(ic,1),params_obj.PulseLength(1));
         
-        config_obj.PulseLength=nanmean(data.pulse_length(ic,:));
-        config_obj.BeamType=0;
+        config_obj=config_cl();
+        config_obj.ChannelID=num2str(mean(data.freq(ic,:)));
+        config_obj.SerialNumber=num2str(calParms.SerialNumber);
+        config_obj.PulseLength=mean(data.pulse_length(ic,:));
+        config_obj.BeamType='single-beam';
         config_obj.BeamWidthAlongship=6;
         config_obj.BeamWidthAthwartship=6;
         config_obj.EquivalentBeamAngle=10*log10(calParms.BP(ic));
-        config_obj.Frequency=nanmean(data.freq(ic,:));
-        config_obj.FrequencyMaximum=nanmax(data.freq(ic,:));
-        config_obj.FrequencyMinimum=nanmin(data.freq(ic,:));
+        config_obj.Frequency=mean(data.freq(ic,:));
+        config_obj.FrequencyMaximum=max(data.freq(ic,:));
+        config_obj.FrequencyMinimum=min(data.freq(ic,:));
         config_obj.Gain=0;
         config_obj.SaCorrection=-SvOffset/2;
         config_obj.TransducerName='ASL';
         config_obj.TransceiverName='ASL';
+        config_obj.TransceiverType='ASL';
+        config_obj.SounderType = 'Single-beam (ASL)';   
         
-        params_obj.Time=data.time;
-        params_obj.Frequency(:)=data.freq(ic,:);
-        params_obj.FrequencyEnd(:)=data.freq(ic,:);
-        params_obj.FrequencyStart(:)=data.freq(ic,:);
-        params_obj.PulseLength(:)=nanmean(data.pulse_length(ic,:));
-        params_obj.SampleInterval(:)=1./nanmean(data.f_s(ic,:)./data.range_sple_bin(ic,:));
-        params_obj.TransmitPower(:)=45;
-        params_obj.Absorption(:)= seawater_absorption(params_obj.Frequency(1)/1e3, (envdata.Salinity), (envdata.Temperature), (envdata.Depth),'fandg')/1e3;
-        
+ 
         
         power_db=pow2db_perso(data.(sprintf('chan_%.0f',ic)))-calParms.TVR(ic)-20*log10(calParms.VTX(ic));
-        data_struct.power=db2pow_perso(power_db);
+        lambda = envdata.SoundSpeed./params_obj.Frequency;
+        AG = 10*log10(params_obj.TransmitPower.*lambda.^2/(16*pi^2));
         
-%         data_struct.sv = power_db + repmat(20*log10(range)+2*params_obj.Absorption(1)*range,1,nb_pings) - 10*log10(c*params_obj.PulseLength(1)/2)-config_obj.EquivalentBeamAngle+SvOffset;
-%         data_struct.sp = power_db + repmat(40*log10(range)+2*params_obj.Absorption(1)*range,1,nb_pings);
-%         
+        data_struct.power=db2pow_perso(power_db+AG);
         
         [sub_ac_data_temp,curr_name]=sub_ac_data_cl.sub_ac_data_from_struct(data_struct,dir_data,{});
-        
-        
+           
         ac_data_temp=ac_data_cl('SubData',sub_ac_data_temp,...
             'Nb_samples',length(range),...
             'Nb_pings',nb_pings,...
@@ -280,17 +280,17 @@ for i_cell=1:length(Filename_cell)
         
         clear curr_data;
 
-        
-        transceiver(ic)=transceiver_cl('Data',ac_data_temp,...
+        trans_obj=transceiver_cl('Data',ac_data_temp,...
             'AttitudeNavPing',att,...
             'Range',range,...
             'Time',data.time,...
             'Mode','CW',...
             'Config',config_obj,...
             'Params',params_obj);
+        trans_obj_tot = [trans_obj_tot trans_obj]; 
     end
-    layers(i_cell)=layer_cl('Filename',{Filename},'Filetype','ASL','Transceivers',transceiver,'EnvData',envdata,'AttitudeNav',att);
     
+    layers(i_cell)=layer_cl('Filename',{Filename},'Filetype','ASL','Transceivers',trans_obj_tot,'EnvData',envdata,'AttitudeNav',att);
     
     
 end

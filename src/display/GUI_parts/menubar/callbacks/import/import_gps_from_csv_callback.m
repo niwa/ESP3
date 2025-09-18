@@ -23,7 +23,7 @@ end
 
 
 [answer,cancel]=input_dlg_perso(main_figure,'Do you want to apply a time offset?',{'Time offset (in Hours)'},...
-    {'%.2f'},{0});
+    {'%.3f'},{0});
 
 if cancel
     warning('Invalid time offset');
@@ -32,14 +32,8 @@ else
    dt=answer{1}; 
 end
 
-gps_data=gps_data_cl.load_gps_from_file(fullfile(PathToFile,Filename));
-if isempty(gps_data)
-   warndlg_perso(main_figure,'Failed','Could not import GPS Data...')
-    return;
-end
-gps_data.Time=gps_data.Time+dt/24;
-layer.replace_gps_data_layer(gps_data);
-layer.add_ping_data_to_db([],1);
+layer.get_gps_data_from_csv(fullfile(PathToFile,Filename),dt);
+
 
 update_grid(main_figure);
 update_grid_mini_ax(main_figure);

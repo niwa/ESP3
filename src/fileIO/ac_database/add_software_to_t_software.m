@@ -37,12 +37,6 @@ for ifi=1:numel(fields)
     end
 end
 
-% t=struct2table(struct_in);
-% 
-% dbconn=connect_to_db(ac_db_filename);  
-% dbconn.insert('t_software',fieldnames(struct_in),t);
-% 
-% dbconn.close();
 struct_in.software_install_date={datestr(struct_in.software_install_date,'yyyy-mm-dd')};
 struct_in_minus_key=rmfield(struct_in,{'software_comments'});
 

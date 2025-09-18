@@ -6,7 +6,7 @@ return;
 end
     
 curr_disp=get_esp3_prop('curr_disp');
-[trans_obj,idx_freq]=layer.get_trans(curr_disp);
+[trans_obj,~]=layer.get_trans(curr_disp);
 [path_f,~,~]=fileparts(layer.Filename{1});
 
 [Filename,PathToFile]= uigetfile({fullfile(path_f,'*.evl')}, 'Pick a .evl','MultiSelect','off');

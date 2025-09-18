@@ -8,8 +8,7 @@ end
 
 [path_f,f_name,ext]=fileparts(fstr);
 
-f_name=regexprep(f_name,'\W','_');
-f_name=strrep(f_name,'__','_');
+f_name  = clean_str(f_name,true);
 
 fname=fullfile(path_f,[f_name ext]);
 

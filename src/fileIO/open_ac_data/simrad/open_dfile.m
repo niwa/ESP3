@@ -1,4 +1,4 @@
-function  new_layers=open_dfile(Filename_cell,varargin)
+function  [new_layers,found_raw_file]=open_dfile(Filename_cell,varargin)
 p = inputParser;
 
 if ~iscell(Filename_cell)
@@ -14,8 +14,7 @@ if isempty(Filename_cell)
     return;
 end
 
-
-[def_path_m,~,~]=fileparts(Filename_cell{1});
+def_path_m = fullfile(tempdir,'data_echo');
 
 addRequired(p,'Filename_cell',@(x) ischar(x)||iscell(x));
 addParameter(p,'CVScheck',1,@isnumeric);
@@ -27,6 +26,7 @@ addParameter(p,'load_bar_comp',[]);
 
 parse(p,Filename_cell,varargin{:});
 
+found_raw_file = true(1,numel(Filename_cell));
 
 new_layers=[];
 
@@ -38,10 +38,10 @@ for uu=1:length(Filename_cell)
     ifileInfo = parse_ifile(FileName);
     RawFilename=ifileInfo.rawFileName;
     
-    if strcmp(RawFilename,'')
-        warning('Could not find associated .*raw file');
-        new_layers=[];
-        return;
+    if strcmp(RawFilename,'')||isempty(RawFilename)
+        warning('Could not find associated .*raw file to %s, will try to open original d-file instead',FileName);
+        found_raw_file(uu) = false;
+        continue;
     end
     
     survey_data=survey_data_cl('Snapshot',ifileInfo.snapshot,'Stratum',ifileInfo.stratum,'Transect',ifileInfo.transect);
@@ -50,8 +50,9 @@ for uu=1:length(Filename_cell)
     [~,PathToRawFile]=find_file_recursive(path_f,RawFilename);
     
     if isempty(PathToRawFile)
-        warning('Could not find associated .*raw file');
-        return;
+        found_raw_file(uu) = false;
+        warning('Could not find associated .*raw file to %s, will try to open original d-file instead',FileName);
+        continue;
     end
     
     lay_temp=open_EK_file_stdalone(fullfile(PathToRawFile{1},RawFilename),...
@@ -60,8 +61,10 @@ for uu=1:length(Filename_cell)
     
     lay_temp.set_survey_data(survey_data);
     
-    if p.Results.CVScheck>0
-        lay_temp.CVS_BottomRegions(p.Results.CVSroot)
+    if p.Results.CVScheck
+        lay_temp.CVS_BottomRegions(p.Results.CVSroot);
+        lay_temp(uu).write_bot_to_bot_xml('overwrite',false);
+        lay_temp(uu).write_reg_to_reg_xml('overwrite',false);
     end
     new_layers=[new_layers lay_temp];
 end

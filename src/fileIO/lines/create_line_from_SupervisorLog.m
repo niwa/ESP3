@@ -8,7 +8,7 @@ function obj=create_line_from_SupervisorLog(filename)
     pressure(end)=[];
     timestamp(end)=[];
 
-    len=nanmin(length(timestamp),length(pressure));
+    len=min(length(timestamp),length(pressure));
     timestamp=timestamp(1:len);
     pressure=pressure(1:len);
     

@@ -1,0 +1,48 @@
+Calibration of Channel GPT  38 kHz 0090720580ea 2-1 ES38B recorded on  26/08/2016 22:49:22
+Processed on the 13/11/2023 13:32:58 using ESP3 version 10000.0.0 Do not use for integration
+Ping rate = 4.7616 Hz
+Mean sphere depth= 24.1938 m
+Sound speed at sphere = 1500 m/s
+Density at sphere = 1026.6982 kg/m^3
+Mean Absorption = 8.4143 dB/km
+Mean sound speed = 1500 m/s
+Sphere TS at 38 kHz is -42.4158 dB
+
+
+Mean ts within 0.21 deg of centre = -41.2331 dB
+Std of ts within 0.21 deg of centre = 0.12628 dB
+Maximum TS within 0.21 deg of centre = -40.9043 dB
+Number of echoes within 0.21 deg of centre = 376
+On axis TS from beam fitting = -41.1702 dB
+
+Hence Ex60 is reading 1.1827 dB too high (mean method)
+So add 0.59135 dB to G_o (mean method)
+G_o from .raw file is 25.81 dB
+So the calibrated G_o = 26.4014 dB (mean method)
+
+Hence Ex60 is reading 1.5115 dB too high (max method)
+So add 0.75576 dB to G_o (max method)
+G_o from .raw file is 25.81 dB
+So the calibrated G_o = 26.5658 dB (max method)
+
+Hence Ex60 is reading 1.2457 dB too high (beam fitting method)
+So add 0.62283 dB to G_o (beam fitting method)
+G_o from .raw file is 25.81 dB
+So the calibrated G_o = 26.4328 dB (beam fitting method)
+
+Mean sphere range = 25.2689 m, std = 0.83588 m
+
+So sa correction = -0.61437 dB
+(the effective pulse length = 0.75357 * nominal pulse length)
+
+Fore/aft beamwidth = 7.0771 degrees
+Fore/aft offset = 0.086951 degrees (to be subtracted from angles)
+Port/stbd beamwidth = 7.1972 degrees
+Port/stbd offset = -0.099386 degrees (to be subtracted from angles)
+New EBA estimated at = -20.0054 dB
+Results obtained from 16013 sphere echoes
+Using c = 1500 m/s
+Using absorption = 9.7575 dB/km
+
+RMS of fit to beam model out to 7.1371 degrees = 0.10507 dB
+

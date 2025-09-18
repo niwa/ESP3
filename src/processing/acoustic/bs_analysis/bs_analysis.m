@@ -60,50 +60,52 @@ pitch_cal = att_cal(1);
 yaw_cal = att_cal(3);
 
 
-trans=layer.Transceivers(idx_freq);
+trans_obj=layer.Transceivers(idx_freq);
 
 
-range = trans.get_transceiver_range();
+range = trans_obj.get_samples_range();
 
-dr = nanmean(diff(range));
+dr = mean(diff(range));
 
-bw_mean = (trans.Config.BeamWidthAlongship+trans.Config.BeamWidthAthwartship)/4/180*pi;
-t_angle = atan(sqrt(tand(trans.Config.TransducerAlphaY).^2+tand(trans.Config.TransducerAlphaX).^2));
+[faBW,psBW] = trans_obj.get_beamwidth_at_f_c([]);
 
-%time=trans.Time;
-number = trans.get_transceiver_pings();
 
-bot_range = trans.get_bottom_range();
+bw_mean = (faBW+psBW)/4/180*pi;
+t_angle = atan(sqrt(tand(trans_obj.Config.TransducerAlphaY).^2+tand(trans_obj.Config.TransducerAlphaX).^2));
 
-sv = trans.Data.get_datamat('sv');
-sp = trans.Data.get_datamat('sp');
+%time=trans_obj.Time;
+number = trans_obj.get_transceiver_pings();
+
+bot_range = trans_obj.get_bottom_range();
+
+sv = trans_obj.Data.get_datamat('sv');
+sp = trans_obj.Data.get_datamat('sp');
 sp(sp==-999)=nan;
 sv(sv==-999)=nan;
 [nb_samples,nb_pings] = size(sv);
-time_r = (0:nb_samples-1) * trans.get_params_value('SampleInterval',1);
-%eq_beam_angle = trans.Config.EquivalentBeamAngle;
+time_r = (0:nb_samples-1) * trans_obj.get_params_value('SampleInterval',1);
+%eq_beam_angle = trans_obj.Config.EquivalentBeamAngle;
 
-acrossangle = trans.Data.get_datamat('acrossangle');
-alongangle  = trans.Data.get_datamat('alongangle');
+acrossangle = trans_obj.Data.get_datamat('acrossangle');
+alongangle  = trans_obj.Data.get_datamat('alongangle');
 
-[alongphi, acrossphi] = trans.get_phase();
+[alongphi, acrossphi] = trans_obj.get_phase();
 % 
-% alongangle = -trans.Data.get_datamat('acrossangle');
-% acrossangle  = -trans.Data.get_datamat('alongangle');
+% alongangle = -trans_obj.Data.get_datamat('acrossangle');
+% acrossangle  = -trans_obj.Data.get_datamat('alongangle');
 % 
-% [acrossphi, alongphi] = trans.get_phase();
+% [acrossphi, alongphi] = trans_obj.get_phase();
 
+idx_algo_bot = find_algo_idx(trans_obj, 'BottomDetectionV2');
 
+algo_obj = trans_obj.Algo(idx_algo_bot);
 
+[PulseLength,~] = trans_obj.get_pulse_length(1);
+varin = algo_obj.input_params_to_struct();
 
-idx_algo_bot = find_algo_idx(trans, 'BottomDetectionV2');
-
-algo = trans.Algo(idx_algo_bot);
-
-[PulseLength,~] = trans.get_pulse_length(1);
 [amp_est, across_est, along_est] = detec_bottom_bathymetric(sp, alongphi, acrossphi, ...
-    trans.get_transceiver_range(), 1/trans.get_params_value('SampleInterval',1), PulseLength, algo.Varargin.thr_bottom, -12, algo.Varargin.r_min);
-z_max = nanmax(amp_est.range) * cos(t_angle);
+    trans_obj.get_samples_range(), 1/trans_obj.get_params_value('SampleInterval',1), PulseLength, varin.thr_bottom, -12, varin.r_min, varin.r_max);
+z_max = max(amp_est.range) * cos(t_angle);
 
 ext_len = floor(z_max*(tan(t_angle+bw_mean) - tan(t_angle-bw_mean)) / dr/4);
 
@@ -147,15 +149,15 @@ straight_range_bottom(~isnan(true_idx_bottom)) = range(true_idx_bottom(~isnan(tr
 true_time_bottom = nan(size(true_idx_bottom));
 true_time_bottom(~isnan(true_idx_bottom)) = time_r(true_idx_bottom(~isnan(true_idx_bottom)));
 
-time_recept = true_time_bottom / (24*60*60) + trans.Time;
-time_recept(isnan(time_recept)) = trans.Time(isnan(time_recept));
-time_trans = trans.Time;
+time_recept = true_time_bottom / (24*60*60) + trans_obj.Time;
+time_recept(isnan(time_recept)) = trans_obj.Time(isnan(time_recept));
+time_trans = trans_obj.Time;
 
-att_trans = layer.AttitudeNav.resample_attitude_nav_data(time_trans);
-Pitch = att_trans.Pitch(:)'+pitch_cal;
-Roll  = att_trans.Roll(:)'+roll_cal;
-Heave = att_trans.Heave(:)';
-Yaw = att_trans.Yaw(:)'+yaw_cal;
+att_trans_obj = layer.AttitudeNav.resample_attitude_nav_data(time_trans);
+Pitch = att_trans_obj.Pitch(:)'+pitch_cal;
+Roll  = att_trans_obj.Roll(:)'+roll_cal;
+Heave = att_trans_obj.Heave(:)';
+Yaw = att_trans_obj.Yaw(:)'+yaw_cal;
 
 att_recept = layer.AttitudeNav.resample_attitude_nav_data(time_recept);
 Pitch_r = att_recept.Pitch(:)' + pitch_cal;
@@ -167,11 +169,11 @@ Yaw_r = att_recept.Heave(:)'+yaw_cal;
 % d_roll=Roll_r-Roll;
 
 %figure();
-% plot((Roll_r-nanmean(Roll_r))/nanmax(abs(Roll_r-nanmean(Roll_r))));
+% plot((Roll_r-mean(Roll_r))/max(abs(Roll_r-mean(Roll_r))));
 % hold on;
-% plot((across_est.slope-nanmean(across_est.slope))/nanmax(abs(across_est.slope-nanmean(across_est.slope))));
+% plot((across_est.slope-mean(across_est.slope))/max(abs(across_est.slope-mean(across_est.slope))));
 % hold on;
-% plot((along_est.slope-nanmean(along_est.slope))/nanmax(abs(along_est.slope-nanmean(along_est.slope))));
+% plot((along_est.slope-mean(along_est.slope))/max(abs(along_est.slope-mean(along_est.slope))));
 
 
 new_echo_figure([]);
@@ -184,9 +186,9 @@ legend('Across Slope','Along Slope');
 
 
 Range_mat = repmat(range,1, nb_pings);
-dr=nanmean(diff(range));
-[~,Np]=trans.get_pulse_length(1);
-transmit_angles = pi/2-atan(sqrt(tand(Roll_r + trans.Config.TransducerAlphaX) .^2 + tand(Pitch_r + trans.Config.TransducerAlphaY) .^2));
+dr=mean(diff(range));
+[~,Np]=trans_obj.get_pulse_length(1);
+transmit_angles = pi/2-atan(sqrt(tand(Roll_r + trans_obj.Config.TransducerAlphaX) .^2 + tand(Pitch_r + trans_obj.Config.TransducerAlphaY) .^2));
 
 BS = sp - 10*log10(Np/2*dr*Range_mat*sin(bw_mean)./cos(repmat(transmit_angles, nb_samples,1)));
 
@@ -201,7 +203,7 @@ extended_along_angle=nan(2*ext_len+1,nb_pings);
 
 for i=1:nb_pings
     if ~isnan(true_idx_bottom(i))
-        idx_temp   = nanmax(true_idx_bottom(i)-ext_len,1):nanmin(true_idx_bottom(i)+ext_len,nb_samples);
+        idx_temp   = max(true_idx_bottom(i)-ext_len,1):min(true_idx_bottom(i)+ext_len,nb_samples);
         bs_temp    = BS(idx_temp,i);
         time_temp  = time_r(idx_temp);
         range_temp = range(idx_temp);
@@ -228,8 +230,8 @@ end
 
 extended_along_angle=zeros(2*ext_len+1,nb_pings);
 
-BW_across=trans.Config.BeamWidthAthwartship;
-BW_along=trans.Config.BeamWidthAlongship;
+BW_across=psBW;
+BW_along=faBW;
 
 
 compensationAtt =  attCompensation(BW_along, BW_across, Roll, Pitch,Roll_r,Pitch_r);
@@ -250,7 +252,7 @@ xlabel('Ping Number');
 ylabel('Sample Number');
 colormap(gray)
 colorbar;
-caxis([-30 -15]);
+clim([-30 -15]);
 subplot(2,1,2)
 image(bs_bottom,'CDataMapping','scaled');
 title('Compensated BS(dB)')
@@ -258,7 +260,7 @@ xlabel('Ping Number');
 ylabel('Sample Number');
 colormap(gray)
 colorbar;
-caxis([-30 -15]);
+clim([-30 -15]);
 
 
 alphamap=sv>=-80;
@@ -287,7 +289,7 @@ hold on;
 plot(number,amp_est.range,'k','linewidth',2);
 set(echo_sv,'AlphaData',alphamap);
 colormap(jet);
-caxis([-80 -40])
+clim([-80 -40])
 title('Sv (dB)')
 
 linkaxes([ax1 ax2 ax3]);
@@ -319,7 +321,7 @@ if isempty(z_temp)
     
 end
 
-[~,idx_shallow]=nanmin(abs(z_temp-5));
+[~,idx_shallow]=min(abs(z_temp-5));
 c_temp(z_temp<5)=c_temp(idx_shallow);
 
 
@@ -352,14 +354,14 @@ if ray_tray_bool==1
         
         [r_ray,t_ray,z_ray,~]=compute_acoustic_ray_path(z_c,c,0,0,0,transmit_angles(i),T);
         if ~isnan(true_time_bottom(i))
-            [~,idx_time]=nanmin(abs(true_time_bottom(i)-2*t_ray));
+            [~,idx_time]=min(abs(true_time_bottom(i)-2*t_ray));
             true_z_bottom(i)=z_ray(idx_time);
             true_r_bottom(i)=r_ray(idx_time);
             straigth_z_bottom(i)=z_c(idx_time);
             straigth_r_bottom(i)=z_c(idx_time)./tan(transmit_angles(i));
             
             true_range_bottom(i)=sqrt(r_ray(idx_time).^2+z_ray(idx_time).^2);
-            [~,idx_vel]=nanmin(abs(true_z_bottom(i)-z_c));
+            [~,idx_vel]=min(abs(true_z_bottom(i)-z_c));
             c_at_bottom(i)=c(idx_vel);
             extended_range(:,i)=true_range_bottom(i)+(extended_time(:,i)-2*t_ray(idx_time))*c_at_bottom(i)/2;
         else
@@ -372,8 +374,7 @@ if ray_tray_bool==1
         
     end
     
-    
-
+   
     
     new_echo_figure([]);
     hold on;
@@ -395,7 +396,7 @@ else
     true_z_bottom=true_range_bottom.*sin(transmit_angles);
     true_r_bottom=true_range_bottom.*cos(transmit_angles);
     for i=1:nb_pings
-        [~,idx_vel]=nanmin(abs(true_z_bottom(i)-z_c));
+        [~,idx_vel]=min(abs(true_z_bottom(i)-z_c));
         c_at_bottom(i)=c(idx_vel);
         extended_range(:,i)=true_range_bottom(i)+(extended_time(:,i)-true_time_bottom(i))*c_at_bottom(i)/2;
     end
@@ -413,7 +414,7 @@ xlabel('Ping Number');
 ylabel('Range(m)');
 colormap(gray)
 colorbar;
-caxis([-30 -15]);
+clim([-30 -15]);
 ap2=subplot(2,1,2);
 pcolor(repmat(1:nb_pings,2*ext_len+1,1),extended_range,bs_bottom);
 title('Compensated BS(dB)')
@@ -422,18 +423,18 @@ xlabel('Range(m)');
 ylabel('Sample');
 colormap(gray)
 colorbar;
-caxis([-30 -15]);
+clim([-30 -15]);
 linkaxes([ap1 ap2]);
 
 
 
 true_z_bottom(true_z_bottom<10)=nan;
-true_y_along = true_r_bottom.*sind(Pitch_r+trans.Config.TransducerAlphaX);
-true_x_across = sign(Roll_r+trans.Config.TransducerAlphaY).*true_r_bottom.*cosd(Pitch_r+trans.Config.TransducerAlphaX);
+true_y_along = true_r_bottom.*sind(Pitch_r+trans_obj.Config.TransducerAlphaX);
+true_x_across = sign(Roll_r+trans_obj.Config.TransducerAlphaY).*true_r_bottom.*cosd(Pitch_r+trans_obj.Config.TransducerAlphaX);
 
 straight_z_bottom(straight_z_bottom<10)=nan;
-straight_y_along = straight_r_bottom.*sind(Pitch_r+trans.Config.TransducerAlphaX);
-straight_x_across = sign(Roll_r+trans.Config.TransducerAlphaY).*straight_r_bottom.*cosd(Pitch_r+trans.Config.TransducerAlphaX);
+straight_y_along = straight_r_bottom.*sind(Pitch_r+trans_obj.Config.TransducerAlphaX);
+straight_x_across = sign(Roll_r+trans_obj.Config.TransducerAlphaY).*straight_r_bottom.*cosd(Pitch_r+trans_obj.Config.TransducerAlphaX);
 
 err=sqrt((true_z_bottom-straight_z_bottom).^2+(straight_y_along-true_y_along).^2+(straight_x_across-true_x_across).^2);
 
@@ -449,8 +450,8 @@ trans_mov=nan(3,nb_pings);
 for i=1:nb_pings
     attitude_mat_t=create_attitude_matrix(Pitch(i),Roll(i),Yaw(i));
     attitude_mat_r=create_attitude_matrix(Pitch_r(i),Roll_r(i),Yaw_r(i));
-    trans_mov(:,i)=-(attitude_mat_t*trans.get_position()-[0;0;Heave(i)])+(attitude_mat_r*trans.get_position()-[0;0;Heave_r(i)]);
-    pos_mat(:,i)=[true_y_along(i);true_x_across(i);true_z_bottom(i)]+attitude_mat_r*trans.get_position()-[0;0;Heave_r(i)];
+    trans_mov(:,i)=-(attitude_mat_t*trans_obj.get_position()-[0;0;Heave(i)])+(attitude_mat_r*trans_obj.get_position()-[0;0;Heave_r(i)]);
+    pos_mat(:,i)=[true_y_along(i);true_x_across(i);true_z_bottom(i)]+attitude_mat_r*trans_obj.get_position()-[0;0;Heave_r(i)];
 end
 
 
@@ -459,56 +460,56 @@ end
     zeros(size(straight_range_bottom)),...
     zeros(size(straight_range_bottom)),...
     zeros(size(straight_range_bottom)),...
-    trans.Config.TransducerAlphaX*ones(size(straight_range_bottom)),...
-    trans.Config.TransducerAlphaY*ones(size(straight_range_bottom)),...
-    trans.Config.TransducerAlphaZ*ones(size(straight_range_bottom)),...
-    trans.Config.TransducerOffsetX*ones(size(straight_range_bottom)),...
-    trans.Config.TransducerOffsetY*ones(size(straight_range_bottom)),...
-    trans.Config.TransducerOffsetZ*ones(size(straight_range_bottom)));
+    trans_obj.Config.TransducerAlphaX*ones(size(straight_range_bottom)),...
+    trans_obj.Config.TransducerAlphaY*ones(size(straight_range_bottom)),...
+    trans_obj.Config.TransducerAlphaZ*ones(size(straight_range_bottom)),...
+    trans_obj.Config.TransducerOffsetX*ones(size(straight_range_bottom)),...
+    trans_obj.Config.TransducerOffsetY*ones(size(straight_range_bottom)),...
+    trans_obj.Config.TransducerOffsetZ*ones(size(straight_range_bottom)));
 
 pos_mat_extended=nan(size(extended_range,1),nb_pings,3);
 
-[x_center,y_center,z_center]=arrayfun(@angles_to_pos_single,true_range_bottom,zeros(size(straight_range_bottom)),zeros(size(straight_range_bottom)),...
+[x_center,y_center,z_center]=arrayfun(@angles_to_pos_single,...
+    true_range_bottom,zeros(size(straight_range_bottom)),zeros(size(straight_range_bottom)),...
     Heave_r,...
-    Pitch_r,...
     Roll_r,...
+    Pitch_r,...
     Yaw_r,...
-    trans.Config.TransducerAlphaX*ones(size(straight_range_bottom)),...
-    trans.Config.TransducerAlphaY*ones(size(straight_range_bottom)),...
-    trans.Config.TransducerAlphaZ*ones(size(straight_range_bottom)),...
-    trans.Config.TransducerOffsetX*ones(size(straight_range_bottom)),...
-    trans.Config.TransducerOffsetY*ones(size(straight_range_bottom)),...
-    trans.Config.TransducerOffsetZ*ones(size(straight_range_bottom)));
+    trans_obj.Config.TransducerAlphaX*ones(size(straight_range_bottom)),...
+    trans_obj.Config.TransducerAlphaY*ones(size(straight_range_bottom)),...
+    trans_obj.Config.TransducerAlphaZ*ones(size(straight_range_bottom)),...
+    trans_obj.Config.TransducerOffsetX*ones(size(straight_range_bottom)),...
+    trans_obj.Config.TransducerOffsetY*ones(size(straight_range_bottom)),...
+    trans_obj.Config.TransducerOffsetZ*ones(size(straight_range_bottom)));
 
 for ii=1:size(extended_range,1)
         [x_temp,y_temp,z_temp]=arrayfun(@angles_to_pos_single,extended_range(ii,:),-extended_along_angle(ii,:),-extended_across_angle(ii,:),...
         Heave_r,...
-        Pitch_r,...
         Roll_r,...
+        Pitch_r,...
         Yaw_r,...
-        trans.Config.TransducerAlphaX*ones(size(Pitch_r)),...
-        trans.Config.TransducerAlphaY*ones(size(Pitch_r)),...
-        trans.Config.TransducerAlphaZ*ones(size(Pitch_r)),...
-        trans.Config.TransducerOffsetX*ones(size(Pitch_r)),...
-        trans.Config.TransducerOffsetY*ones(size(Pitch_r)),...
-        trans.Config.TransducerOffsetZ*ones(size(Pitch_r)));
+        trans_obj.Config.TransducerAlphaX*ones(size(Pitch_r)),...
+        trans_obj.Config.TransducerAlphaY*ones(size(Pitch_r)),...
+        trans_obj.Config.TransducerAlphaZ*ones(size(Pitch_r)),...
+        trans_obj.Config.TransducerOffsetX*ones(size(Pitch_r)),...
+        trans_obj.Config.TransducerOffsetY*ones(size(Pitch_r)),...
+        trans_obj.Config.TransducerOffsetZ*ones(size(Pitch_r)));
     
     pos_mat_extended(ii,:,:)=([x_temp-x_center;y_temp-y_center;z_temp-z_center]+pos_mat)';
     
 end
 
-lat_ship=trans.GPSDataPing.Lat;
-long_ship=trans.GPSDataPing.Long;
+lat_ship=trans_obj.GPSDataPing.Lat;
+long_ship=trans_obj.GPSDataPing.Long;
 
 x_ext=pos_mat_extended(:,:,1);
 y_ext=pos_mat_extended(:,:,2);
-z_ext=-pos_mat_extended(:,:,3);
+z_ext=pos_mat_extended(:,:,3);
 
 
 mask_bs=double(bs_bottom_uncomp>-30)&abs(extended_across_angle)<=bw_mean/pi*180;
 mask_bs=floor(filter2_perso(ones(2,2),mask_bs));
 mask_bs=ceil(filter2_perso(ones(3,3),mask_bs))==1;
-
 
 x_d=x_ext;
 y_d=y_ext;
@@ -526,7 +527,7 @@ dz=z_d(2:end,:)-z_d(1:end-1,:);
 dr(dr==0)=nan;
 
 
-incident_angles_estimation=90-(transmit_angles/pi*180)-atand(nanmean(dz)./nanmean(dr));
+incident_angles_estimation=90-(transmit_angles/pi*180)-atand(mean(dz)./mean(dr));
 
 new_echo_figure([]);
 plot(incident_angles_estimation)
@@ -540,8 +541,8 @@ z=pos_mat(3,:);
 new_echo_figure([]);
 aa2=subplot(3,1,1);
 hold on;
-plot(-z_uncorr,'r')
-plot(-z,'b')
+plot(z_uncorr,'r')
+plot(z,'b')
 grid on;
 legend('Uncorrected','Corrected')
 ylabel('Depth');
@@ -562,19 +563,19 @@ ylabel('Along Distance');
 linkaxes([aa2 aa3 aa4],'x');
 
 
-[x_ship,y_ship,Zone]=deg2utm(lat_ship,long_ship);
+[x_ship,y_ship,Zone]=ll2utm(lat_ship,long_ship);
 
-heading=90-trans.AttitudeNavPing.Heading(:)';%TOFIX when there is no attitude data...
+heading=90-trans_obj.AttitudeNavPing.Heading(:)';%TOFIX when there is no attitude data...
 
 Y_Bottom_ext=repmat(y_ship',size(y_ext,1),1)+y_ext.*cosd(repmat(heading,size(y_ext,1),1))+x_ext.*sind(repmat(heading,size(x_ext,1),1));%E
 X_Bottom_ext=repmat(x_ship',size(x_ext,1),1)+x_ext.*cosd(repmat(heading,size(y_ext,1),1))-y_ext.*sind(repmat(heading,size(y_ext,1),1));%N
 
-[lat_bot_ext,lon_bot_ext] = utm2degx(X_Bottom_ext(:),Y_Bottom_ext(:),repmat(Zone,size(Y_Bottom_ext,1),1));
+[lat_bot_ext,lon_bot_ext] = utm2ll(X_Bottom_ext(:),Y_Bottom_ext(:),Zone);
 lat_bot_ext=reshape(lat_bot_ext,size(X_Bottom_ext,1),size(X_Bottom_ext,2));
 lon_bot_ext=reshape(lon_bot_ext,size(X_Bottom_ext,1),size(X_Bottom_ext,2));
 
-LongLim=[nanmin(lon_bot_ext(:)) nanmax(lon_bot_ext(:))];
-LatLim=[nanmin(lat_bot_ext(:)) nanmax(lat_bot_ext(:))];
+LongLim=[min(lon_bot_ext(:)) max(lon_bot_ext(:))];
+LatLim=[min(lat_bot_ext(:)) max(lat_bot_ext(:))];
 
 
 
@@ -586,12 +587,12 @@ grid on;
 view(2)
 colormap(gray)
 colorbar;
-caxis([-30 -15])
+clim([-30 -15])
 set(h3,'alphadata',mask_bs)
 shading interp
 
 
-bs_mean_lin=(nanmean(db2pow_perso(bs_bottom)));
+bs_mean_lin=(mean(db2pow_perso(bs_bottom)));
 bs_mean_lin(bs_mean_lin<=0)=nan;
 bs_mean=10*log10(bs_mean_lin);
 
@@ -603,7 +604,7 @@ xlabel('Ping Number')
 grid on;
 
 new_echo_figure([]);
-plot(nanmean(bsxfun(@plus,extended_across_angle,transmit_angles/pi*180),2),pow2db(nanmean(db2pow_perso(bs_bottom),2)));
+plot(mean(bsxfun(@plus,extended_across_angle,transmit_angles/pi*180),2),pow2db(mean(db2pow_perso(bs_bottom),2)));
 ylabel('BS(db)')
 xlabel('Across Angle')
 grid on;
@@ -621,7 +622,7 @@ grid on;
 axis square;
 colormap(gray)
 colorbar;
-caxis([-30 -15]);
+clim([-30 -15]);
 shading flat
 
 

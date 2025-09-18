@@ -66,6 +66,7 @@ end
 
 %% set up an HTML table
 fid = fopen(fname,'w');
+
 if p.Results.WriteFileHtmlHeaders
     fprintf(fid,['<html>\n\n\t<head>\n\t\t<title>',p.Results.Title, '</title>\n\t</head>\n\n\t<body>\n\n']);
 end
@@ -83,15 +84,15 @@ fprintf(fid,['\t\t\t<caption>',p.Results.Caption,'</caption>\n']); %add the capt
 
 
 %% Step through and print each table element
-for i=1:size(table_cell,1);
+for i=1:size(table_cell,1)
     %begin a row of the table. 
     if ~isempty(bgc_override{i}) || ~isempty(row_font_override{i})
         fprintf(fid, ['\t\t\t<tr style="color:' row_font_override{i} ';background:' bgc_override{i} '">\n']);
     else
         fprintf(fid,'\t\t\t<tr>\n');
     end
-    for j=1:size(table_cell,2); %step through each column in the current row
-        if isnumeric(table_cell{i,j}) && ~isempty(table_cell{i,j}) && ~isnan(table_cell{i,j});
+    for j=1:size(table_cell,2) %step through each column in the current row
+        if isnumeric(table_cell{i,j}) && ~isempty(table_cell{i,j}) && ~isnan(table_cell{i,j})
             if (table_cell{i,j}>=0.0) || isempty(p.Results.NegativeCellFontColour)
                 c = [' align="right"> ' num2str(table_cell{i,j}, p.Results.DataFormatStr)]; %Convert numbers to strings and right align them
             else

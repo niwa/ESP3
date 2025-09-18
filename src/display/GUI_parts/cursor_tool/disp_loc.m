@@ -8,9 +8,9 @@ end
 obj=gco;
 
 axes_panel_comp=getappdata(main_figure,'Axes_panel');
-ah=axes_panel_comp.main_axes;
+ah=axes_panel_comp.echo_obj.main_ax;
 
-if strcmp(src.SelectionType,'normal')&&axes_panel_comp.main_echo==obj
+if strcmp(src.SelectionType,'normal')&&axes_panel_comp.echo_obj.echo_surf==obj
     
     u=get(ah,'children');
     
@@ -21,8 +21,8 @@ if strcmp(src.SelectionType,'normal')&&axes_panel_comp.main_echo==obj
         end
     end
     
-    xdata=get(axes_panel_comp.main_echo,'XData');
-    ydata=get(axes_panel_comp.main_echo,'YData');
+    xdata=get(axes_panel_comp.echo_obj.echo_surf,'XData');
+    ydata=get(axes_panel_comp.echo_obj.echo_surf,'YData');
     cp = ah.CurrentPoint;
     
     xinit = cp(1,1);
@@ -58,13 +58,13 @@ end
         layer=get_current_layer();
         curr_disp=get_esp3_prop('curr_disp');
         
-        [trans_obj,idx_freq]=layer.get_trans(curr_disp);
+        [trans_obj,~]=layer.get_trans(curr_disp);
         
         curr_gps=trans_obj.GPSDataPing;
         
-        [~,idx_pings]=nanmin(abs(double(xdata)-xinit));
+        [~,idx_ping]=min(abs(double(xdata)-xinit));
         
-        (fprintf('%.6f \n%.6f\n',curr_gps.Lat(idx_pings),curr_gps.Long(idx_pings)));
+        (fprintf('%.6f \n%.6f\n',curr_gps.Lat(idx_ping),curr_gps.Long(idx_ping)));
         
     end
 

@@ -21,12 +21,8 @@ switch tab
             end
             basemap_str=curr_disp.Basemap;
             all_lays=map_tab_comp.all_lays;
-            cont_disp=map_tab_comp.cont_disp;
-            cont_val=map_tab_comp.cont_val;
             idx_lays=map_tab_comp.idx_lays;
         else
-            cont_disp=0;
-            cont_val=500;
             idx_lays=[];
             basemap_str=curr_disp.Basemap;
             all_lays=0;
@@ -53,7 +49,13 @@ switch tab
         tab_comp=getappdata(main_figure,'EchoInt_tab');
         tab_h=tab_comp.echo_int_tab;        
         tt='Echo-Integration';
+        
+    case 'env'
+        env_comp=getappdata(main_figure,'Env_tab');
+        tab_h=env_comp.env_tab;
+        tt='Environment';
 end
+
 pos_fig=getpixelposition(main_figure);
 if ~isempty(tab_h)
     if~isvalid(tab_h)
@@ -66,7 +68,7 @@ if ~isempty(tab_h)
     pos_tab=getpixelposition(tab_h);  
     delete(tab_h);
     pos_out=pos_tab+[0 0 pos_tab(3)/2 2*pos_tab(4)];
-    pos_out=nanmin(pos_out,pos_fig);
+    pos_out=min(pos_out,pos_fig);
 else
     pos_out=pos_fig/2;
 end
@@ -91,7 +93,7 @@ switch tab
     case 'st_tracks'
         load_st_tracks_tab(main_figure,dest_fig);
     case 'map'
-        load_map_tab(main_figure,dest_fig,'cont_disp',cont_disp,'cont_val',cont_val,'basemap',basemap_str,'idx_lays',idx_lays,'all_lays',all_lays);
+        load_map_tab(main_figure,dest_fig,'basemap',basemap_str,'idx_lays',idx_lays,'all_lays',all_lays);
     case 'reglist'
         load_reglist_tab(main_figure,dest_fig);
     case 'laylist'
@@ -101,6 +103,8 @@ switch tab
         init_link_prop(main_figure);
     case {'sv_f' 'ts_f'}
         load_multi_freq_disp_tab(main_figure,dest_fig,tab);
+    case 'env'
+        load_environnement_tab(main_figure,dest_fig);
 end
 
 
@@ -118,31 +122,33 @@ format_color_gui(dest_fig,curr_disp.Font,curr_disp.Cmap);
 
 end
 
-function close_tab(src,~,main_figure)
+function close_tab(src,~)
 tag=src.Tag;
 
-
+main_figure = get_esp3_prop('main_figure');
 dest_fig=getappdata(main_figure,'option_tab_panel');
-switch tag
+switch tag  
+    case 'env'
+        delete(src)
+        load_environnement_tab(main_figure,dest_fig);
     case 'st_tracks'
         delete(src);
         load_st_tracks_tab(main_figure,dest_fig);
     case 'map'
-        map_tab_comp=getappdata(main_figure,'Map_tab');
-        cont_disp=map_tab_comp.cont_disp;
-        cont_val=map_tab_comp.cont_val;
+        map_tab_comp=getappdata(main_figure,'Map_tab');       
         idx_lays=map_tab_comp.idx_lays;
         basemap_str=map_tab_comp.basemap_list.UserData{map_tab_comp.basemap_list.Value};
         all_lays=map_tab_comp.all_lays;
-        war_str='Do you want close the map or dock it?';
-        choice=question_dialog_fig(main_figure,'Close or Dock?',war_str,'opt',{'Close' 'Dock'},'timeout',5);
-        delete(src);
-        switch choice
-            case 'Dock'      
-                load_map_tab(main_figure,dest_fig,'cont_disp',cont_disp,'cont_val',cont_val,'basemap',basemap_str,'idx_lays',idx_lays,'all_lays',all_lays);
-            case 'Close'
-                rmappdata(main_figure,'Map_tab');
-        end
+        % war_str='Do you want close the map or dock it?';
+        % choice=question_dialog_fig(main_figure,'Close or Dock?',war_str,'opt',{'Close' 'Dock'},'timeout',10);
+        % delete(src);
+        % switch choice
+        %     case 'Dock'      
+        %         load_map_tab(main_figure,dest_fig,'basemap',basemap_str,'idx_lays',idx_lays,'all_lays',all_lays);
+        %     case 'Close'
+        %         rmappdata(main_figure,'Map_tab');
+        % end
+        load_map_tab(main_figure,dest_fig,'basemap',basemap_str,'idx_lays',idx_lays,'all_lays',all_lays);
     case 'reglist'
         delete(src);
         load_reglist_tab(main_figure,dest_fig);
@@ -150,7 +156,6 @@ switch tag
         delete(src);
         load_tree_layer_tab(main_figure,dest_fig);
     case 'echoint_tab'
-
         dest_fig=getappdata(main_figure,'echo_tab_panel');
         delete(src);
         load_echo_int_tab(main_figure,dest_fig);

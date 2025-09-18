@@ -6,7 +6,7 @@ if isfield(xstruct.Environment,'Attributes')
     if isfield(xstruct.Environment,'Transducer')
         trans=xstruct.Environment.Transducer;
         
-        if length(trans)==1
+        if isscalar(trans)
             trans={trans};
         end
         if isfield(trans{1},'Transducer')

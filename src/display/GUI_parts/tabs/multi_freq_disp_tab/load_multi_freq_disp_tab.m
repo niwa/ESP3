@@ -17,14 +17,15 @@ switch tab_panel.Type
 end
 
 gui_fmt=init_gui_fmt_struct();
-gui_fmt.txt_w=gui_fmt.txt_w*1.4;
 
 size_tab=getpixelposition(multi_freq_disp_tab_comp.multi_freq_disp_tab);
 
-height=nanmin(size_tab(4)-20,80);
+height=min(size_tab(4),150);
+
 width=300;
 
 size_opt=[10 size_tab(4)-height width-20 height];
+
 ax_size=[size_opt(3)+size_opt(1) 0 size_tab(3)-size_opt(3) size_tab(4)];
 
 table_size=[size_opt(1) 5 size_opt(3) size_tab(4)-size_opt(4)-5];
@@ -38,30 +39,70 @@ multi_freq_disp_tab_comp.ax.YAxis.TickLabelFormat='%.0fdB';
 grid(multi_freq_disp_tab_comp.ax,'on');
 %zoom(multi_freq_disp_tab_comp.ax,'on');
 
-
 multi_freq_disp_tab_comp.opt_panel=uibuttongroup(multi_freq_disp_tab_comp.multi_freq_disp_tab,'units','pixels','Position',size_opt,'Title','Options','background','white');
 
 
-pos=create_pos_3(5,2,gui_fmt.x_sep,gui_fmt.y_sep,gui_fmt.txt_w,gui_fmt.box_w,gui_fmt.box_h);
+pos=create_pos_3(4,2,gui_fmt.x_sep,gui_fmt.y_sep,gui_fmt.txt_w,gui_fmt.box_w,gui_fmt.box_h);
 
 multi_freq_disp_tab_comp.ax_lim_cbox=uicontrol(multi_freq_disp_tab_comp.opt_panel,gui_fmt.chckboxStyle,...
-    'position',pos{5,1}{1},'String','Fix YLim.','Value',0,'Callback',{@fix_ylim,main_figure,tab_tag});
+    'position',pos{4,1}{1},'String','Fix YLim.','Value',0,'Callback',{@fix_ylim,main_figure,tab_tag});
 
 cax=get(multi_freq_disp_tab_comp.ax,'YLim');
-multi_freq_disp_tab_comp.thr_down=uicontrol(multi_freq_disp_tab_comp.opt_panel,gui_fmt.edtStyle,'position',pos{5,1}{2},'string',cax(1));
-multi_freq_disp_tab_comp.thr_up=uicontrol(multi_freq_disp_tab_comp.opt_panel,gui_fmt.edtStyle,'position',pos{5,1}{2}+[gui_fmt.box_w+gui_fmt.x_sep 0 0 0],'string',cax(2));
+multi_freq_disp_tab_comp.thr_down=uicontrol(multi_freq_disp_tab_comp.opt_panel,gui_fmt.edtStyle,'position',pos{4,1}{2},'string',cax(1));
+multi_freq_disp_tab_comp.thr_up=uicontrol(multi_freq_disp_tab_comp.opt_panel,gui_fmt.edtStyle,'position',pos{4,1}{2}+[gui_fmt.box_w+gui_fmt.x_sep 0 0 0],'string',cax(2));
 set([multi_freq_disp_tab_comp.ax_lim_cbox multi_freq_disp_tab_comp.thr_up multi_freq_disp_tab_comp.thr_down],'callback',{@fix_ylim,main_figure,tab_tag});
 
 %  multi_freq_disp_tab_comp.ax_lim_cbox=uicontrol(multi_freq_disp_tab_comp.multi_freq_disp_tab,gui_fmt.chckboxStyle,...
 %      'BackgroundColor','White','units','normalized','position',[0.25 0.9 0.25 0.1],'String','Link YLim to Echo.','Value',0,'Callback',{@link_ylim_to_echo_clim,main_figure,tab_tag});
 %
-multi_freq_disp_tab_comp.detrend_cbox=uicontrol(multi_freq_disp_tab_comp.opt_panel,gui_fmt.chckboxStyle,...
-    'position',pos{4,1}{1},'String','Normalize Curves','Value',0,'Callback',{@detrend_curves_cback,main_figure,tab_tag});
-multi_freq_disp_tab_comp.show_sd_bar=uicontrol(multi_freq_disp_tab_comp.opt_panel,gui_fmt.chckboxStyle,...
-    'position',pos{4,1}{1}+[gui_fmt.txt_w 0 0 0],'String','Show Error Bars','Value',0,'Callback',{@detrend_curves_cback,main_figure,tab_tag});
 
-columnname = {'Name' 'Tag' 'Disp' 'ID'};
-columnformat = {'char' 'char','logical','char'};
+uicontrol(multi_freq_disp_tab_comp.opt_panel,gui_fmt.txtStyle,'HorizontalAlignment','left','String','Norm.:','Position',pos{2,1}{1}+[0 0 -gui_fmt.txt_w/2 0]);
+
+multi_freq_disp_tab_comp.fref = uicontrol(...
+'Parent',multi_freq_disp_tab_comp.opt_panel,...
+'String',{'None' 'Fref' 'Norm 2'},...
+gui_fmt.popumenuStyle,...
+'Value',1,...
+'Position',pos{2,1}{1}+[gui_fmt.txt_w/2 0 -gui_fmt.txt_w/2 0],...
+'Callback',{@update_cback,main_figure,tab_tag},...
+'userdata',{'None' 'Fref' 'Norm 2'});
+
+multi_freq_disp_tab_comp.fref_val = uicontrol(...
+'Parent',multi_freq_disp_tab_comp.opt_panel,...
+'String',{ '10kHz' '18kHz' '38kHz' '70kHz' '120kHz' '200kHz' '333kHz'},...
+gui_fmt.popumenuStyle,...
+'Value',1,...
+'Position',pos{2,1}{1}+[gui_fmt.txt_w+5 0 -gui_fmt.txt_w/2-2 0],...
+'Callback',{@update_cback,main_figure,tab_tag},...
+'userdata',[10000 18000 38000 70000 120000 200000 333000]);
+
+
+multi_freq_disp_tab_comp.show_sd_bar=uicontrol(multi_freq_disp_tab_comp.opt_panel,gui_fmt.chckboxStyle,...
+    'position',pos{3,1}{1}+[gui_fmt.txt_w 0 0 0],'String','Show Error Bars','Value',0,'Callback',{@update_cback,main_figure,tab_tag});
+
+uicontrol(multi_freq_disp_tab_comp.opt_panel,gui_fmt.txtStyle,'HorizontalAlignment','left','String','Filt.:','Position',pos{1,1}{1}+[0 0 -gui_fmt.txt_w/2 0]);
+
+multi_freq_disp_tab_comp.filter = uicontrol(...
+'Parent',multi_freq_disp_tab_comp.opt_panel,...
+'String',{'None' 'Linear regression' 'Quadratic Regression' 'Savitzky-Golay' 'Moving average' 'Moving Gaussian'},...
+gui_fmt.popumenuStyle,...
+'Value',1,...
+'Position',pos{1,1}{1}+[gui_fmt.txt_w/2 0 -gui_fmt.txt_w/2 0],...
+'Callback',{@update_cback,main_figure,tab_tag},...
+'userdata',{'none' 'rlowess' 'rloess' 'sgolay' 'movmean' 'gaussian'});
+
+multi_freq_disp_tab_comp.win_size = uicontrol(...
+'Parent',multi_freq_disp_tab_comp.opt_panel,...
+'String',{'0.5kHz' '1kHz' '5kHz' '10kHz'},...
+gui_fmt.popumenuStyle,...
+'Value',1,...
+'Position',pos{1,1}{1}+[gui_fmt.txt_w+5 0 -gui_fmt.txt_w/2-2 0],...
+'Callback',{@update_cback,main_figure,tab_tag},...
+'userdata',[0.5 1 5 10]);
+
+
+columnname = {'Name' 'Depth(m)' 'Tag' 'Disp' 'ID'};
+columnformat = {'char' 'numeric' 'char','logical','char'};
 
 
 multi_freq_disp_tab_comp.table = uitable('Parent', multi_freq_disp_tab_comp.multi_freq_disp_tab,...
@@ -70,23 +111,25 @@ multi_freq_disp_tab_comp.table = uitable('Parent', multi_freq_disp_tab_comp.mult
     'ColumnFormat', columnformat,...
     'CellSelectionCallback',{@active_curve_cback,main_figure,tab_tag},...
     'CellEditCallback',{@edit_cell_cback,main_figure,tab_tag},...
-    'ColumnEditable', [false true true false],...
+    'ColumnEditable', [false false true true false],...
     'Units','pixels','Position',table_size,...
     'RowName',[]);
 
 pos_t = getpixelposition(multi_freq_disp_tab_comp.table);
 
 set(multi_freq_disp_tab_comp.table,'ColumnWidth',...
-    num2cell(pos_t(3)*[4/6 1/6 1/6 0]));
+    num2cell(pos_t(3)*[3/6 1/6 1/6 1/6 0]));
 
-%set(multi_freq_disp_tab_comp.multi_freq_disp_tab,'SizeChangedFcn',@resize_table);
+
+
 rc_menu = uicontextmenu(ancestor(tab_panel,'figure'));
-multi_freq_disp_tab_comp.table.UIContextMenu =rc_menu;
+multi_freq_disp_tab_comp.table.ContextMenu =rc_menu;
 
 set_auto_resize_table(multi_freq_disp_tab_comp.table);
 
-
 uimenu(rc_menu,'Label',['Produce ' tab_name ' curves from regions'],'Callback',{@add_curves_from_regions_cback,main_figure,tab_tag});
+
+
 switch tab_tag
     case 'sv_f'
         
@@ -96,13 +139,17 @@ switch tab_tag
 end
 uimenu(rc_menu,'Label',['Clear ' tab_name ' curves'],'Callback',{@clear_curves_cback,main_figure,tab_tag});
 
+uimenu(rc_menu,'Label',['Cluster ' tab_name ' curves'],'Callback',{@cluster_curves_cback,tab_tag});
+
+
 select_menu=uimenu(rc_menu,'Label','Select');
 uimenu(select_menu,'Label','All','Callback',{@selection_callback,main_figure,tab_tag},'Tag','se');
 uimenu(select_menu,'Label','De-Select All','Callback',{@selection_callback,main_figure,tab_tag},'Tag','de');
 uimenu(select_menu,'Label','Inverse Selection','Callback',{@selection_callback,main_figure,tab_tag},'Tag','inv');
+uimenu(select_menu,'Label','Remove selected curves','Callback',{@selection_callback,main_figure,tab_tag},'Tag','rem');
 export_menu=uimenu(rc_menu,'Label','Export');
-uimenu(export_menu,'Label','Export (all) to CSV','Callback',{@export_freq_curves_callback,main_figure,tab_tag},'Tag','all');
-uimenu(export_menu,'Label','Export (selected) to CSV','Callback',{@export_freq_curves_callback,main_figure,tab_tag},'Tag','selected');
+uimenu(export_menu,'Label','Export (all) to .csv','Callback',{@export_freq_curves_callback,main_figure,tab_tag},'Tag','all');
+uimenu(export_menu,'Label','Export (selected) to .csv','Callback',{@export_freq_curves_callback,main_figure,tab_tag},'Tag','selected');
 
 % pos=getpixelposition(multi_freq_disp_tab_comp.multi_freq_disp_tab);
 set(multi_freq_disp_tab_comp.multi_freq_disp_tab,'ResizeFcn',{@resize_mf_tab,main_figure,tab_tag})
@@ -115,7 +162,7 @@ resize_mf_tab([],[],main_figure,tab_tag);
 
 end
 
-function export_freq_curves_callback(src,evt,main_figure,tab_tag)
+function export_freq_curves_callback(src,~,main_figure,tab_tag)
 layer=get_current_layer();
 multi_freq_disp_tab_comp=getappdata(main_figure,tab_tag);
 
@@ -125,14 +172,13 @@ if isempty(curves)
     disp_perso(main_figure,'No curves to export');
     return;
 end
-    
 
 [path_tmp,~,~]=fileparts(layer.Filename{1});
 layers_Str=list_layers(layer,'nb_char',80);
 
 [fileN, pathname] = uiputfile({'*.csv'},...
     'Save curves to .csv',...
-    fullfile(path_tmp,[tab_tag '_curves_' layers_Str{1} '.csv']));
+    fullfile(path_tmp,[tab_tag '_curves_' generate_valid_filename(layers_Str{1}) '.csv']));
 
 if isequal(pathname,0)||isequal(fileN,0)
     return;
@@ -142,26 +188,27 @@ switch src.Tag
     case 'all'
         curves.curve_to_csv(fullfile(pathname,fileN));
     case 'selected'
-        idx_sel=[multi_freq_disp_tab_comp.table.Data{:,3}];
-        idx_export=contains({curves(:).Unique_ID},multi_freq_disp_tab_comp.table.Data(idx_sel,4));
+        idx_sel=[multi_freq_disp_tab_comp.table.Data{:,4}];
+        idx_export=contains({curves(:).Unique_ID},multi_freq_disp_tab_comp.table.Data(idx_sel,5));
         if any(idx_export)
             curves(idx_export).curve_to_csv(fullfile(pathname,fileN));
         end
 end
 
 
-
 end
 
-function resize_mf_tab(src,evt,main_figure,tab_tag)
+function resize_mf_tab(~,~,main_figure,tab_tag)
 multi_freq_disp_tab_comp=getappdata(main_figure,tab_tag);
-
+drawnow;
 size_tab=getpixelposition(multi_freq_disp_tab_comp.multi_freq_disp_tab);
 
-height=nanmin(size_tab(4)-20,80);
+height=min(size_tab(4),150);
+
 width=300;
+
 try
-    size_opt=[10 size_tab(4)-height width-20 height];
+    size_opt=[0 size_tab(4)-height width-20 height];
     ax_size=[size_opt(3)+size_opt(1) 0 size_tab(3)-size_opt(3) size_tab(4)];
     table_size=[size_opt(1) 5 size_opt(3) size_tab(4)-size_opt(4)-5];
     
@@ -172,7 +219,7 @@ end
 
 end
 
-function detrend_curves_cback(src,evt,main_figure,tab_tag)
+function update_cback(~,~,main_figure,tab_tag)
 update_multi_freq_disp_tab(main_figure,tab_tag,1);
 end
 
@@ -180,20 +227,32 @@ end
 function selection_callback(src,~,main_figure,tab_tag)
 multi_freq_disp_tab_comp=getappdata(main_figure,tab_tag);
 data=multi_freq_disp_tab_comp.table.Data;
-for i=1:size(data,1)
-    switch src.Tag
-        case 'se'
-            data{i,end-1}=true;
-        case 'de'
-            data{i,end-1}=false;
-        case 'inv'
-            data{i,end-1}=~data{i,end-1};
-    end
+
+switch src.Tag
+    case 'rem'
+        layer=get_current_layer();
+        id_rem = cell2mat(data(:,end-1));
+        layer.Curves(ismember({layer.Curves(:).Unique_ID},data(id_rem,end)))=[];
+        data(id_rem,:) = [];
+        up = 1;
+    otherwise
+        up = 0;
+        for id=1:size(data,1)
+            switch src.Tag
+                case 'se'
+                    data{id,end-1}=true;
+                case 'de'
+                    data{id,end-1}=false;
+                case 'inv'
+                    data{id,end-1}=~data{id,end-1};
+
+            end
+        end
 end
 
 multi_freq_disp_tab_comp.table.Data=data;
 
-update_multi_freq_disp_tab(main_figure,tab_tag,0);
+update_multi_freq_disp_tab(main_figure,tab_tag,up);
 
 end
 
@@ -216,57 +275,68 @@ end
 function add_curves_from_regions_cback(~,~,main_figure,tab_name)
 curr_disp=get_esp3_prop('curr_disp');
 layer=get_current_layer();
-[trans_obj,~]=layer.get_trans(curr_disp);
+[trans_obj,idx_freq]=layer.get_trans(curr_disp);
 idx=trans_obj.find_regions_type('Data');
 regs=trans_obj.Regions(idx);
+load_bar_comp = show_status_bar(main_figure);
 switch tab_name
     case 'sv_f'
         for i=1:length(regs)
-            Sv_freq_response_func(main_figure,regs(i),0) ;
+            layer.Sv_freq_response_func('reg_obj',regs(i),'load_bar_comp',load_bar_comp,'idx_freq',idx_freq);
         end
         
     case 'ts_f'
+        update_algos('algo_name',{'SingleTarget'});
         for i=1:length(regs)
-            TS_freq_response_func(main_figure,regs(i),true) ;
+            layer.TS_freq_response_func('reg_obj',regs(i),'load_bar_comp',load_bar_comp,'idx_freq',idx_freq);
         end
         
 end
+hide_status_bar(main_figure);
 update_multi_freq_disp_tab(main_figure,tab_name,1);
 end
 
 
 
 function edit_cell_cback(~,evt,main_figure,tab_tag)
+idx = unique(evt.Indices(1));
 switch evt.Indices(2)
-    case 3
+    case 4
         multi_freq_disp_tab_comp=getappdata(main_figure,tab_tag);
-        data=multi_freq_disp_tab_comp.table.Data(evt.Indices(1),:);
-        line_obj=findobj(multi_freq_disp_tab_comp.ax,{'Tag',data{4}});
+        data=multi_freq_disp_tab_comp.table.Data(idx,:);
+        line_obj=findobj(multi_freq_disp_tab_comp.ax,{'Tag',data{5}});
         if ~isempty(line_obj)
-            switch data{3}
+            switch data{4}
                 case true
                     set(line_obj,'Visible','on');
                 case false
                     set(line_obj,'Visible','off');
             end
         end
-    case 2
+    case 3
         multi_freq_disp_tab_comp=getappdata(main_figure,tab_tag);
         %curr_disp=get_esp3_prop('curr_disp');
-        data=multi_freq_disp_tab_comp.table.Data(evt.Indices(1),:);
-        layer=get_current_layer();
-        id_reg=strsplit(data{4},'_');
-        idx_mod=layer.set_tag_to_region_with_uid(id_reg{1},data{2});
-        data_tot=multi_freq_disp_tab_comp.table.Data(:,4);
-        idx_d=contains(data_tot,id_reg{1});
-        multi_freq_disp_tab_comp.table.Data(idx_d,2)=data(2);
         
+        data=multi_freq_disp_tab_comp.table.Data(idx,:);
+        layer=get_current_layer();
+
+        id_reg=strsplit(data{5},'_');
+        idx_mod=layer.set_tag_to_region_with_uid(id_reg{1},data{3});
+        curr_disp=get_esp3_prop('curr_disp');
+        [trans_obj,~]=layer.get_trans(curr_disp);
+        map_tab_comp = getappdata(main_figure,'Map_tab');
+        gax = map_tab_comp.ax;
+        trans_obj.disp_reg_tag_on_map('gax',gax,'uid',id_reg(1));
+        data_tot=multi_freq_disp_tab_comp.table.Data(:,5);
+        idx_d=contains(data_tot,id_reg{1});
+        multi_freq_disp_tab_comp.table.Data(idx_d,3)=data(3);
+
         idx_c=find(contains({layer.Curves(:).Unique_ID},id_reg));
         for it=1:numel(idx_c)
-            layer.Curves(idx_c(it)).Tag=data{2};
+            layer.Curves(idx_c(it)).Tag=data{3};
         end
         update_reglist_tab(main_figure,0);
-        display_regions(main_figure,union({'main' 'mini'},layer.ChannelID(idx_mod)));
+        display_regions(union({'main' 'mini'},layer.ChannelID(idx_mod)));
         
         switch tab_tag
             case 'ts_f'
@@ -274,6 +344,7 @@ switch evt.Indices(2)
             case 'sv_f'
                 update_curves_and_table(main_figure,'ts_f',{layer.Curves(:).Unique_ID});
         end
+        
     otherwise
 end
 
@@ -286,15 +357,18 @@ end
 
 multi_freq_disp_tab_comp=getappdata(main_figure,tab_tag);
 data=multi_freq_disp_tab_comp.table.Data(evt.Indices(end,1),:);
-line_obj=findobj(multi_freq_disp_tab_comp.ax,{'Type','errorbar','-and','Tag',data{4}});
-other_lines_obj=findobj(multi_freq_disp_tab_comp.ax,{'Type','errorbar','-and','-not','Tag',data{4}});
+
+line_obj=findobj(multi_freq_disp_tab_comp.ax,{'Type','errorbar','-and','Tag',data{5}});
+other_lines_obj=findobj(multi_freq_disp_tab_comp.ax,{'Type','errorbar','-and','-not','Tag',data{5}});
 
 if ~isempty(other_lines_obj)
-    set(other_lines_obj,'Linewidth',1);
+    set(other_lines_obj,'Linewidth',0.5);
+    set(other_lines_obj,'MarkerSize',2);
 end
 
 if ~isempty(line_obj)
-    set(line_obj,'Linewidth',2);
+    set(line_obj,'Linewidth',1.5);
+    set(line_obj,'MarkerSize',4);
 end
 
 text_obj=findobj(multi_freq_disp_tab_comp.ax,'Tag','DataText');

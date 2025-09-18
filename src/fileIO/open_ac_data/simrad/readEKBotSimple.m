@@ -1,24 +1,27 @@
 function [bottom, frequencies] = readEKBotSimple(filename)
-
+bottom.number = [];
+bottom.time = [];
+bottom.depth = [];
+frequencies = [];
 
 %  open file for reading
-fid = fopen(filename, 'r');
+fid = fopen(filename, 'r','l');
 if (fid==-1)
     [~, name, ext] = fileparts(filename);
-    bottom = -1; frequencies=-1;
     warning('Could not open out file: %s%s',name,ext);
     return;
 end
 
 %  read configuration datagram (file header)
 [~, frequencies,~] = readEKRaw_ReadHeader(fid);
-bottom=[];
-
+if isempty(frequencies)
+    frewind(fid);
+end
 nPings=1;
 %  read entire file, processing individual datagrams
 while (true)
     %  check if we're at the end of the file
-    fread(fid, 1, 'int32', 'l');
+    fread(fid, 1, 'int32');
     if (feof(fid))
         break;
     end
@@ -31,29 +34,27 @@ while (true)
         
         case 'BOT0'
             
-            
             %  Read BOT datagram
-            transceivercount = fread(fid, 1, 'int32', 'l');
-            depth = fread(fid, transceivercount, 'float64', 'l');
-            
+            transceivercount = fread(fid, 1, 'int32');
+            depth = fread(fid, transceivercount, 'float64');
             
             %  store data assuming there are transceivercount depths per datagram.
             bottom.number(nPings) = nPings;
             bottom.time(nPings) = datenum(1601, 1, 1, 0, 0, dgTime);
             bottom.depth(:,nPings) = depth;
             nPings = nPings + 1;
-            
-            
-            
+  
         otherwise
             %  Skip unknown datagram - print warning message
-            warning('readEKRaw:IOError', strcat('Unknown datagram ''', ...
-                dgheader.datagramtype,''' in file'));
-            
+            if ~isdeployed
+                warning('readEKRaw:IOError', strcat('Unknown datagram ''', ...
+                    dgType,''' in file'));
+            end
+            break;
     end
     
     %  datagram length is repeated...
-    fread(fid, 1, 'int32', 'l');
+    fread(fid, 1, 'int32');
 end
 
 %  close file.

@@ -14,11 +14,12 @@ if ~isempty(fig)
 end
 
 try
-        if ~isdeployed()
-            [gpu_comp,~]=license('checkout','Distrib_Computing_Toolbox');
-        else
-            gpu_comp=1;
-        end
+    if ~isdeployed()
+        gpu_comp = canUseGPU();
+    else
+        gpu_comp=1;
+    end
+    
     if gpu_comp
         g = gpuDevice;
         if str2double(g.ComputeCapability)>=3&&g.SupportsDouble&&g.DriverVersion>7&&g.DeviceSupported>0&&g.ToolkitVersion>=9.1

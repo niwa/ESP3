@@ -6,75 +6,93 @@ curr_disp=get_esp3_prop('curr_disp');
 layer=get_current_layer();
 mini_axes_comp=getappdata(main_figure,'Mini_axes');
 %st_tracks_tab_comp=getappdata(main_figure,'ST_Tracks');
-echo_int_tab_comp=getappdata(main_figure,'EchoInt_tab');
 
 if isempty(axes_panel_comp)
     return;
 end
-[cmap,col_ax,col_lab,col_grid,col_bot,col_txt,col_tracks]=init_cmap(curr_disp.Cmap);
+cmap_struct = init_cmap(curr_disp.Cmap,curr_disp.ReverseCmap);
+cmap = cmap_struct.cmap;
 
-set(axes_panel_comp.main_axes,'Color',col_ax,...
-    'GridColor',col_grid,'MinorGridColor',col_grid,'XColor',col_lab,'YColor',col_lab);
+set(axes_panel_comp.echo_obj.main_ax,'Color',cmap_struct.col_ax,...
+    'GridColor',cmap_struct.col_grid,'MinorGridColor',cmap_struct.col_grid,'XColor',cmap_struct.col_lab,'YColor',cmap_struct.col_lab);
 
-[~,~,echo_im_bt,~,~,~]=get_axis_from_cids(main_figure,union({'main' 'mini'}, layer.ChannelID));
+[echo_obj,~,~,~]=get_axis_from_cids(main_figure,union({'main' 'mini'}, layer.ChannelID));
 
-for iim=1:numel(echo_im_bt)
-    set(echo_im_bt(iim),'FaceColor',col_lab);
+for iim=1:numel(echo_obj)
+    set(echo_obj.get_echo_bt_surf(iim),'FaceColor',cmap_struct.col_lab);
 end
 
-set(axes_panel_comp.bottom_plot,'Color',col_bot);
-    track_h=findobj(axes_panel_comp.main_axes,'tag','track');
-set(track_h,'Color',col_tracks);
-
-lines_obj=findobj(axes_panel_comp.main_axes,'tag','lines');
-set(lines_obj,'Color',col_tracks);
-
-set(mini_axes_comp.bottom_plot,'Color',col_bot);
-obj_line=findobj(axes_panel_comp.main_axes,'Tag','file_id');
-set(obj_line,'Color',col_lab);
-
-txt_obj=[findobj(axes_panel_comp.main_axes,'Type','Text','-not',{'Tag','lines','-or','Tag','tooltipl'});
-    findobj(mini_axes_comp.mini_ax,'Type','Text','-not','Tag','lines','-not',{'Tag','lines','-or','Tag','tooltipl'});...
-    findobj(axes_panel_comp.vaxes,'Type','Text','-not','Tag','lines','-not',{'Tag','lines','-or','Tag','tooltipl'})];
-mini_axes_comp.patch_lim_obj.EdgeColor=col_bot;
-set(txt_obj,'Color',col_txt);
-
-txt_obj=findobj(axes_panel_comp.main_axes,'Type','Text','-and','Tag','tooltipl');
-set(txt_obj,'Color',col_txt,'EdgeColor',col_txt,'BackgroundColor',col_ax);
-
-set(axes_panel_comp.v_bot_val,'color',col_grid);
+set(axes_panel_comp.echo_obj.bottom_line_plot,'Color',cmap_struct.col_bot);
+set(axes_panel_comp.echo_obj.h_curr_val,'Color',circshift(cmap_struct.col_bot,1));
+set(axes_panel_comp.echo_obj.v_curr_val,'Color',circshift(cmap_struct.col_bot,1));
+set(axes_panel_comp.echo_obj.h_plot_high,'MarkerFaceColor',[1 1 1] - cmap_struct.col_ax);
 
 
+track_h=findobj(axes_panel_comp.echo_obj.main_ax,'tag','track');
+set(track_h,'Color',cmap_struct.col_tracks);
 
-set(axes_panel_comp.main_axes,'Color',col_ax,...
-    'GridColor',col_grid,'MinorGridColor',col_grid,'XColor',col_lab,'YColor',col_lab);
+lines_obj=findobj(axes_panel_comp.echo_obj.main_ax,'tag','lines');
+set(lines_obj,'Color',cmap_struct.col_tracks);
+
+set(mini_axes_comp.echo_obj.bottom_line_plot,'Color',cmap_struct.col_bot);
+obj_line=findobj(axes_panel_comp.echo_obj.main_ax,'Tag','file_id');
+set(obj_line,'Color',cmap_struct.col_lab);
+
+txt_obj=[findobj(axes_panel_comp.echo_obj.main_ax,'Type','Text','-not',{'Tag','lines','-or','Tag','tooltipl'});
+    findobj(mini_axes_comp.echo_obj.main_ax,'Type','Text','-not','Tag','lines','-not',{'Tag','lines','-or','Tag','tooltipl'});...
+    findobj(axes_panel_comp.echo_obj.vert_ax,'Type','Text','-not','Tag','lines','-not',{'Tag','lines','-or','Tag','tooltipl'})];
+mini_axes_comp.patch_lim_obj.EdgeColor=cmap_struct.col_bot;
+set(txt_obj,'Color',cmap_struct.col_txt);
+
+txt_obj=findobj(axes_panel_comp.echo_obj.main_ax,'Type','Text','-and','Tag','tooltipl');
+set(txt_obj,'Color',cmap_struct.col_txt,'EdgeColor',cmap_struct.col_txt,'BackgroundColor',cmap_struct.col_ax);
+
+set(axes_panel_comp.echo_obj.v_bot_val,'color',cmap_struct.col_grid);
+
+set(axes_panel_comp.echo_obj.main_ax,'Color',cmap_struct.col_ax,...
+    'GridColor',cmap_struct.col_grid,'MinorGridColor',cmap_struct.col_grid,'XColor',cmap_struct.col_lab,'YColor',cmap_struct.col_lab);
 
 
-% set(st_tracks_tab_comp.ax_pos,'Color',col_ax,...
-%     'GridColor',col_grid,'MinorGridColor',col_grid,'XColor',col_lab,'YColor',col_lab);
-% set(st_tracks_tab_comp.ax_pdf,'Color',col_ax,...
-%     'GridColor',col_grid,'MinorGridColor',col_grid,'XColor',col_lab,'YColor',col_lab);
+axes_panel_comp.echo_obj.main_ax.Colormap = cmap;
 
-% colormap(st_tracks_tab_comp.ax_pdf,cmap);
-% colormap(st_tracks_tab_comp.ax_pos,cmap);
-
-
-colormap(mini_axes_comp.mini_ax,cmap);
-colormap(axes_panel_comp.main_axes,cmap);
 update_st_tracks_tab(main_figure);
-colormap(echo_int_tab_comp.main_ax,cmap);
 
 if isappdata(main_figure,'Secondary_freq')&&curr_disp.DispSecFreqs>0
     secondary_freq=getappdata(main_figure,'Secondary_freq');
     
     colormap(secondary_freq.fig,cmap);
-    set(secondary_freq.bottom_plots,'color',col_bot);
-    set(secondary_freq.names,'color',col_txt); 
+    set(secondary_freq.echo_obj.get_bottom_line_plot(),'color',cmap_struct.col_bot);
+    set([secondary_freq.echo_obj(:).h_name],'color',cmap_struct.col_txt); 
 end
 
-update_regions_colors(main_figure,'all');
+
+if isappdata(main_figure,'wc_fan')
+    wc_fan  = getappdata(main_figure,'wc_fan');
+    wc_fan.wc_axes.Color = cmap_struct.col_ax;
+    wc_fan.wc_axes.GridColor = cmap_struct.col_grid;
+    wc_fan.wc_axes.MinorGridColor = cmap_struct.col_grid;
+    wc_fan.wc_axes.XColor = cmap_struct.col_lab;
+    wc_fan.wc_axes.YColor = cmap_struct.col_lab;
+    wc_fan.wc_fan_fig.Color = cmap_struct.col_ax;
+    wc_fan.gl_ax.BackgroundColor = cmap_struct.col_ax;
+    wc_fan.wc_axes_tt.Color = cmap_struct.col_lab;
+    wc_fan.wc_fig.Colormap=cmap;
+    wc_fan.wc_axes.Colormap=cmap;
+    wc_fan.wc_cbar.Color = cmap_struct.col_lab;
+end
+
+echo_3D_obj = get_esp3_prop('echo_3D_obj');
+
+if ~isempty(echo_3D_obj)
+    echo_3D_obj.set_cmap(curr_disp.Cmap,'','');
+end
+
+
+
 %format_color_gui(getappdata(main_figure,'ExternalFigures'),curr_disp.Font,curr_disp.Cmap);
 format_color_gui(main_figure,curr_disp.Font,curr_disp.Cmap);
+update_echo_int_tab(main_figure,0);
+update_regions_colors(main_figure,'all');
 %profile off;
 %profile viewer;
 end

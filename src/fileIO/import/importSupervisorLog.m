@@ -68,7 +68,7 @@ for row=1:size(rawData, 1)
         invalidThousandsSeparator = false;
         if any(numbers==',')
             thousandsRegExp = '^\d+?(\,\d{3})*\.{0,1}\d*$';
-            if isempty(regexp(numbers, thousandsRegExp, 'once'));
+            if isempty(regexp(numbers, thousandsRegExp, 'once'))
                 numbers = NaN;
                 invalidThousandsSeparator = true;
             end

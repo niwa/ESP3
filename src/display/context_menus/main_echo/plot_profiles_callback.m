@@ -2,13 +2,12 @@ function plot_profiles_callback(~,~,main_figure)
 layer=get_current_layer();
 axes_panel_comp=getappdata(main_figure,'Axes_panel');
 curr_disp=get_esp3_prop('curr_disp');
-[trans_obj,idx_freq]=layer.get_trans(curr_disp);
+[trans_obj,~]=layer.get_trans(curr_disp);
 trans=trans_obj;
-
 
 Bottom=trans.Bottom;
 
-ax_main=axes_panel_comp.main_axes;
+ax_main=axes_panel_comp.echo_obj.main_ax;
 
 
 x_lim=double(get(ax_main,'xlim'));
@@ -19,25 +18,22 @@ cp = ax_main.CurrentPoint;
 x=cp(1,1);
 y=cp(1,2);
 
-x=nanmax(x,x_lim(1));
-x=nanmin(x,x_lim(2));
+x=max(x,x_lim(1));
+x=min(x,x_lim(2));
 
-y=nanmax(y,y_lim(1));
-y=nanmin(y,y_lim(2));
-
-
+y=max(y,y_lim(1));
+y=min(y,y_lim(2));
 
 
 xlab_str='Ping Number';
 xdata=trans.get_transceiver_pings();
 
+ydata=trans.get_samples_range();
+[~,idx_ping]=min(abs(xdata-x));
+idx_r=ceil(y);
 
-
-ydata=trans.get_transceiver_range();
-[~,idx_ping]=nanmin(abs(xdata-x));
-[~,idx_r]=nanmin(abs(ydata-y));
-vert_val=trans.Data.get_subdatamat(1:length(ydata),idx_ping,'field',curr_disp.Fieldname);
-horz_val=trans.Data.get_subdatamat(idx_r,1:length(xdata),'field',curr_disp.Fieldname);
+vert_val=trans.Data.get_subdatamat('idx_r',1:length(ydata),'idx_ping',idx_ping,'field',curr_disp.Fieldname);
+horz_val=trans.Data.get_subdatamat('idx_r',idx_r,'idx_ping',1:length(xdata),'field',curr_disp.Fieldname);
 
 switch lower(deblank(curr_disp.Fieldname))
     case{'alongangle','acrossangle'}
@@ -62,25 +58,30 @@ if ~isempty(Bottom.Sample_idx)
 else
     bot_val=nan;
 end
-bot_x_val=[nanmin(vert_val(~(vert_val==-Inf))) nanmax(vert_val)];
 
-v=new_echo_figure(main_figure,'Tag','profile_v','Toolbar','esp3','MenuBar','esp3');
+pos = getpixelposition(main_figure);
+
+v_figure_size = [pos(1) pos(2) pos(4)/4 pos(4)];
+h_figure_size = [pos(1) pos(2) pos(3) pos(3)/8];
+
+
+v=new_echo_figure(main_figure,'Tag','profile_v','Toolbar','esp3','MenuBar','esp3','Units','','Position',v_figure_size);
 axv=axes(v);
 hold(axv,'on');
 title(axv,sprintf('Vertical Profile for Ping: %.0f',idx_ping))
 plot(axv,vert_val,ydata,'k');
 hold(axv,'on');
-plot(axv,bot_x_val,[bot_val bot_val],'r');
+yline(axv,bot_val,'r');
 grid(axv,'on');
 ylabel(axv,'Range(m)')
 xlabel(axv,ylab_str);
 axis(axv,'ij');
 
 
-h=new_echo_figure(main_figure,'Tag','profile_h','Toolbar','esp3','MenuBar','esp3');
+h=new_echo_figure(main_figure,'Tag','profile_h','Toolbar','esp3','MenuBar','esp3','Units','','Position',h_figure_size);
 axh=axes(h);
 hold(axh,'on');
-title(axh,sprintf('Horizontal Profile for sample: %.0f, Range: %.2fm',idx_r,y))
+title(axh,sprintf('Horizontal Profile for sample: %.0f, Range: %.2fm',idx_r,ydata(idx_r)))
 plot(axh,xdata,horz_val,'r');
 grid(axh,'on');
 

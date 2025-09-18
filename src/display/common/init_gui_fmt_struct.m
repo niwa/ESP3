@@ -19,7 +19,7 @@ function gui_fmt=init_gui_fmt_struct(varargin)
 % gui_fmt.radbtnStyle=struct('Style','radiobutton','Units','pixels','BackgroundColor','white');
 
 if isempty(varargin)
-    units='characters';
+    units='pixels';
 else
     units=varargin{1};
 end
@@ -30,19 +30,21 @@ switch units
         gui_fmt.y_sep=0.25;
         gui_fmt.txt_w=20;
         gui_fmt.txt_h=1.2;
-        gui_fmt.box_w=6.5;
+        gui_fmt.box_w=6;
         gui_fmt.box_h=1.2;
         gui_fmt.button_w=9;
         gui_fmt.button_h=1.2;
+        
     case'pixels'
-        gui_fmt.x_sep=4;
-        gui_fmt.y_sep=5;
-        gui_fmt.txt_w=95;
-        gui_fmt.txt_h=20;
-        gui_fmt.box_w=32;
-        gui_fmt.box_h=25;
-        gui_fmt.button_w=50;
-        gui_fmt.button_h=25;
+        gui_fmt.x_sep=3;
+        gui_fmt.y_sep=3;
+        gui_fmt.txt_w=125;
+        gui_fmt.txt_h=18;
+        gui_fmt.box_w=30;
+        gui_fmt.box_h=20;
+        gui_fmt.button_w=60;
+        gui_fmt.button_h=20;
+        
     case {'normalized','norm'}
         
         if nargin<3

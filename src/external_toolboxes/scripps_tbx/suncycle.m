@@ -27,7 +27,7 @@ function  [rs,t,d,z,a,r] = suncycle(lat,lon,date,n)
 %  Dec        = Solar Declination,        N Columns
 %  Alt        = Solar Altitude,           N Columns
 %  Azm        = Solar Azimuth,            N Columns
-%  Rad        = Solar Radiation (no-sky), N Columns, [W/m²]
+%  Rad        = Solar Radiation (no-sky), N Columns, [W/mÂ²]
 %               perpendicular to Earth Surface, i.e. normalized with sin(Alt)
 % 
 %----------------------------------------------------------------------------
@@ -145,7 +145,7 @@ end
 %**************************************************************************
 %@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-function [DEC,JD,AZM,RAD] = soradna(LAT,LON,JD,y);
+function [DEC,JD,AZM,RAD] = soradna(LAT,LON,JD,y)
 
 % SORADNA  computes no-sky solar radiation and solar altitude.
 %

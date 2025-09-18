@@ -4,14 +4,14 @@
 function load_bad_pings_tab(main_figure,algo_tab_panel)
 
 tab_main = uitab(algo_tab_panel,'Title','Bad Data');
-[h,l] = get_top_panel_height(7.25);
+
+[h,l] = get_top_panel_height(8);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%Bad Pings Detection Algorithm%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 algo_name = 'BadPingsV2';
 panel_comp=load_algo_panel('main_figure',main_figure,...
         'panel_h',uipanel(tab_main,'Units','Pixels','Position',[0 0 1.6*l h]),...
-        'algo_name',algo_name,...
-        'title','Bad Pings Detection');
+        'algo_name',algo_name);
 
 gui_fmt=init_gui_fmt_struct();
 gui_fmt.txt_w=gui_fmt.txt_w*1.2;
@@ -26,7 +26,7 @@ uicontrol(panel_comp.container,gui_fmt.pushbtnStyle,'String','Reset all','pos',p
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%Spike Detection%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 algo_name='SpikesRemoval';
 panel_comp=load_algo_panel('main_figure',main_figure,...
-        'panel_h',uipanel(tab_main,'Units','Pixels','Position',[1.6*l 0 2*l h]),...
+        'panel_h',uipanel(tab_main,'Units','Pixels','Position',[panel_comp.container.Position(1)+panel_comp.container.Position(3) 0 2*l h]),...
         'algo_name',algo_name,...
         'title','Spikes Detection');
 
@@ -37,14 +37,20 @@ uicontrol(panel_comp.container,gui_fmt.pushbtnStyle,'String','Reset','pos',p_but
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%Dropouts Detection%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 algo_name = 'DropOuts';
 load_algo_panel('main_figure',main_figure,...
-        'panel_h',uipanel(tab_main,'Units','Pixels','Position',[3.6*l 0 1.6*l h]),...
+        'panel_h',uipanel(tab_main,'Units','Pixels','Position',[panel_comp.container.Position(1)+panel_comp.container.Position(3) 0 1.6*l h]),...
         'algo_name',algo_name,...
-        'title','Dropouts Detection',...
         'save_fcn_bool',true);
+
+
+algo_name = 'Bad_pings_from_attitude';
+load_algo_panel('main_figure',main_figure,...
+    'panel_h',uipanel(tab_main,'Units','Pixels','Position',[panel_comp.container.Position(1)*2+panel_comp.container.Position(3) 0 l h]),...
+    'algo_name',algo_name,...
+    'save_fcn_bool',true);
 
 end
 
-function rm_spikes_cback(src,~,main_figure)
+function rm_spikes_cback(~,~,main_figure)
 
 curr_disp=get_esp3_prop('curr_disp');
 layer = get_current_layer();

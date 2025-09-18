@@ -1,4 +1,4 @@
-function listenDispSurveyLines(src,listdata,main_figure)
+function listenDispSurveyLines(~,listdata,main_figure)
 main_menu=getappdata(main_figure,'main_menu');
 set(main_menu.disp_survey_lines,'checked',listdata.AffectedObject.DispSurveyLines);
 

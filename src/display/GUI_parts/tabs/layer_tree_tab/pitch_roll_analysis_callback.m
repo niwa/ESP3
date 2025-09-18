@@ -36,7 +36,7 @@
 % Yoann Ladroit, NIWA. Type |help EchoAnalysis.m| for copyright information.
 
 %% Function
-function pitch_roll_analysis_callback(src,~,main_figure,IDs)
+function pitch_roll_analysis_callback(~,~,main_figure,IDs)
 
  layers=get_esp3_prop('layers');
     layer=get_current_layer();
@@ -51,6 +51,7 @@ function pitch_roll_analysis_callback(src,~,main_figure,IDs)
     if numel(IDs)<2
         return;
     end
+
     pitch_av=nan(1,numel(IDs));
     pitch_std=nan(1,numel(IDs));
     pitch_grad_av=nan(1,numel(IDs));
@@ -61,18 +62,17 @@ function pitch_roll_analysis_callback(src,~,main_figure,IDs)
     heave_av=nan(1,numel(IDs));
     heave_std=nan(1,numel(IDs));
     heave_grad_av=nan(1,numel(IDs));
-    for i=1:numel(IDs)
 
-        [idx,~]=find_layer_idx(layers,IDs{i});
+    for id=1:numel(IDs)
+        [idx,~]=find_layer_idx(layers,IDs{id});
        
         layer_curr=layers(idx);
         
-        [trans_obj,idx_freq]=layer_curr.get_trans(curr_disp);
+        [trans_obj,~]=layer_curr.get_trans(curr_disp);
  
-        bad_ping_pc(i)=trans_obj.get_badtrans_perc();
+        bad_ping_pc(id)=trans_obj.get_badtrans_perc();
         
-        [pitch_av(i),pitch_std(i),pitch_grad_av(i),roll_av(i),roll_std(i),roll_grad_av(i),heave_grad_av(i)]=layer_curr.produce_pitch_roll_analysis();
-        
+        [pitch_av(id),pitch_std(id),pitch_grad_av(id),roll_av(id),roll_std(id),roll_grad_av(id),heave_grad_av(id)]=layer_curr.produce_pitch_roll_analysis();   
     end
 
     
@@ -142,7 +142,7 @@ function pitch_roll_analysis_callback(src,~,main_figure,IDs)
     
     P_roll_1 = polyfit(bad_ping_pc,roll_std,1);
     P_roll = polyfit(bad_ping_pc,roll_grad_av,1);
-    x_bad=nanmin(bad_ping_pc):nanmax(bad_ping_pc);
+    x_bad=min(bad_ping_pc):max(bad_ping_pc);
     hfig_2=new_echo_figure(main_figure,'Tag','rollbadanalysis','Name','Roll change rate against Bad Pings');
     ax_3= axes(hfig_2,'nextplot','add','OuterPosition',[0 0 1 1]);
     yyaxis(ax_3,'left');

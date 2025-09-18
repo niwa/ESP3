@@ -1,4 +1,4 @@
-function export_regions_xyz_callback(src,~,main_figure,field)
+function export_regions_xyz_callback(src,~,~,field)
 
 layer=get_current_layer();
 curr_disp=get_esp3_prop('curr_disp');

@@ -44,18 +44,20 @@ for ifi=1:numel(fields)
     end
 end
 
-t=struct2table(struct_in);
+%t=struct2table(struct_in);
 
-    if ischar(ac_db_filename)
-        dbconn=connect_to_db(ac_db_filename);
-    else
-        dbconn=ac_db_filename;
-    end
-dbconn.insert('t_parameters',fieldnames(struct_in),t);
+%     if ischar(ac_db_filename)
+%         dbconn=connect_to_db(ac_db_filename);
+%     else
+%         dbconn=ac_db_filename;
+%     end
+% dbconn.sqlwrite('t_parameters',t);
+% 
+% if ischar(ac_db_filename) 
+%     dbconn.close();
+% end
 
-if ischar(ac_db_filename) 
-    dbconn.close();
-end
+datainsert_perso(ac_db_filename,'t_parameters',struct_in);
 
 struct_in=rmfield(struct_in,'parameters_comments');
 [~,parameters_pkey]=get_cols_from_table(ac_db_filename,'t_parameters','input_struct',struct_in,'output_cols',{'parameters_pkey'});

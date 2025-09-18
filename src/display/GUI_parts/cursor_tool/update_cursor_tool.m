@@ -57,7 +57,7 @@ jToolbar.revalidate;
 
 end
 
-function update_ed_bot_tag(src,~,main_figure,new_tag,new_string)
+function update_ed_bot_tag(~,~,main_figure,new_tag,new_string)
 cursor_mode_tool_comp=getappdata(main_figure,'Cursor_mode_tool');
 
 if isempty(cursor_mode_tool_comp)
@@ -90,7 +90,7 @@ end
 
 
 
-function update_create_region_tag(src,~,main_figure,new_tag,new_string)
+function update_create_region_tag(~,~,main_figure,new_tag,new_string)
 cursor_mode_tool_comp=getappdata(main_figure,'Cursor_mode_tool');
 if isempty(cursor_mode_tool_comp)
     return;

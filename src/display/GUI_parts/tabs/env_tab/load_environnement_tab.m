@@ -1,10 +1,20 @@
 function load_environnement_tab(main_figure,option_tab_panel)
-
+reload = true;
 if isappdata(main_figure,'Env_tab')
     env_tab_comp=getappdata(main_figure,'Env_tab');
-    delete(get(env_tab_comp.env_tab,'children'));
-else
-    env_tab_comp.env_tab=uitab(option_tab_panel,'Title','Environment','tag','env');
+    if isvalid(env_tab_comp.env_tab)
+        delete(get(env_tab_comp.env_tab,'children'));
+        reload = false;
+    end
+end
+
+if reload
+    switch option_tab_panel.Type
+        case 'uitabgroup'
+            env_tab_comp.env_tab=new_echo_tab(main_figure,option_tab_panel,'Title','Environment','UiContextMenuName','env');
+        case 'figure'
+            env_tab_comp.env_tab=option_tab_panel;
+    end
 end
 
 %curr_disp=get_esp3_prop('curr_disp');
@@ -20,7 +30,7 @@ curr_abs=10/1e3;
 %%%%%%Environment%%%%%%
 pos=create_pos_3(8,2,gui_fmt.x_sep,gui_fmt.y_sep,gui_fmt.txt_w,gui_fmt.box_w,gui_fmt.box_h);
 
-env_tab_comp.env_group=uipanel(env_tab_comp.env_tab,'Position',[0 0.0 0.4 1],'units','norm');
+env_tab_comp.env_group=uipanel(env_tab_comp.env_tab,'Position',[0 0.0 0.5 1],'units','norm');
 
 uicontrol(env_tab_comp.env_group,gui_fmt.txtStyle,'string','Model:','position',pos{1,1}{1});
 
@@ -49,6 +59,7 @@ env_tab_comp.string_cal=uicontrol(env_tab_comp.env_group,gui_fmt.txtStyle,'posit
 
 p_button=pos{7,1}{1};
 p_button(3)=gui_fmt.txt_w+gui_fmt.x_sep+gui_fmt.box_w;
+
 uicontrol(env_tab_comp.env_group,gui_fmt.pushbtnStyle,'String','Apply env.','callback',{@apply_envdata_callback,main_figure},'position',p_button,'tooltipstring','Apply environmental values');
 uicontrol(env_tab_comp.env_group,gui_fmt.pushbtnStyle,'String','Save env.','callback',{@save_abs_calibration},'position',p_button+[0 -gui_fmt.box_h 0 0],'tooltipstring','Save environmental values to cal_echo.csv and survey_options.xml');
 
@@ -63,8 +74,7 @@ env_tab_comp.att_choice=uicontrol(env_tab_comp.env_group,gui_fmt.popumenuStyle,'
 env_tab_comp.ss_choice=uicontrol(env_tab_comp.env_group,gui_fmt.popumenuStyle,'string',{'Constant' 'Profile' 'Theoritical'},...
     'position',pos{5,2}{1}+[gui_fmt.box_w+gui_fmt.x_sep 0 0 0]);
 
-
-env_tab_comp.ax_group=uipanel(env_tab_comp.env_tab,'Position',[0.4 0 0.6 1],'units','norm');
+env_tab_comp.ax_group=uipanel(env_tab_comp.env_tab,'Position',[0.5 0 0.5 1],'units','norm');
 
 field={'temperature','salinity','soundspeed','absorption'};
 label={'Temp(deg.)','Sal.(PSU)','SS(m/s)','Abs,(dB/km)'};
@@ -89,7 +99,7 @@ end
 ylabel(env_tab_comp.ax_temperature,'Depth(m)');
 
 setappdata(main_figure,'Env_tab',env_tab_comp);
-
+update_environnement_tab(main_figure,1);
 end
 
 
@@ -99,7 +109,7 @@ update_survey_opts(esp3_obj.main_figure);
 save_cal_echo_file();
 end
 
-function save_envdata_profiles_callback(~,~,main_figure)
+function save_envdata_profiles_callback(~,~,~)
 layer=get_current_layer();
 
 layer.save_svp('');
@@ -133,6 +143,8 @@ env_tab_comp=getappdata(main_figure,'Env_tab');
 new_sal=str2double(get(env_tab_comp.sal,'string'));
 if isnan(new_sal)||new_sal<0||new_sal>60
     new_sal=envdata.Salinity;
+else
+    
 end
 
 set(env_tab_comp.sal,'string',num2str(new_sal,'%.2f'));
@@ -153,39 +165,43 @@ if get(env_tab_comp.soundspeed_over,'value')==0
     c = seawater_svel_un95(new_sal,new_temp,new_d);
 else
     c = str2double(get(env_tab_comp.soundspeed,'string'));
+    layer.EnvData.SoundSpeed = c;
     if~(~isnan(c)&&c>=1000&&c<=2000)
         c=envdata.SoundSpeed;
     end
 end
 set(env_tab_comp.soundspeed,'string',num2str(c,'%.2f'));
+att_list=get(env_tab_comp.att_model,'String');
+att_model=att_list{get(env_tab_comp.att_model,'value')};
 
-if get(env_tab_comp.att_over,'value')==0||isempty(trans_obj)
-    att_list=get(env_tab_comp.att_model,'String');
-    att_model=att_list{get(env_tab_comp.att_model,'value')};
-    f_c=nanmean(trans_obj.get_center_frequency());
-    if f_c>120000&&strcmp(att_model,'Doonan et al (2003)')
-        att_model='Francois & Garrison (1982)';
-        set(env_tab_comp.att_model,'value',1);
-    end
-    
+if get(env_tab_comp.att_over,'value')==0&&~isempty(trans_obj)
+    f_c = trans_obj.get_center_frequency([]);
+    f_c = mean(f_c,'all');
+
     switch att_model
         case 'Doonan et al (2003)'
-            alpha = seawater_absorption(f_c/1e3, new_sal, new_temp, new_d,'doonan');
+            att_model = 'doonan';
         case 'Francois & Garrison (1982)'
-            alpha = seawater_absorption(f_c/1e3, new_sal, new_temp, new_d,'fandg');
-    end
-else
-    alpha=str2double(get(env_tab_comp.att,'string'));
-    if isnan(alpha)||alpha<0||alpha>200
-        alpha=trans_obj.get_absorption()*1e3;
+            att_model = 'fandg';
     end
     
+    alpha = seawater_absorption(f_c/1e3, new_sal, new_temp, new_d,att_model);
+    set(env_tab_comp.att,'string',num2str(mean(alpha),'%.2f'));
+else
+    a = str2double(get(env_tab_comp.att,'string'));
+    s_new_abs=size(trans_obj.get_absorption(),1);
+    new_a = repelem(a,s_new_abs);
+    new_a = new_a'*10^(-3);
+    trans_obj.Alpha = new_a;
+
 end
+
 layer.EnvData.Salinity=new_sal;
 layer.EnvData.Depth=new_d;
 layer.EnvData.Temperature=new_temp;
+layer.EnvData.AttModel=att_model;
 
-set(env_tab_comp.att,'string',num2str(nanmean(alpha),'%.2f'));
+
 
 update_environnement_tab(main_figure,0);
 end

@@ -47,7 +47,7 @@ if ischar(ac_db_filename)
 else
     dbconn=ac_db_filename;
 end
-dbconn.insert('t_ancillary',fieldnames(struct_in),t);
+dbconn.sqlwrite('t_ancillary',t);
 if ischar(ac_db_filename)
     dbconn.close();
 end

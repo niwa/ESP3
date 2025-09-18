@@ -7,8 +7,8 @@ else
 end
 
 if ~isempty(ls)
-    for i=1:length(ls)
-        ls(i).Enabled = false;
+    for ils=1:length(ls)
+        ls(ils).Enabled = false;
     end
 end
 

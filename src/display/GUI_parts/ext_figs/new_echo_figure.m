@@ -5,18 +5,23 @@ def_pos=[0.2 0.2 0.6 0.6];
 
 size_max = get(groot, 'MonitorPositions');
 units= get(groot, 'units');
+
 if ~isempty(main_figure)
     pos_main=getpixelposition(main_figure);
 else
     pos_main=size_max(1,:);
 end
-[~,id_screen]=nanmin(abs(size_max(:,1)-pos_main(1)));
-if size(size_max,1)>1
-    
+[~,id_screen]=min(abs(size_max(:,1)-pos_main(1)));
+if size(size_max,1)>1   
     size_max(id_screen,:)=[];
 end
 
-def_pos=def_pos.*[size_max(end,3:4) size_max(end,3:4)];
+
+tmp=[size_max(end,3:4) size_max(end,3:4)];
+tmp(3) = min(tmp(3),1920);
+tmp(4) = min(tmp(4),1080);
+
+def_pos = def_pos.*tmp;
 
 def_menubar='none';
 def_toolbar='none';
@@ -27,11 +32,12 @@ addParameter(p,'fig_handle',[],@(x) isempty(x)||ishandle(x));
 addParameter(p,'Name','',@ischar);
 addParameter(p,'Position',def_pos,@isnumeric);
 addParameter(p,'Units','pixels',@ischar);
+addParameter(p,'Color','White');
 addParameter(p,'MenuBar',def_menubar,@ischar);
 addParameter(p,'Toolbar',def_toolbar,@ischar);
 addParameter(p,'Resize','on',@ischar);
 addParameter(p,'CloseRequestFcn',@close_win_echo,@(x) isa(x,'function_handle'));
-addParameter(p,'WindowScrollWheelFcn',@do_nothing,@(x) isa(x,'function_handle'));
+addParameter(p,'WindowScrollWheelFcn',[],@(x) isempty(x) || isa(x,'function_handle'));
 addParameter(p,'ButtonDownFcn',@do_nothing,@(x) isa(x,'function_handle'));
 addParameter(p,'WindowKeyPressFcn',@do_nothing,@(x) isa(x,'function_handle'));
 addParameter(p,'WindowStyle','normal',@ischar);
@@ -46,10 +52,6 @@ addParameter(p,'UiFigureBool',false,@islogical);
 
 parse(p,main_figure,varargin{:});
 
-    cur_ver=ver('Matlab');
-    cur_ver_num = str2double(cur_ver.Version);
-    
-
 
 if p.Results.Keep_old==0
     hfigs=clean_echo_figures(main_figure,'Tag',p.Results.Tag);
@@ -59,13 +61,13 @@ end
 
 switch lower(p.Results.Units)
     case 'pixels'
-        pos_final=p.Results.Position+[size_max(end,1:2) 0 0];
+        pos_final=p.Results.Position+[def_pos(1:2) 0 0];
         pos_u='pixels';
     case {'normalized' 'norm'}
         pos_u=units;
-        pos_final=p.Results.Position.*[size_max(end,3:4) size_max(end,3:4)]+[size_max(end,1:2) 0 0];
+        pos_final=p.Results.Position.*[def_pos(3:4) def_pos(3:4)]+[def_pos(1:2) 0 0];
     otherwise
-        pos_u=p.Results.Units;
+        pos_u='pixels';
         pos_final=p.Results.Position;
 end
 
@@ -87,39 +89,38 @@ if isempty(p.Results.fig_handle)
     if p.Results.UiFigureBool
         fig_handle=uifigure('Units',pos_u,...
             'Position',pos_final,...
-            'Color','White',...
+            'Color',p.Results.Color,...
             'Tag',p.Results.Tag,...
             'Name',p.Results.Name,...
             'NumberTitle','off',...
-            'DockControls','off',...
             'Resize',p.Results.Resize,...
             'MenuBar',mbar,...
             'ToolBar',tbar,...
-            'CloseRequestFcn',{p.Results.CloseRequestFcn,main_figure},...
-            'ButtonDownFcn',{p.Results.ButtonDownFcn,main_figure},...
-            'WindowScrollWheelFcn',{p.Results.WindowScrollWheelFcn,main_figure},...
+            'CloseRequestFcn',p.Results.CloseRequestFcn,...
+            'ButtonDownFcn',p.Results.ButtonDownFcn,...
+            'WindowScrollWheelFcn',p.Results.WindowScrollWheelFcn,...
             'Visible',p.Results.Visible,...
-            'WindowKeyPressFcn',{p.Results.WindowKeyPressFcn,main_figure},...
-            'UserData',p.Results.UserData);
+            'WindowKeyPressFcn',p.Results.WindowKeyPressFcn,...
+            'UserData',p.Results.UserData,'HandleVisibility','on');
     else
-            fig_handle=figure('Units',pos_u,...
-        'InvertHardcopy', 'off',...
-        'Position',pos_final,...
-        'Color','White',...
-        'Tag',p.Results.Tag,...
-        'DockControls','off',...
-        'WindowStyle',p.Results.WindowStyle,...
-        'Name',p.Results.Name,...
-        'NumberTitle','off',...
-        'Resize',p.Results.Resize,...
-        'MenuBar',mbar,...
-        'ToolBar',tbar,...
-        'CloseRequestFcn',{p.Results.CloseRequestFcn,main_figure},...
-        'ButtonDownFcn',{p.Results.ButtonDownFcn,main_figure},...
-        'WindowScrollWheelFcn',{p.Results.WindowScrollWheelFcn,main_figure},...
-        'Visible',p.Results.Visible,...
-        'WindowKeyPressFcn',{p.Results.WindowKeyPressFcn,main_figure},...
-        'UserData',p.Results.UserData);
+        fig_handle=figure('Units',pos_u,...
+            'InvertHardcopy', 'off',...
+            'Position',pos_final,...
+            'Color',p.Results.Color,...
+            'Tag',p.Results.Tag,...
+            'DockControls','off',...
+            'WindowStyle',p.Results.WindowStyle,...
+            'Name',p.Results.Name,...
+            'NumberTitle','off',...
+            'Resize',p.Results.Resize,...
+            'MenuBar',mbar,...
+            'ToolBar',tbar,...
+            'CloseRequestFcn',p.Results.CloseRequestFcn,...
+            'ButtonDownFcn',p.Results.ButtonDownFcn,...
+            'WindowScrollWheelFcn',p.Results.WindowScrollWheelFcn,...
+            'Visible',p.Results.Visible,...
+            'WindowKeyPressFcn',p.Results.WindowKeyPressFcn,...
+            'UserData',p.Results.UserData,'HandleVisibility','on');
     end
 else
     fig_handle=p.Results.fig_handle;
@@ -137,9 +138,7 @@ else
     end
 end
 
-if isdeployed()
-    fig_handle.DockControls='off';
-end
+iptPointerManager(fig_handle);
 
 switch p.Results.Toolbar
     case 'esp3'
@@ -148,14 +147,11 @@ end
 
 %% Install mouse pointer manager in figure
 iptPointerManager(fig_handle);
-if ~p.Results.UiFigureBool
+
+if will_it_work(fig_handle,'',false)
     javaFrame = get(fig_handle,'JavaFrame');
     javaFrame.setFigureIcon(javax.swing.ImageIcon(fullfile(whereisEcho(),'icons','echoanalysis.png')));
-    if ~isdeployed()
-        javaFrame.fHG2Client.setClientDockable(true);
-        set(javaFrame,'GroupName',p.Results.Group);
-    end
-elseif cur_ver_num>=9.9
+elseif will_it_work(fig_handle,'',true)
     fig_handle.Icon = fullfile(whereisEcho(),'icons','echoanalysis.png');
 end
 
@@ -179,7 +175,10 @@ else
 end
 
 if ~strcmp(fig_handle.WindowStyle,'docked')
-    set(fig_handle,'Position',get_dlg_position(main_figure,pos_final,get(fig_handle,'Units'),p.Results.WhichScreen));
+    switch lower(p.Results.Units)
+        case {'normalized' 'norm' 'pixels'}
+            set(fig_handle,'Position',get_dlg_position(main_figure,pos_final,get(fig_handle,'Units'),p.Results.WhichScreen));
+    end
 end
 
 if~isempty(font)
@@ -199,17 +198,11 @@ end
 end
 
 
-
-function close_win_echo(src,~,~,main_figure)
-uiresume(src);
-% if ~isempty(main_figure)
-%     ext_fig=getappdata(main_figure,'ExternalFigures');
-%     idx_src=find(src==ext_fig);
-%     if ~isempty(idx_src)
-%         ext_fig(idx_src)=[];
-%         setappdata(main_figure,'ExternalFigures',ext_fig);
-%     end
-% end
-
+function close_win_echo(src,~)
+try
+    uiresume(src);
+catch err
+    print_errors_and_warnings(1,'error',err);
+end
 delete(src);
 end

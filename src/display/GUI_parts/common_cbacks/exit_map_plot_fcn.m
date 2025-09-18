@@ -1,4 +1,4 @@
-function exit_map_plot_fcn(src,~,hplot)
+function exit_map_plot_fcn(~,~,~)
 % set(src, 'Pointer', 'hand');
 % ax=ancestor(hplot(1),'axes');
 % % obj=findobj(ax,'Tag','tooltip');

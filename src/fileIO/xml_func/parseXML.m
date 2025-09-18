@@ -74,16 +74,20 @@ if theNode.hasAttributes
     numAttributes = theAttributes.getLength;
     allocCell = cell(1, numAttributes);
     attributes = struct('Name', allocCell, 'Value', ...
-        allocCell);
+        allocCell, 'Value_str', allocCell);
     
     for count = 1:numAttributes
         attrib = theAttributes.item(count-1);
         attributes(count).Name = char(attrib.getName);
-        tmp=str2double(attrib.getValue);
+        attributes(count).Value_str = char(attrib.getValue);
+        
+        tmp=str2double(attributes(count).Value_str);
+
         if ~isnan(tmp)
             attributes(count).Value = tmp;
         else
-            attributes(count).Value = char(attrib.getValue);
+            attributes(count).Value = attributes(count).Value_str;
         end
+        
     end
 end

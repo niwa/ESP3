@@ -42,41 +42,51 @@ nb_algos = length(algo_node.Children);
 % initialize output
 algo_cell = cell(1,nb_algos);
 
+al_names = list_algos();
+
 % get each algo details
-for i = 1:nb_algos
+for ial = 1:nb_algos
 
     % ignore comments
-    if strcmp(algo_node.Children(i).Name,'#comment')
+    if ~ismember(algo_node.Children(ial).Name,al_names)
+        if strcmp(algo_node.Children(ial).Name,'#comment')
+            print_errors_and_warnings([],'war',sprintf('Algorithm %s not recognised',algo_node.Children(ial).Name))
+        end
         continue;
     end
-    
+
     % record algo name
-    algo_cell{i}.Name = algo_node.Children(i).Name;
-    
-    % record each attribute
-    for j = 1:length(algo_node.Children(i).Attributes)
-        algo_cell{i}.Varargin.(algo_node.Children(i).Attributes(j).Name) = algo_node.Children(i).Attributes(j).Value;
+    al_struct_tmp.Name = algo_node.Children(ial).Name;
+    att_names = {algo_node.Children(ial).Attributes(:).Name};
+
+    if ~ismember('savename',att_names)
+        al_struct_tmp.Varargin.savename = '--';
     end
-    
+
+    % record each attribute
+    for jat = 1:length(algo_node.Children(ial).Attributes)
+        al_struct_tmp.Varargin.(algo_node.Children(ial).Attributes(jat).Name) = algo_node.Children(ial).Attributes(jat).Value;
+    end
+
     % special record for frequencies if this field exists
-    if isfield(algo_cell{i}.Varargin,'Frequencies')
-        if ischar(algo_cell{i}.Varargin.Frequencies)
-            algo_cell{i}.Varargin.Frequencies = str2double(strsplit(algo_cell{i}.Varargin.Frequencies,';'));
-            if isnan(algo_cell{i}.Varargin.Frequencies)
-                algo_cell{i}.Varargin.Frequencies = [];
+    if isfield(al_struct_tmp.Varargin,'Frequencies')
+        if ischar(al_struct_tmp.Varargin.Frequencies)
+            al_struct_tmp.Varargin.Frequencies = str2double(strsplit(al_struct_tmp.Varargin.Frequencies,';'));
+            if isnan(al_struct_tmp.Varargin.Frequencies)
+                al_struct_tmp.Varargin.Frequencies = [];
             end
         end
     else
-        algo_cell{i}.Varargin.Frequencies = [];
+        al_struct_tmp.Varargin.Frequencies = [];
     end
     
-    if ~isfield(algo_cell{i}.Varargin,'savename')
-        algo_cell{i}.Varargin.savename = '--';
-    end
+    algo_cell{ial} = al_struct_tmp;
     
 end
 
 % remove empty algorithms (comments)
 algo_cell(cellfun(@isempty,algo_cell)) = [];
+
+
 
 end

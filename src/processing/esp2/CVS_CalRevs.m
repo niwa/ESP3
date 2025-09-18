@@ -3,7 +3,7 @@ function svCorr=CVS_CalRevs(cvsroot,varargin)
 p = inputParser;
 
 addRequired(p,'cvsroot',@ischar);
-addParameter(p,'CalRev',1);
+addParameter(p,'CalRev','1.0');
 
 parse(p,cvsroot,varargin{:});
 
@@ -11,6 +11,7 @@ CalRev=p.Results.CalRev;
 
 workingPath = pwd;
 outDir = fullfile(tempname); %Make temp directory for calibration rev
+
 %run command - make output directory for cvs
 if ~mkdir(outDir)
     error('Unable to create temporary cvs directory');
@@ -33,6 +34,6 @@ else
     fclose(fid);
 end
 
-cd(workingPath)
+cd(workingPath);
 
 rmdir(outDir,'s'); %Remove temp CVS dir

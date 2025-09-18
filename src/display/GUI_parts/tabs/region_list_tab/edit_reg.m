@@ -43,6 +43,10 @@ if isempty(evt.Indices)
 end
 
 layer=get_current_layer();
+curr_disp = get_esp3_prop('curr_disp');
+trans_obj = layer.get_trans(curr_disp);
+map_tab_comp = getappdata(main_figure,'Map_tab');
+gax = map_tab_comp.ax;
 
 if isempty(layer)
     return;
@@ -70,7 +74,7 @@ for ifi=1:numel(fields)
     layer.set_field_to_region_with_uid(uid,fields{ifi},id);
 end
 
-display_regions(main_figure,'all');
+display_regions('all');
 
 activate_region_callback(uid,main_figure);
 
@@ -81,9 +85,9 @@ if ~isempty(layer.Curves)
             layer.Curves(ic).Tag=src.Data{evt.Indices(1,1),3};
         end
         update_curves_and_table(main_figure,'sv_f',uid);
-        update_curves_and_table(main_figure,'ts_f',uid);
+        update_curves_and_table(main_figure,'ts_f',uid);       
     end
 end
-
+trans_obj.disp_reg_tag_on_map('gax',gax,'uid',{uid});
 
 end

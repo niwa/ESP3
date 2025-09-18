@@ -15,8 +15,7 @@ if isempty(Filename_cell)
     return;
 end
 
-[def_path_m,~,~] = fileparts(Filename_cell{1});
-
+def_path_m = fullfile(tempdir,'data_echo');
 
 addRequired(p,'Filename_cell',@(x) ischar(x)||iscell(x));
 addParameter(p,'PathToMemmap',def_path_m,@ischar);

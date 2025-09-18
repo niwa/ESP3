@@ -10,8 +10,8 @@ if multi_layer==1
 end
 
 t_start=nan(1,numel(layers_in));
-for i=1:numel(layers_in)
-    [t_start(i),~]=layers_in(i).get_time_bounds();
+for il=1:numel(layers_in)
+    [t_start(il),~]=layers_in(il).get_time_bounds();
 end
 [~,idx_sort]=sort(t_start);
 layers_in=layers_in(idx_sort);
@@ -23,21 +23,21 @@ nb_transceivers=nan(1,length(layers_in));
 transceiver_combination=nan(1,length(layers_in));
 transceiver_combination_cell={};
 
-for i=1:length(layers_in)
-    curr_layer=layers_in(i);
-    cids{i}=curr_layer.ChannelID;
-    idx=find(cellfun(@(x) all(ismember(cids{i},x))&&numel(cids{i})==numel(x),transceiver_combination_cell));
+for il=1:length(layers_in)
+    curr_layer=layers_in(il);
+    cids{il}=curr_layer.ChannelID;
+    idx=find(cellfun(@(x) all(ismember(cids{il},x))&&numel(cids{il})==numel(x),transceiver_combination_cell));
     
     if isempty(idx)
-        transceiver_combination_cell{end+1}=cids{i};
-        transceiver_combination(i)=numel(transceiver_combination_cell);
+        transceiver_combination_cell{end+1}=cids{il};
+        transceiver_combination(il)=numel(transceiver_combination_cell);
         
     else
-        transceiver_combination(i)=idx;
+        transceiver_combination(il)=idx;
     end
     
-    nb_transceivers(i)=length(curr_layer.Transceivers);
-    filetype{i}=curr_layer.Filetype;
+    nb_transceivers(il)=length(curr_layer.Transceivers);
+    filetype{il}=curr_layer.Filetype;
     %fold_temp=curr_layer.get_folder();
     
 end
@@ -59,9 +59,9 @@ for uu=1:length(trans_comb)
             for ii=1:trans_nb(uu)
                 curr_trans=curr_layer.Transceivers(ii);
                 layers_grp(uu).cid{ii,jj}=curr_trans.Config.ChannelID;
-                layers_grp(uu).sample_interval(ii,jj)=ceil(curr_trans.get_params_value('SampleInterval',1)/eps)*eps;
+                layers_grp(uu).sample_interval(ii,jj)=ceil(curr_trans.get_params_value('SampleInterval',1,1)/eps)*eps;
                 
-                if ~isempty(curr_trans.get_transceiver_range())
+                if ~isempty(curr_trans.get_samples_range())
                     layers_grp(uu).time_start(ii,jj)=curr_trans.Time(1);
                     layers_grp(uu).time_end(ii,jj)=curr_trans.Time(end);
                     layers_grp(uu).dt(ii,jj)=(curr_trans.Time(end)-curr_trans.Time(1))/length(curr_trans.Time);
@@ -91,11 +91,11 @@ for uu=1:length(trans_comb)
         idx_to_concatenate{uu}{kk}=[];
         
         if trans_nb(uu)>0
-            idx_same_sample_int=find(nansum(layers_grp(uu).sample_interval==repmat(sample_int(:,kk),1,size(layers_grp(uu).sample_interval,2)),1)==trans_nb(uu));
-            %idx_same_sample_int=find(nansum(layers_grp(uu).sample_interval>0,1)==trans_nb(uu));
+            idx_same_sample_int=find(sum(layers_grp(uu).sample_interval==repmat(sample_int(:,kk),1,size(layers_grp(uu).sample_interval,2)),1)==trans_nb(uu));
+            %idx_same_sample_int=find(sum(layers_grp(uu).sample_interval>0,1)==trans_nb(uu));
         else
-             idx_same_sample_int=find(nansum(layers_grp(uu).sample_interval==repmat(sample_int(:,kk),1,size(layers_grp(uu).sample_interval,2)),1));
-             %idx_same_sample_int=find(nansum(layers_grp(uu).sample_interval>0,1));
+             idx_same_sample_int=find(sum(layers_grp(uu).sample_interval==repmat(sample_int(:,kk),1,size(layers_grp(uu).sample_interval,2)),1));
+             %idx_same_sample_int=find(sum(layers_grp(uu).sample_interval>0,1));
              trans_nb(uu)=1;
         end
         
@@ -103,7 +103,7 @@ for uu=1:length(trans_comb)
             for kki=idx_same_sample_int
                 for kkj=idx_same_sample_int
                                         
-                    first_cond= kki == kkj || nansum(layers_grp(uu).time_end(:,kki)==layers_grp(uu).time_end(:,kkj)|...
+                    first_cond = kki == kkj || sum(layers_grp(uu).time_end(:,kki)==layers_grp(uu).time_end(:,kkj)|...
                         layers_grp(uu).time_start(:,kki)==layers_grp(uu).time_start(:,kkj)|...
                         (layers_grp(uu).time_start(:,kki)>=layers_grp(uu).time_start(:,kkj)&...
                         layers_grp(uu).time_start(:,kki)<=layers_grp(uu).time_end(:,kkj))|...
@@ -114,8 +114,9 @@ for uu=1:length(trans_comb)
                     if first_cond
                         continue;
                     end
+                    
                     mult_val = 10;
-                    second_cond= nansum(layers_grp(uu).time_end(:,kki)+ mult_val*layers_grp(uu).dt(:,kki)>=layers_grp(uu).time_start(:,kkj)&...
+                    second_cond = sum(layers_grp(uu).time_end(:,kki)+ mult_val*layers_grp(uu).dt(:,kki)>=layers_grp(uu).time_start(:,kkj)&...
                         layers_grp(uu).time_end(:,kki)-mult_val*layers_grp(uu).dt(:,kki)<=layers_grp(uu).time_start(:,kkj))==trans_nb(uu);
                     
                     if second_cond
@@ -170,17 +171,17 @@ for uui=1:length(idx_to_concatenate)
                 kkki=kkki+1;
             end
             
-            for i=1:length(new_chains)
+            for il=1:length(new_chains)
                 for j=1:length(new_chains)
-                    if ~isempty(intersect(new_chains{i},new_chains{j}))&&(j~=i)
-                        time_i=layers_in(new_chains{i}(end)).Transceivers(1).Time(end)-layers_in(new_chains{i}(1)).Transceivers(1).Time(1);
+                    if ~isempty(intersect(new_chains{il},new_chains{j}))&&(j~=il)
+                        time_i=layers_in(new_chains{il}(end)).Transceivers(1).Time(end)-layers_in(new_chains{il}(1)).Transceivers(1).Time(1);
                         time_j=layers_in(new_chains{j}(end)).Transceivers(1).Time(end)-layers_in(new_chains{j}(1)).Transceivers(1).Time(1);
                         
                         if time_j>=time_i
-                            temp_u=setdiff(new_chains{i},new_chains{j});
-                            new_chains{i}=[];
+                            temp_u=setdiff(new_chains{il},new_chains{j});
+                            new_chains{il}=[];
                         else
-                            temp_u=setdiff(new_chains{j},new_chains{i});
+                            temp_u=setdiff(new_chains{j},new_chains{il});
                             new_chains{j}=[];
                         end
                         idx_not_to_concatenate{uui}=unique([idx_not_to_concatenate{uui}(:); temp_u(:)]);

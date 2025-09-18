@@ -11,7 +11,7 @@ switch field
         trans_obj.Data.remove_sub_data(fields);
         curr_disp.setField('sv');
     case 'st'
-        trans_obj.ST=init_st_struct();
+        trans_obj.ST=init_st_struct(0);
         trans_obj.Tracks=[];
         fields={'singletarget'};
         if~isempty(layer.Curves)
@@ -22,6 +22,9 @@ switch field
         trans_obj.Data.remove_sub_data(fields);
         display_tracks(main_figure);
         curr_disp.setField('sv');
+    case 'features'
+        trans_obj.Features = feature_3D_cl.empty();
+        set_alpha_map(main_figure,'update_bt',0);
 end
 
 

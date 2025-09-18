@@ -6,12 +6,12 @@ addRequired(p,'line_xml',@(x) isstruct(x));
 
 parse(p,docNode,line_xml);
 
-
 line_file=docNode.getDocumentElement;
 
 line_node = docNode.createElement('line');
 line_node.setAttribute('type',line_xml.Type);
 line_node.setAttribute('tag',line_xml.Tag);
+line_node.setAttribute('units',line_xml.Units);
 line_node.setAttribute('file_origin',line_xml.File_origin);
 line_node.setAttribute('dist_diff',num2str(line_xml.Dist_diff,'%.2f'));
 line_node.setAttribute('utc_diff',num2str(line_xml.UTC_diff,'%.4f'));
@@ -24,14 +24,19 @@ time_str=datestr(line_xml.Time(idx_keep),'yyyymmddHHMMSSFFF ');
 time_str=time_str';
 time_str=time_str(:)';
 range_str=sprintf('%.4f ',line_xml.Range(idx_keep));
+data_str=sprintf('%.4f ',line_xml.Data(idx_keep));
 
 range_node = docNode.createElement('range');
 range_node.appendChild(docNode.createTextNode(range_str));
+
+data_node = docNode.createElement('data');
+data_node.appendChild(docNode.createTextNode(data_str));
 
 time_node = docNode.createElement('time');
 time_node.appendChild(docNode.createTextNode(time_str));
 
 line_node.appendChild(range_node);
+line_node.appendChild(data_node);
 line_node.appendChild(time_node);
 
 line_file.appendChild(line_node);

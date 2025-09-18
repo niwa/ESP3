@@ -1,11 +1,11 @@
 function move_image_select(src,~,main_figure)
 curr_disp=get_esp3_prop('curr_disp');
 layer=get_current_layer();
-[trans_obj,idx_freq]=layer.get_trans(curr_disp);
+[trans_obj,~]=layer.get_trans(curr_disp);
 
 axes_panel_comp=getappdata(main_figure,'Axes_panel');
 image_obj=src;
-ah=axes_panel_comp.main_axes;
+ah=axes_panel_comp.echo_obj.main_ax;
 
 if isempty(image_obj.XData)||~ismember(curr_disp.CursorMode,{'Normal'})
     return;
@@ -22,8 +22,8 @@ if strcmp(current_fig.SelectionType,'normal')
     xdata=trans_obj.get_transceiver_pings();
     ydata=trans_obj.get_transceiver_samples();
     
-    dx_image=nanmax(image_obj.XData(:))-nanmin(image_obj.XData(:));
-    dy_image=nanmax(image_obj.YData(:))-nanmin(image_obj.YData(:));
+    dx_image=max(image_obj.XData(:))-min(image_obj.XData(:));
+    dy_image=max(image_obj.YData(:))-min(image_obj.YData(:));
     
     replace_interaction(current_fig,'interaction','WindowButtonMotionFcn','id',2,'interaction_fcn',@wbmcb,'Pointer','fleur');
     replace_interaction(current_fig,'interaction','WindowButtonUpFcn','id',2,'interaction_fcn',@wbucb);

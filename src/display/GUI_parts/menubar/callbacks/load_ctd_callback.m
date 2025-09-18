@@ -24,9 +24,7 @@ if isempty(temp)||isempty(sal)||isempty(depth)
     return;
 end
 
-trans_obj=layer.get_trans(curr_disp);
 
-depth_t=trans_obj.get_transceiver_depth([],1);
 idx_keep=(depth>0);
 
 depth(~idx_keep)=[];
@@ -34,7 +32,7 @@ sal(~idx_keep)=[];
 temp(~idx_keep)=[];
 
 
-[d_max,id_max]=nanmax(depth);
+[d_max,id_max]=max(depth);
 
 [~,idx]=sort(depth);
 

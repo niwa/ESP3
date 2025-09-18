@@ -17,18 +17,18 @@ if isempty(regions_node)
 end
 
 
-for i=1:nb_reg_groups
-    region_xml{i}.Infos=get_node_att(xml_struct.Children(i));
+for ireg=1:nb_reg_groups
+    region_xml{ireg}.Infos=get_node_att(xml_struct.Children(ireg));
     switch ver
         case '0.1'
-            region_xml{i}.Regions=get_regions_node(xml_struct.Children(i));
-        case '0.2'
-            region_xml{i}.Regions=get_regions_node_v2(xml_struct.Children(i));
+            region_xml{ireg}.Regions=get_regions_node(xml_struct.Children(ireg));
+        case {'0.2' '0.3'}
+            region_xml{ireg}.Regions=get_regions_node_v2(xml_struct.Children(ireg));
     end
-    if isnumeric(region_xml{i}.Infos.ChannelID)
-        region_xml{i}.Infos.ChannelID=num2str(region_xml{i}.Infos.ChannelID);
+    if isnumeric(region_xml{ireg}.Infos.ChannelID)
+        region_xml{ireg}.Infos.ChannelID=num2str(region_xml{ireg}.Infos.ChannelID);
     end
-    region_xml{i}.Infos.ChannelID=deblank(region_xml{i}.Infos.ChannelID);
+    region_xml{ireg}.Infos.ChannelID=deblank(region_xml{ireg}.Infos.ChannelID);
 end
 
 
@@ -90,6 +90,9 @@ for iu=1:length(regions_node)
     end
     
     bbox=get_childs(regions_node(iu),'bbox');
+    if isempty(bbox)||~isfield(bbox,'Data')
+        continue;
+    end
     
     bbox_cell=textscan(bbox.Data,'%d %d');
     region_curr.bbox_p=double(bbox_cell{1});
@@ -110,7 +113,8 @@ for iu=1:length(regions_node)
     regions{iu}=region_curr;
 end
 
-
 end
+
+
 
 

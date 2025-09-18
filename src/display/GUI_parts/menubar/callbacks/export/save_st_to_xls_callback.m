@@ -6,7 +6,7 @@ curr_disp=get_esp3_prop('curr_disp');
 [path_lay,files] = layer.get_path_files();
 
 [~,fname,~]=fileparts(files{1});
-[trans_obj,idx_freq]=layer.get_trans(curr_disp);
+[trans_obj,~]=layer.get_trans(curr_disp);
 
 
  file_path = path_lay{1};

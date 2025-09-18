@@ -26,7 +26,7 @@ if nargin < 2
     guessalpha = true;
 end
 
-[p,f,ext] = fileparts(filename);
+[~,~,ext] = fileparts(filename);
 % if this is a mat-file, look for the varible cdata (or something like it)
 if isequal(lower(ext),'.mat')
     cdata = [];

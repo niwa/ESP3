@@ -37,7 +37,7 @@ try
         end
     end
     
-    load_logbook_tab_from_db(main_figure,1);
+    update_logbook_panel_f(layer.Filename);
     
 catch err
     print_errors_and_warnings(1,'error',err);

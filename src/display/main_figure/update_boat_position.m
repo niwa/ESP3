@@ -1,11 +1,10 @@
 function update_boat_position(main_figure,idx_ping,force)
 try
-    
-    
+        
     if ~isappdata(main_figure,'Map_tab')
         return;
     end
-    
+   
     
     layer=get_current_layer();
     
@@ -39,14 +38,13 @@ try
     Long=trans_obj.GPSDataPing.Long;
     time_t=trans_obj.get_transceiver_time();
     nb_pings=length(time_t);
-    idx_ping=nanmin(nb_pings,idx_ping);
-    idx_ping=nanmax(1,idx_ping);
+    idx_ping=min(nb_pings,idx_ping);
+    idx_ping=max(1,idx_ping);
     
-    
-    
+       
     map_tab_comp=getappdata(main_figure,'Map_tab');
-    
-    if map_tab_comp.update_boat_pos.Value==0&&~force
+
+    if  ~isempty(map_tab_comp) && isvalid(map_tab_comp.ax) && (~isvalid(map_tab_comp.update_boat_pos)||(map_tab_comp.update_boat_pos.Value==0&&~force))
         return;
     end
         

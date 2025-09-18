@@ -37,22 +37,27 @@
 %% Function
 function create_context_menu_bottom(main_figure,bottom_line)
 curr_disp=get_esp3_prop('curr_disp');
-layer=get_current_layer();
+layer = get_current_layer();
+
 if isempty(layer)
     return;
 end
-[~,idx_freq]=layer.get_trans(curr_disp);
+
+trans_obj = layer.get_trans(curr_disp) ;
 
 delete(findobj(main_figure,'Type','Uicontextmenu','-and','Tag','botCtxtMenu'));
-
 context_menu=uicontextmenu(ancestor(bottom_line,'figure'),'Tag','botCtxtMenu');
 bottom_line.UIContextMenu=context_menu;
 
-uimenu(context_menu,'Label','Shift Bottom ...','Callback',{@shift_bottom_callback,[],main_figure});
+uimenu(context_menu,'Label','Shift Bottom ...','Callback',{@shift_bottom_callback,[]});
 uimenu(context_menu,'Label','Filter Bottom ...','Callback',@filter_bottom_callback);
 uimenu(context_menu,'Label','Remove Bottom','Callback',{@rm_bottom_callback,main_figure});
+uimenu(context_menu,'Label','Create line from Bottom','Callback',{@bottom_to_line_callback,main_figure});
+uimenu(context_menu,'Label','Create calibration curve from bottom Sv(f)','Callback',{@bottom_to_cal_callback,main_figure});
+
+
 switch layer.Filetype
-    case 'EK60'
+    case {'EK60' 'EK80'}
         uimenu(context_menu,'Label','Reload Simrad bottom','Callback',@reload_ek_bot_cback);
 end
 uimenu(context_menu,'Label','Display Bottom Region','Callback',@display_bottom_region_callback);
@@ -72,6 +77,103 @@ end
 %%
 % subfunctions
 %
+
+function bottom_to_cal_callback(~,~,main_figure)
+
+layer_obj=get_current_layer();
+curr_disp=get_esp3_prop('curr_disp');
+
+[trans_obj,idx_trans]=layer_obj.get_trans(curr_disp);
+switch trans_obj.Mode
+    case 'FM'
+        [load_bar_comp,~]=show_status_bar(main_figure);
+        reg_wc = trans_obj.create_WC_region(...
+            'y_min',-10,...
+            'y_max',-1,...
+            'Type','Data',...
+            'Ref','Bottom',...
+            'Cell_w',10,...
+            'Cell_h',1,...
+            'Cell_w_unit','pings',...
+            'Cell_h_unit','meters');
+
+
+        cal_fm=trans_obj.get_transceiver_fm_cal('origin','th');
+
+        [Sv_f_out,freq_vec,~,~]=trans_obj.sv_f_from_region(reg_wc,...
+            'envdata',layer_obj.EnvData,'output_size','3D','sliced_output',1,'bottom_only',true,'cal',cal_fm,'load_bar_comp',load_bar_comp);
+        hide_status_bar(main_figure);
+
+        Sv_f = pow2db(squeeze(mean(db2pow(Sv_f_out),[1 2],"omitnan")))';
+        
+        %cal_cw = trans_obj.get_transceiver_cw_cal();
+
+        f_nom = trans_obj.Config.Frequency;
+        [~,idx_freq] = min(abs(f_nom-freq_vec));
+
+        G_th=interp1(cal_fm.Frequency,cal_fm.Gain_th,freq_vec,'linear','extrap');
+
+        G_new = (Sv_f-Sv_f(idx_freq))/2+G_th;
+
+        G_new=interp1(freq_vec,G_new,cal_fm.Frequency,'linear','extrap');
+
+        cal_fig=new_echo_figure(main_figure,'Name',sprintf('Gain calibration from Bottom Echo'),'Tag',sprintf('FM cal_fm.'),'Toolbar','esp3','MenuBar','esp3');
+        ax_1=axes(cal_fig,'Box','on','Nextplot','add');
+        grid(ax_1,'on');
+        ylabel(ax_1,'G(dB)')
+        xlabel(ax_1,'Frequency(dB)');
+
+        plot(ax_1,cal_fm.Frequency/1e3,cal_fm.Gain_th,'color',[0 0.6 0],'tag','th','linestyle','-');
+        plot(ax_1,cal_fm.Frequency/1e3,cal_fm.Gain_file,'color',[0 0 0.6],'tag','file','linestyle','-');
+        plot(ax_1,cal_fm.Frequency/1e3,cal_fm.Gain_xml,'color',[0.6 0 0],'tag','xml','linestyle','-');
+        plot(ax_1,cal_fm.Frequency/1e3,G_new,'color',[0 0 0],'tag','New','linestyle','-');
+
+        %[answers,cancel]=input_dlg_perso(main_figure,tt_str,cell_input,cell_fmt_input,cell_default_value)
+        freq_str_disp=sprintf('%s %.0f kHz',layer_obj.ChannelID{idx_trans},f_nom/1e3);
+        choice=question_dialog_fig(main_figure,'Calibration',sprintf('Do you want to save those results for Channel %s',freq_str_disp),'opt',{'Yes' 'No'},'timeout',10);
+
+        
+
+        switch choice
+            case 'Yes'
+
+                [answers,cancel]=input_dlg_perso(main_figure,'Frequency band',{'Min. frequency (kHz)' 'Max. frequency (kHz)'},{'%.0f' '%.0f'},{min(round(freq_vec/1e3)) max(round(freq_vec/1e3))});
+
+                if ~cancel
+                    G_new(cal_fm.Frequency<answers{1}*1e3|cal_fm.Frequency>answers{2}*1e3) = nan;
+                else
+                    return;
+                end
+
+                cal_fm.Gain=G_new(:)';
+                [cal_path,~,~]=fileparts(layer_obj.Filename{1});
+                file_cal=fullfile(cal_path,generate_valid_filename(['Calibration_FM_' layer_obj.ChannelID{idx_trans} '.xml']));
+                save_cal_to_xml(cal_fm,file_cal);
+                update_calibration_tab(main_figure);
+        end
+
+
+end
+
+end
+
+function bottom_to_line_callback(~,~,main_figure)
+
+layer=get_current_layer();
+curr_disp=get_esp3_prop('curr_disp');
+
+[trans_obj,~]=layer.get_trans(curr_disp);
+
+bot_obj=trans_obj.Bottom;
+r_trans = trans_obj.get_samples_range();
+t_trans = trans_obj.get_transceiver_time();
+line_obj = bot_obj.bottom_to_line(r_trans,t_trans);
+layer.add_lines(line_obj);
+display_lines();
+update_lines_tab(main_figure);
+
+end
+
 function rm_bottom_callback(~,~,main_figure)
 
 layer=get_current_layer();
@@ -83,7 +185,6 @@ old_bot=trans_obj.Bottom;
 trans_obj.Bottom=bottom_cl();
 
 curr_disp.Bot_changed_flag=1;
-
 
 bot=trans_obj.Bottom;
 curr_disp.Bot_changed_flag=1;
@@ -97,7 +198,7 @@ display_bottom(main_figure);
 
 end
 
-function reload_ek_bot_cback(src,evt)
+function reload_ek_bot_cback(~,~)
 esp3_obj=getappdata(groot,'esp3_obj');
 layer=get_current_layer();
 
@@ -112,7 +213,7 @@ set_alpha_map(esp3_obj.main_figure,'update_bt',0);
 update_info_panel([],[],1);
 end
 
-function export_bottom_to_lat_long_depth_csv_cback(src,~,main_figure)
+function export_bottom_to_lat_long_depth_csv_cback(~,~,~)
 curr_disp=get_esp3_prop('curr_disp');
 layer=get_current_layer();
 [trans_obj,~]=layer.get_trans(curr_disp);
@@ -132,7 +233,7 @@ lat=trans_obj.GPSDataPing.Lat();
 lon=trans_obj.GPSDataPing.Long();
 d=trans_obj.get_bottom_depth();
 t=cellfun(@(x) datestr(x,'dd/mm/yyyy HH:MM:SS'),(num2cell(trans_obj.GPSDataPing.Time())),'UniformOutput',0);
-
+lon(lon>180) = lon(lon>180) -360;
 struct_obj.Lat=lat(:);
 struct_obj.Lon=lon(:);
 struct_obj.Depth=d(:);
@@ -147,7 +248,7 @@ end
 
 
 
-function copy_bottom_cback(src,~,main_figure,ifreq)
+function copy_bottom_cback(~,~,main_figure,ifreq)
 
 layer=get_current_layer();
 curr_disp=get_esp3_prop('curr_disp');
@@ -158,13 +259,13 @@ if ~isempty(ifreq)
     if isempty(idx_other)
         return;
     end
-    
+
     list_freq_str = cellfun(@(x,y) sprintf('%.0f kHz: %s',x,y),num2cell(layer.Frequencies(idx_other)/1e3), deblank(layer.ChannelID(idx_other)),'un',0);
-    
+
     if isempty(list_freq_str)
         return;
     end
-    
+
     [ifreq,val] = listdlg_perso(main_figure,'',list_freq_str);
     if val==0 || isempty(ifreq)
         return;
@@ -195,14 +296,22 @@ layer = get_current_layer();
 curr_disp=get_esp3_prop('curr_disp');
 [trans_obj,idx_freq] = layer.get_trans(curr_disp);
 
-time=trans_obj.Time;
-
-
-ah=axes_panel_comp.haxes;
-
+ah=axes_panel_comp.echo_obj.hori_ax;
 
 % estimate shadow zone
-[outer_reg,slope_est,shadow_height_est] = trans_obj.estimate_shadow_zone('DispReg',1,'intersect_only',0);
+[outer_reg,slope_est,shadow_height_est,range_bathy] = trans_obj.estimate_shadow_zone('DispReg',1,'intersect_only',0);
+
+line_obj = line_cl('Time',trans_obj.get_transceiver_time(),...
+    'Range',range_bathy,...
+    'Reference','Surface',...
+    'Name',sprintf('Bathy_line_%s',layer.ChannelID{idx_freq}),...
+    'Tag','Bathy'...
+    );
+idx = layer.get_lines_per_Tag('Bathy');
+if ~isempty(idx)
+    layer.Lines(idx) = [];
+end
+layer.add_lines(line_obj);
 
 % initalize display
 fig_handle = new_echo_figure(main_figure,'Tag','shadow_zone');
@@ -219,16 +328,20 @@ plot(ax1,slope_est);
 xlabel(ax1,'Ping number')
 ylabel(ax1,'Slope (deg)');
 
+sv = pow2db_perso(outer_reg.sv);sv(sv<-900) = nan;
+
 % bottom axes
 ax2 = axes(fig_handle,'nextplot','add','units','normalized','OuterPosition',[0 0 1 0.5]);
-plot((outer_reg.Ping_E+outer_reg.Ping_S)/2,pow2db_perso(outer_reg.sv_mean),'k')
+plot((outer_reg.Ping_E+outer_reg.Ping_S)/2,sv,'k')
 xlabel(ax2,'Ping number')
 ylabel(ax2,'Sv mean(m)')
 grid(ax2,'on');
 
 % link axes
-
 fig_handle.UserData=linkprop([ah ax1 ax2],{'XTick' 'XTickLabels' 'XLim'});
+update_lines_tab(main_figure);
+display_lines();
+
 end
 %
 % function slope_est_callback(src,~)
@@ -296,7 +409,7 @@ else
 end
 layer=get_current_layer();
 curr_disp=get_esp3_prop('curr_disp');
-[trans_obj,idx_freq]=layer.get_trans(curr_disp);
+[trans_obj,~]=layer.get_trans(curr_disp);
 
 
 trans_obj.filter_bottom('FilterWidth',w_filter);

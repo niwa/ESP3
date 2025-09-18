@@ -46,7 +46,7 @@ switch field
         field=curr_disp.Fieldname;        
 end
 list_freq_str = cellfun(@(x,y) sprintf('%.0f kHz: %s',x,y),num2cell(layer.Frequencies/1e3), layer.ChannelID,'un',0);
-[select,val] = listdlg_perso(main_figure,'Choose Channels to load',list_freq_str,'timeout',10,'init_val',idx_freq);
+[select,val] = listdlg_perso(main_figure,'Choose Channels to export',list_freq_str,'timeout',10,'init_val',idx_freq);
 if val==0 || isempty(select)
     return;
 else

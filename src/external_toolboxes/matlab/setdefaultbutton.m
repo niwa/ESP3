@@ -47,7 +47,7 @@ end
         fh.setDefaultButton(btnH);
     end
 
-    function useHGDefaultButton(figHandle, btnHandle)
+    function useHGDefaultButton(~, btnHandle)
         % First get the position of the button.
         btnPos = getpixelposition(btnHandle);
 

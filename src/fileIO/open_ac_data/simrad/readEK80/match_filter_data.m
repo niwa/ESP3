@@ -1,41 +1,47 @@
-function [data,mode]=match_filter_data(data,params,filters)
+function data=match_filter_data(data,y_tx_matched,gpu_comp)
 
-
-if params.FrequencyStart(1)~=params.FrequencyEnd(1)
-    mode='FM';
+if ~isempty(y_tx_matched)
     
-    [~,y_tx_matched]=generate_sim_pulse(params,filters(1),filters(2));
     Np=numel(y_tx_matched);
-    
+
     nb_chan=sum(contains(fieldnames(data),'comp_sig'));
     
-    for i=1:nb_chan
-        s=data.(sprintf('comp_sig_%1d',i));
+    for ic=1:nb_chan
+        s=data.(sprintf('comp_sig_%1d',ic));
         
-        [nb_s,nb_pings]=size(s);
-        
-        data.ping_num=(1:nb_pings);
-        
-        val_sq=sum(abs(y_tx_matched).^2);
-        n = Np + nb_s - 1;
-        %gpu_comp=get_gpu_comp_stat();
-        gpu_comp=0;
-        
-        if gpu_comp>0
-            a=fft(gpuArray(y_tx_matched),n);
-            b=fft(gpuArray(s),n,1);
-            yc_temp = gather(ifft(a.*b,n,1)/val_sq);
-        else            
-            yc_temp =ifft(fft(y_tx_matched,n).*fft(s,n,1)/val_sq);
+        if ic  == 1
+            [nb_s,nb_pings]=size(s);
+            y_tx_matched = cast(y_tx_matched,class(s));
+            data.ping_num=(1:nb_pings);
+            
+            val_sq=sum(abs(y_tx_matched).^2);
+            
+            n = Np + nb_s - 1;
+            if gpu_comp>0
+                y_tx_matched  =gpuArray(y_tx_matched);
+                s = gpuArray(s);
+            end
+            fft_matched = fft(y_tx_matched,n);
         end
         
-        %i0=ceil(Np/2);
-        i0=ceil(Np);
-        d_t=yc_temp(i0:i0+nb_s-1,:);
+        if gpu_comp>0
+            s = gpuArray(s);
+        end
         
-        data.(sprintf('comp_sig_%1d',i))=d_t;
+        yc_temp =ifft(fft_matched.*fft(s,n,1));
+        
+        if gpu_comp>0
+            yc_temp = gather(yc_temp);
+        end
+        
+        yc_temp = yc_temp/val_sq;
+
+        ddr = floor(Np/2);
+        yc_temp = circshift(yc_temp,-ddr,1);
+        yc_temp(end-ddr:end,:)=0;
+
+        data.(sprintf('comp_sig_%1d',ic)) = yc_temp;
+
     end
-    
-else
-    mode='CW';
-end
+end  
+

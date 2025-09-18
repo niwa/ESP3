@@ -1,4 +1,4 @@
-function move_patch_mini_axis(src,evt,main_figure)
+function move_patch_mini_axis(~,evt,main_figure)
 
 mini_axes_comp=getappdata(main_figure,'Mini_axes');
 patch_obj=mini_axes_comp.patch_obj;
@@ -7,9 +7,7 @@ if isempty(patch_obj.Vertices)
 end
 
 
-
-
-ah=mini_axes_comp.mini_ax;
+ah=mini_axes_comp.echo_obj.main_ax;
 
 if evt.Button==1
     cp = ah.CurrentPoint;
@@ -18,9 +16,9 @@ if evt.Button==1
     xinit=cp(1,1);
     yinit=cp(1,2);
     
-    center_coord=[nanmean(patch_obj.Vertices(:,1)) nanmean(patch_obj.Vertices(:,2))];
-    dx_patch=nanmax(patch_obj.Vertices(:,1))-nanmin(patch_obj.Vertices(:,1));
-    dy_patch=nanmax(patch_obj.Vertices(:,2))-nanmin(patch_obj.Vertices(:,2));
+    center_coord=[mean(patch_obj.Vertices(:,1)) mean(patch_obj.Vertices(:,2))];
+    dx_patch=max(patch_obj.Vertices(:,1))-min(patch_obj.Vertices(:,1));
+    dy_patch=max(patch_obj.Vertices(:,2))-min(patch_obj.Vertices(:,2));
     
     d_move=[xinit yinit]-center_coord;
     
@@ -45,11 +43,10 @@ if evt.Button==1
     patch_obj.Vertices=new_vert;
 
     
-    
     axes_panel_comp=getappdata(main_figure,'Axes_panel');
-    main_axes=axes_panel_comp.main_axes;
-    xlim=[nanmin(patch_obj.Vertices(:,1)) nanmax(patch_obj.Vertices(:,1))];
-    ylim=[nanmin(patch_obj.Vertices(:,2)) nanmax(patch_obj.Vertices(:,2))];
+    main_axes=axes_panel_comp.echo_obj.main_ax;
+    xlim=[min(patch_obj.Vertices(:,1)) max(patch_obj.Vertices(:,1))];
+    ylim=[min(patch_obj.Vertices(:,2)) max(patch_obj.Vertices(:,2))];
     
     if diff(xlim)>0
         set(main_axes,'xlim',xlim);

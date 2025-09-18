@@ -10,12 +10,12 @@ axes_panel_comp=getappdata(main_figure,'Axes_panel');
 curr_disp=get_esp3_prop('curr_disp');
 
 
-ah=axes_panel_comp.main_axes;
+ah=axes_panel_comp.echo_obj.main_ax;
 
 clear_lines(ah);
 clear_lines_temp(ah);
 
-[cmap,col_ax,col_lab,col_grid,col_bot,col_txt,line_col]=init_cmap(curr_disp.Cmap);
+cmap_struct = init_cmap(curr_disp.Cmap,curr_disp.ReverseCmap);
 
 [trans_obj,~]=layer.get_trans(curr_disp);
 
@@ -47,7 +47,7 @@ add=1;
 
 switch src.SelectionType
     case 'normal'
-        hp=plot(ah,xinit,yinit,'color',line_col,'linewidth',1,'Tag','bottom_temp','Marker','o','MarkerFaceColor',col_grid,'linestyle','none');
+        hp=plot(ah,xinit,yinit,'color',cmap_struct.col_lab,'linewidth',1,'Tag','bottom_temp','Marker','o','MarkerFaceColor',cmap_struct.col_grid,'linestyle','none');
         replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2,'interaction_fcn',@wbmcb_ext);
         replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',1,'interaction_fcn',@wbucb);
         replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',@wbdcb_ext);
@@ -68,9 +68,9 @@ end
         
         x_tmp=cp(1,1);
         y_tmp=cp(1,2);
-        [~, idx_p]=nanmin(abs(x_tmp-xdata));
+        [~, idx_p]=min(abs(x_tmp-xdata));
         
-        [~,idx_r]=nanmin(abs(y_tmp-ydata));
+        [~,idx_r]=min(abs(y_tmp-ydata));
         
         xinit(u)=xdata(idx_p);
         yinit(u)=ydata(idx_r);
@@ -79,7 +79,7 @@ end
         if isvalid(hp)
             set(hp,'XData',xinit,'YData',yinit);
         else
-            hp=plot(ah,xinit,yinit,'color',line_col,'linewidth',1,'Tag','bottom_temp','linestyle','none','Marker','o','MarkerFaceColor',col_grid);
+            hp=plot(ah,xinit,yinit,'color',cmap_struct.col_lab,'linewidth',1,'Tag','bottom_temp','linestyle','none','Marker','o','MarkerFaceColor',cmap_struct.col_grid);
         end
         
         
@@ -97,7 +97,7 @@ end
                 return;
         end
         
-        u=nansum(~isnan(xinit))+1;
+        u=sum(~isnan(xinit))+1;
     end
 
     function [x_f, y_f]=check_xy()
@@ -128,9 +128,9 @@ end
 
     function end_st_edit()
         
-        [~, idx_p]=nanmin(abs(xinit'-xdata),[],2);
+        [~, idx_p]=min(abs(xinit'-xdata),[],2);
         
-        [~,idx_r]=nanmin(abs(ydata-yinit));
+        [~,idx_r]=min(abs(ydata-yinit));
         
         if add>0
             trans_obj.add_st_from_idx(idx_r,idx_p);

@@ -49,6 +49,10 @@ layer  = get_current_layer();
 layers = get_esp3_prop('layers');
 
 if isempty(layers)
+    layer_obj=layer_cl.empty();
+    set_esp3_prop('layers',layers);
+    set_current_layer(layer_obj);
+    update_display_no_layers(main_figure);
     return;
 end
 
@@ -60,20 +64,14 @@ disable_listeners(main_figure);
 uiundo(main_figure,'clear');
 
 load_bar_comp=getappdata(main_figure,'Loading_bar');
-lay_str=list_layers(layer);
-    
+lay_str=list_layers(layer,'valid_filename',false);
 
 disp_perso(main_figure,sprintf('Loading layer %s',lay_str{1}));
 nb_layers = length(layers);
-
-try
-     if all(ismember(layer.ChannelID,curr_disp.AllChannels))...
-            &&all(ismember(curr_disp.AllChannels,layer.ChannelID))
-        up_curr_disp=0;
-    else
-        up_curr_disp=1;
-     end
-    
+filepath=fileparts(layer.Filename{1});
+up_curr_disp = ~strcmpi(curr_disp.CurrFolder,filepath);
+curr_disp.CurrFolder = filepath;
+try 
     if strcmp(layer.Unique_ID,curr_disp.CurrLayerID) ...
             &&nb_layers==curr_disp.NbLayers...
             &&all(ismember(layer.ChannelID,curr_disp.AllChannels))...
@@ -81,38 +79,20 @@ try
         flag = 0;
     else
         flag = 1; 
-    end
-    
+    end  
 catch
     flag = 1;
-    up_curr_disp=1;
     if ~isdeployed()
         disp_perso(main_figure,'Error in Load Echo');
     end
 end
 
-if up_curr_disp>=1
-    [display_config_file,~,~]=get_config_files();
-    [~,fname,fext]=fileparts(display_config_file);
-    filepath=fileparts(layer.Filename{1});
-    disp_config_file=fullfile(filepath,[fname fext]);
-    
-    if isfile(disp_config_file)
-        curr_disp_new=read_config_display_xml(disp_config_file);
-        props=properties(curr_disp);
-        
-        for i=1:numel(props)
-            if ~ismember((props{i}),{'Basemap' 'Basemaps' 'Fieldnames' 'Fieldname' 'Type' 'Xaxes_current' 'Cax' 'Caxes' 'Freq' 'DispSecFreqs' 'Cmap' 'DispSecFreqsOr' 'DispSecFreqsWithOffset' 'EchoType' 'EchoQuality'})
-                curr_disp.(props{i})=curr_disp_new.(props{i});
-            end
-        end
-    end
-end
-
 curr_disp.CurrLayerID = layer.Unique_ID;
 curr_disp.NbLayers    = nb_layers;
-curr_disp.SecChannelIDs=layer.ChannelID;
-curr_disp.SecFreqs=layer.Frequencies;
+if ~all(ismember(curr_disp.SecChannelIDs,layer.ChannelID))
+    curr_disp.SecChannelIDs=layer.ChannelID;
+    curr_disp.SecFreqs=layer.Frequencies;
+end
 curr_disp.AllChannels=layer.ChannelID;
 
 [trans_obj,idx_freq]=layer.get_trans(curr_disp);
@@ -125,6 +105,9 @@ if isempty(trans_obj)
 	[trans_obj,idx_freq]=layer.get_trans(curr_disp);
 end
 
+if up_curr_disp
+    curr_disp.update_curr_disp(filepath,trans_obj.Config.SounderType);   
+end
 curr_disp.ChannelID = layer.ChannelID{idx_freq};
 
 [~,found_field] = find_field_idx(trans_obj.Data,curr_disp.Fieldname);
@@ -139,16 +122,11 @@ if found_field == 0
     curr_disp.setField(field);
 end
 
-
-%old_nb=curr_disp.NbLayers;
-
 curr_disp.Bot_changed_flag = 0;
 curr_disp.Reg_changed_flag = 0;
 curr_disp.UIupdate=1;
 
 curr_disp.setActive_reg_ID({});
-
-
 
 if nargin>=3
     flag=varargin{1};
@@ -156,6 +134,7 @@ if nargin>=3
 else
    f_update=0; 
 end
+
 update_display(main_figure,flag,f_update);
 
 waitfor(curr_disp,'UIupdate',0);
@@ -168,6 +147,7 @@ if isa(axes_panel_comp.axes_panel,'matlab.ui.container.Tab')
 end
 
 enable_listeners(main_figure);
+
 initialize_interactions_v2(main_figure);
 
 curr_disp.CursorMode=curr_disp.CursorMode;

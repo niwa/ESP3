@@ -69,7 +69,7 @@ uicontrol(reg_fig, ...
 %% Reference
 
 % possible values and default
-ref = {'Surface','Bottom','Transducer'};
+ref = list_echo_int_ref();
 ref_idx = 1;
 
 % text
@@ -312,7 +312,7 @@ end
 end
 
 %% Change reference callback
-function change_ref_callback(src,~,reg_fig_comp)
+function change_ref_callback(~,~,reg_fig_comp)
 
 
 text_top_position = [0 0.55 0.6 0.07];

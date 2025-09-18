@@ -6,7 +6,7 @@ int_plot.UIContextMenu=reg_plot_cxtmenu;
 end
 
 
-function display_grid_cbak(src,evt,int_plot)
+function display_grid_cbak(src,~,int_plot)
 grid(int_plot.Parent);
 switch src.Checked
     case 'off'
@@ -17,7 +17,7 @@ end
 
 end
 
-function copy_cb_cbak(src,evt,int_plot)
+function copy_cb_cbak(~,~,int_plot)
 
 print(ancestor(int_plot,'figure'),'-clipboard','-dbitmap');
 

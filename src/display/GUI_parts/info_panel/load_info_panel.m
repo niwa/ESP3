@@ -1,14 +1,27 @@
-function load_info_panel(main_figure)
-inf_h=get_top_panel_height(1);
-load_bar_comp=getappdata(main_figure,'Loading_bar');
-h=load_bar_comp.panel.Position(4);
-pix_pos=getpixelposition(main_figure);
+function load_info_panel(main_figure,info_panel)
 
 if isappdata(main_figure,'Info_panel')
     info_panel_comp=getappdata(main_figure,'Info_panel');
-    delete(get(info_panel_comp.info_panel,'children'));
+    if isvalid(info_panel_comp.info_panel)     
+        delete(get(info_panel_comp.info_panel,'children'));
+        
+        if ~isempty(info_panel)
+            delete(info_panel_comp.info_panel)
+        else
+            info_panel = info_panel_comp.info_panel;
+        end
+        
+    end
 end
-info_panel_comp.info_panel=uipanel(main_figure,'Units','pixels','Position',[0 h pix_pos(3) inf_h],'BackgroundColor',[1 1 1],'tag','info_panel','visible','on','BorderType','line');
+
+if ~isempty(info_panel)
+    info_panel_comp = [];
+    info_panel_comp.info_panel=info_panel;  
+else
+   setappdata(main_figure,'Info_panel',info_panel_comp);
+   return 
+end
+
 
 info_panel_comp.xy_disp=uicontrol(info_panel_comp.info_panel,'Style','Text','String','','units','normalized','Position',[0 0 0.2 1],'BackgroundColor',[1 1 1]);
 

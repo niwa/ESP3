@@ -46,12 +46,6 @@ for ifi=1:numel(fields)
     end
 end
 
-% t=struct2table(struct_in);
-% 
-% dbconn=connect_to_db(ac_db_filename);  
-% dbconn.insert('t_mission',fieldnames(struct_in),t);
-
-% dbconn.close();
 
 struct_in_minus_key=rmfield(struct_in,{'mission_comments' 'mission_abstract' 'principal_investigator'});
 

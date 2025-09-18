@@ -63,7 +63,7 @@ reglist_tab_comp.data_type=uicontrol(reglist_tab_comp.reglist_tab,gui_fmt.popume
 
 %ref={'Surface','Bottom','Line'};
 
-ref={'Surface','Bottom','Transducer'};
+ref=list_echo_int_ref;
 
 ref_idx=find(strcmp(reg_curr.Reference,ref));
 uicontrol(reglist_tab_comp.reglist_tab,gui_fmt.txtStyle,'String','Reference','Position',pos{3,1}{1});
@@ -90,7 +90,7 @@ set(reglist_tab_comp.cell_h_unit ,'callback',{@tog_units,main_figure,reglist_tab
 set([reglist_tab_comp.cell_w reglist_tab_comp.cell_h],'callback',{@check_cell,main_figure,reglist_tab_comp})
 
 
-str_delete='<HTML><center><FONT color="Red"><b>Delete</b></Font> ';
+str_delete='<HTML><center><FONT color="Red"><b>Delete</b></Font>';
 str_delete_all='<HTML><center><FONT color="Red"><b>Del. All</b></Font> ';
 
 uicontrol(reglist_tab_comp.reglist_tab,gui_fmt.pushbtnStyle,'String',str_delete,'pos',p_button,'callback',{@delete_region_callback,main_figure,[]});
@@ -124,7 +124,7 @@ set(reglist_tab_comp.table,'KeyPressFcn',{@keypresstable,main_figure});
 set_auto_resize_table(reglist_tab_comp.table);
 
 rc_menu = uicontextmenu(ancestor(tab_panel,'figure'));
-reglist_tab_comp.table.UIContextMenu =rc_menu;str_delete='<HTML><center><FONT color="REd"><b>Delete region(s)</b></Font> ';
+reglist_tab_comp.table.ContextMenu =rc_menu;str_delete='<HTML><center><FONT color="REd"><b>Delete region(s)</b></Font> ';
 
 
 uimenu(rc_menu,'Label','Display region(s)','Callback',{@display_regions_callback,main_figure});
@@ -159,7 +159,7 @@ end
 
 
 
-function display_regions_callback(src,~,main_figure)
+function display_regions_callback(~,~,main_figure)
 layer=get_current_layer();
 curr_disp=get_esp3_prop('curr_disp');
 [trans_obj,~]=layer.get_trans(curr_disp);

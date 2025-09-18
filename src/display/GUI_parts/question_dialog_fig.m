@@ -13,8 +13,8 @@ parse(p,main_figure,tt_str,str_quest,varargin{:});
 
 opt=p.Results.opt;
 
-
-idef=nanmax(p.Results.default_answer,numel(opt));
+answer='';
+idef=min(p.Results.default_answer,numel(opt));
 
 curr_disp = get_esp3_prop('curr_disp');
 if ~isempty(curr_disp)
@@ -29,14 +29,19 @@ if isempty(main_figure)
     main_figure=get_esp3_prop('main_figure');
 end
 
-s_str=numel(str_quest);
-nb_lines=ceil(s_str*8/400);
 
-str_b_w=nanmax(ceil(s_str*8/nb_lines),250);
+split_str = regexp(str_quest,'\n','split');
+s_str  = max(cellfun(@numel,split_str));
 
-bt_w=nanmax([nansum(cellfun(@numel,opt))*8,50]);
+w = min(max(300,s_str*7),600);
 
-box_w=nanmax(str_b_w+10,numel(opt)*(bt_w+10)+10);
+nb_lines=ceil(s_str*7/w)+numel(split_str)-1;
+
+str_b_w=max(ceil(s_str*7/nb_lines),w);
+
+bt_w=max([sum(cellfun(@numel,opt))*7,50]);
+
+box_w=max(str_b_w+10,numel(opt)*(bt_w+10)+10);
 
 QuestFig=new_echo_figure(main_figure,'units','pixels','position',[200 200 box_w 100+(nb_lines-1)*10],...
     'WindowStyle','modal','Visible','off','resize','off','tag','question','Name',tt_str,'UserData',opt{idef});
@@ -73,7 +78,12 @@ fig_timer.ExecutionMode= 'fixedSpacing';
 if ishghandle(QuestFig)
     % Go into uiwait if the figure handle is still valid.
     % This is mostly the case during regular use.
-    c = matlab.ui.internal.dialog.DialogUtils.disableAllWindowsSafely();
+
+    if will_it_work([],'9.10',true)
+        c = matlab.ui.internal.dialog.DialogUtils.disableAllWindowsSafely(true);
+    else
+        c = matlab.ui.internal.dialog.DialogUtils.disableAllWindowsSafely();
+    end
     
     if isempty(p.Results.timeout)
         uiwait(QuestFig);
@@ -88,15 +98,13 @@ end
 
 if ishghandle(QuestFig)
     answer=get(QuestFig,'UserData');
-else
-    answer='';
 end
 delete(QuestFig);
 drawnow; % Update the view to remove the closed figure (g1031998)
 
 end
 
-function update_fig_name(src,evt,fig)
+function update_fig_name(src,~,fig)
 t=abs((now-src.UserData.t0)*60*60*24);
 if t<src.UserData.timeout
     str_name=sprintf('%s (%.0fs)',src.UserData.tt_str,abs(t-src.UserData.timeout));

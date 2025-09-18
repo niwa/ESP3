@@ -2,10 +2,10 @@ function split_transect_callback(~,~,main_figure)
 layer=get_current_layer();
 axes_panel_comp=getappdata(main_figure,'Axes_panel');
 curr_disp=get_esp3_prop('curr_disp');
-[trans_obj,idx_freq]=layer.get_trans(curr_disp);
+[trans_obj,~]=layer.get_trans(curr_disp);
 trans=trans_obj;
 
-ax_main=axes_panel_comp.main_axes;
+ax_main=axes_panel_comp.echo_obj.main_ax;
 
 
 x_lim=double(get(ax_main,'xlim'));
@@ -14,16 +14,16 @@ cp = ax_main.CurrentPoint;
 x=cp(1,1);
 % y=cp(1,2);
 
-x=nanmax(x,x_lim(1));
-x=nanmin(x,x_lim(2));
+x=max(x,x_lim(1));
+x=min(x,x_lim(2));
 
-% y=nanmax(y,y_lim(1));
-% y=nanmin(y,y_lim(2));
+% y=max(y,y_lim(1));
+% y=min(y,y_lim(2));
 
 xdata=trans.get_transceiver_pings();
 
 
-[~,idx_ping]=nanmin(abs(xdata-x));
+[~,idx_ping]=min(abs(xdata-x));
 
 t_n=trans.Time(idx_ping);
 
@@ -73,6 +73,6 @@ update_tree_layer_tab(main_figure);
 display_survdata_lines(main_figure);
 update_axis(main_figure,1,'main_or_mini','mini');
 
-load_logbook_tab_from_db(main_figure,1);
+update_logbook_panel_f(layer.Filename);
 
 end

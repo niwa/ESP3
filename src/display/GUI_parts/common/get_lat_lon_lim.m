@@ -29,12 +29,12 @@ lon_tmp=lon;
 
 idx_empty=find(cellfun(@(x) isempty(x),lat)|cellfun(@(x) all(x==0),lat));
 if ~isempty(idx_empty)
-    lat_tmp{idx_empty}=nan;
-    lon_tmp{idx_empty}=nan;
+    lat_tmp(idx_empty)={nan};
+    lon_tmp(idx_empty)={nan};
 end
 
-lat_lim=[nanmin(cellfun(@nanmin,lat_tmp)) nanmax(cellfun(@nanmax,lat_tmp))];
-lon_lim=[nanmax(cellfun(@nanmin,lon_tmp)) nanmax(cellfun(@nanmax,lon_tmp))];
+lat_lim=[min(cellfun(@min,lat_tmp)) max(cellfun(@max,lat_tmp))];
+lon_lim=[max(cellfun(@min,lon_tmp)) max(cellfun(@max,lon_tmp))];
 
 
 end

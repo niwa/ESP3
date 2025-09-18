@@ -13,17 +13,21 @@ for i_file=1:length(files)
     
     file_curr=files{i_file};
     [path_f,fileTemp,~]=fileparts(file_curr);
-    
-    bot_file_curr=fullfile(path_f,'bot_reg',['b_' fileTemp '.xml']);
+    path_to_files = get_bot_reg_folder(path_f,true);
+    bot_file_curr=fullfile(path_to_files,['b_' fileTemp '.xml']);
     if exist(bot_file_curr,'file')==0
         continue;
     end
+    
     bottom_xml=parse_bottom_xml(bot_file_curr);
-        
-    fileIdx=fullfile(path_f,'echoanalysisfiles',[fileTemp '_echoidx.mat']);
+    echo_folder = get_esp3_file_folder(path_f,false);
+
+    fileIdx=fullfile(echo_folder,[fileTemp '_echoidx.mat']);
+
     if isfile(fileIdx)
-        load(fileIdx);
-        nb_pings_f=nansum(contains(idx_raw_obj.type_dg,{'RAW3' 'RAW0'}))/numel(unique(idx_raw_obj.chan_dg(~isnan(idx_raw_obj.chan_dg))));
+        obj_load = load(fileIdx);
+        idx_raw_obj = obj_load.idx_raw_obj;
+        nb_pings_f=sum(contains(idx_raw_obj.type_dg,{'RAW3' 'RAW0'}))/numel(unique(idx_raw_obj.chan_dg(~isnan(idx_raw_obj.chan_dg))));
     else
         nb_pings_f=[];
     end
@@ -44,7 +48,7 @@ for i_file=1:length(files)
                 ChannelID_cell_t=[ChannelID_cell_t num2str(bottom_xml{ibot}.Infos.Freq)];
             end
             freq_vec_t=[freq_vec_t bottom_xml{ibot}.Infos.Freq];
-            nb_bad_pings_t=[nb_bad_pings_t nansum(bottom_xml{ibot}.Bottom.Tag==0)];
+            nb_bad_pings_t=[nb_bad_pings_t sum(bottom_xml{ibot}.Bottom.Tag==0)];
             files_out_t=[files_out_t fileTemp];
         end
     end

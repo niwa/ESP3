@@ -7,14 +7,14 @@ function [school,layer,exclude,erased]=LSSSreader_readsnapfiles(file)
 % Input:
 % file : The data file
 
-newline=char(10);
+newline=newline;
 
 %% Import the snap file
 D.snap = xml2struct(file);
 
 % Fix a problem where xml2struct doesn't return a cell array if only one
 % item is present. Sort of a hack...
-if length(D.snap.regionInterpretation.layerInterpretation.layerDefinitions.layer) == 1
+if isscalar(D.snap.regionInterpretation.layerInterpretation.layerDefinitions.layer)
     l = D.snap.regionInterpretation.layerInterpretation.layerDefinitions.layer;
     D.snap.regionInterpretation.layerInterpretation.layerDefinitions = rmfield(D.snap.regionInterpretation.layerInterpretation.layerDefinitions, 'layer');
     D.snap.regionInterpretation.layerInterpretation.layerDefinitions.layer{1} = l;
@@ -22,7 +22,7 @@ end
 
 if isfield(D.snap.regionInterpretation, 'masking')
     if isfield(D.snap.regionInterpretation.masking, 'mask')
-        if length(D.snap.regionInterpretation.masking.mask) == 1
+        if isscalar(D.snap.regionInterpretation.masking.mask)
             m = D.snap.regionInterpretation.masking.mask;
             D.snap.regionInterpretation.masking = rmfield(D.snap.regionInterpretation.masking, 'mask');
             D.snap.regionInterpretation.masking.mask{1} = m;
@@ -31,7 +31,7 @@ if isfield(D.snap.regionInterpretation, 'masking')
 end
 
 if isfield(D.snap.regionInterpretation.exclusionRanges, 'timeRange')
-    if length(D.snap.regionInterpretation.exclusionRanges.timeRange) == 1
+    if isscalar(D.snap.regionInterpretation.exclusionRanges.timeRange)
         t = D.snap.regionInterpretation.exclusionRanges.timeRange;
         D.snap.regionInterpretation.exclusionRanges = rmfield(D.snap.regionInterpretation.exclusionRanges, 'timeRange');
         D.snap.regionInterpretation.exclusionRanges.timeRange{1} = t;
@@ -312,7 +312,6 @@ function [ s ] = xml2struct( file )
 
 if (nargin < 1)
     clc;
-    help xml2struct
     return
 end
 

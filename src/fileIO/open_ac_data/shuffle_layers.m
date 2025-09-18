@@ -9,7 +9,7 @@ parse(p,layers_in,varargin{:});
 
 multi_layer=p.Results.multi_layer;
 
-if length(layers_in)==1
+if isscalar(layers_in)
     layers_out=layers_in;
     return;
 end

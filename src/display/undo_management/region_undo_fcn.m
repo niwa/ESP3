@@ -37,10 +37,18 @@ function region_undo_fcn(main_figure,trans_obj,regs)
 if~isdeployed()
     disp_perso(main_figure,'Undo Region')
 end
+
+map_tab_comp = getappdata(main_figure,'Map_tab');
+gax = map_tab_comp.ax;
+old_regs = trans_obj.Regions;
+if ~isempty(old_regs)
+    cellfun(@(x) rem_reg_tag_lim(gax,x),{old_regs(:).Unique_ID});
+end
 trans_obj.rm_all_region();
 IDs=trans_obj.add_region(regs);
+trans_obj.disp_reg_tag_on_map('gax',gax,'uid',IDs);
 curr_disp=get_esp3_prop('curr_disp');
-display_regions(main_figure,'all');
+display_regions('all');
 curr_disp.Reg_changed_flag=1;
 if ~isempty(IDs)
     curr_disp.setActive_reg_ID({});   

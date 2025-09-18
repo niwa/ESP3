@@ -37,9 +37,10 @@ for ic=1:num_can
         row_idx=rem(curr_candidate,nb_row);
         row_idx(row_idx==0)=nb_row;
         col_idx=ceil(curr_candidate/nb_row);
-        
-        if range(dist_pings(col_idx))>=l_min_can...
-                &&range(range_d(row_idx))>=h_min_can
+        rd = range_d(row_idx);
+        rd(isnan(rd)) = [];
+        if ~isempty(rd)&&range(dist_pings(col_idx))>=l_min_can...
+                &&range(rd)>=h_min_can
             
             switch output
                 case 'mat'

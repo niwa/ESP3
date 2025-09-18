@@ -41,9 +41,9 @@ for i=1:length(fields)
     end
     
     diff_cells=reg_1_f-reg_2_f;
-    diff_mean=nanmean(diff_cells(:));
+    diff_mean=mean(diff_cells(:));
     if any(reg_2_f(:)~=reg_1_f(:)&~(isnan(reg_2_f(:))&isnan(reg_1_f(:))))&&diff_mean>eps
-        diff_mean=nanmean(diff_cells(:));
+        diff_mean=mean(diff_cells(:));
         
         imagesc(ax2,reg_1_f,'AlphaData',alpha_1,'CDataMapping','scaled');cb2=colorbar(ax2);cb2.UIContextMenu=[];
         imagesc(ax3,reg_2_f,'AlphaData',alpha_2,'CDataMapping','scaled');cb3=colorbar(ax3);cb3.UIContextMenu=[];     

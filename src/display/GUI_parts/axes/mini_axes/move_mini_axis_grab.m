@@ -37,7 +37,7 @@
 %% Function
 function move_mini_axis_grab(src,~,main_figure)
 
-current_fig=gcf;
+current_fig=ancestor(src,'figure');
 
 ptr=current_fig.Pointer;
 if strcmp(current_fig.SelectionType,'normal')
@@ -58,7 +58,7 @@ end
         replace_interaction(current_fig,'interaction','WindowButtonMotionFcn','id',2,'Pointer',ptr);
         replace_interaction(current_fig,'interaction','WindowButtonUpFcn','id',2);
         
-       if nansum(cp(:)<0)||nansum(cp>pos(3:4))
+       if nnz(cp(:)<0)||sum(cp>pos(3:4))
            undock_mini_axes_callback(src,[],main_figure,'out_figure')
        end
     end

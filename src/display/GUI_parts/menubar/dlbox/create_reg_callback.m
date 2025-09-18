@@ -1,11 +1,11 @@
 %% Create Region button callback
-function create_reg_callback(~,~,reg_fig_comp,main_figure,reg_fig)
+function create_reg_callback(~,~,reg_fig_comp,~,reg_fig)
 
 layer = get_current_layer();
 
 curr_disp=get_esp3_prop('curr_disp');
 
-[trans_obj,idx_freq]=layer.get_trans(curr_disp);
+[trans_obj,~]=layer.get_trans(curr_disp);
 if isempty(trans_obj)
     return;
 end
@@ -47,7 +47,7 @@ trans_obj.add_region(reg_wc);
 close(reg_fig);
 
 
-display_regions(main_figure,'both');
+display_regions('both');
 
 curr_disp=get_esp3_prop('curr_disp');
 

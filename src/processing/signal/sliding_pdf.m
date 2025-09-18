@@ -1,6 +1,6 @@
 function [s_pdf,x_value,y_value,nb_pings_in_pdf] = sliding_pdf(x_data,y_data,win,bins,spc,gauss_win)
 
-if length(bins) == 1
+if isscalar(bins)
     nb_pings = ceil(max(size(x_data))/spc);
     s_pdf = nan(bins,nb_pings);
     x_value = nan(bins,nb_pings);

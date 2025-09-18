@@ -78,8 +78,8 @@ end
 
 if curr_gps>0&&isfield(gps,'lat')
     types=unique(gps.type);
-    nb_type=cellfun(@(x) nansum(strcmp(x,gps.type)),types);
-    [~,id_max]=nanmax(nb_type);
+    nb_type=cellfun(@(x) sum(strcmp(x,gps.type)),types);
+    [~,id_max]=max(nb_type);
     id_keep=strcmp(types(id_max),gps.type);
     gps_data=gps_data_cl('Lat',gps.lat(id_keep),'Long',gps.lon(id_keep),'Time',gps.time(id_keep),'NMEA',gps.type{id_max});
 else

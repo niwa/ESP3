@@ -67,7 +67,7 @@ end
 setptr(mini_axes_fig,'arrow');
 
 % Set wheel mouse scroll cback
-interactions.WindowScrollWheelFcn(1)=iptaddcallback(mini_axes_fig,'WindowScrollWheelFcn',{@scroll_fcn_callback,main_figure});
+interactions.WindowScrollWheelFcn(1)=iptaddcallback(mini_axes_fig,'WindowScrollWheelFcn',@scroll_fcn_callback);
 
 % Initialize Keyboard interactions in the figure
 interactions.KeyPressFcn(1)=iptaddcallback(mini_axes_fig,'KeyPressFcn',{@keyboard_func,main_figure});

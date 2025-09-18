@@ -31,6 +31,11 @@ if ~mkdir(outDir)
     error('Unable to create temporary cvs directory');
 end
 
+outDir_final = fullfile(iFilePath,'bot_reg_crest');
+if ~isfolder(outDir_final)
+    mkdir(outDir_final);
+end
+
 idx_str=strfind(iFilePath,voyage);
 remain_str=iFilePath(idx_str:end);
 bFileName = ['b' iFileName(2:end)];
@@ -46,25 +51,31 @@ end
 %run command - export bottom from cvs
 work_path=pwd;
 cd(outDir)
-[~,output] = system(command,'-echo');
+[~,~] = system(command,'-echo');
 cd(work_path)
 
-if contains(output,'checkout aborted')||contains(output,'cannot find module')||contains(output,'Unknown command')
-    rmdir(outDir,'s');
+bFilePath = fullfile(outDir,remain_str);
+
+bfile = fullfile(outDir_final,bFileName);
+
+if isfile(fullfile(bFilePath,bFileName))
+    copyfile(fullfile(bFilePath,bFileName),bfile);
+end
+
+if  ~isfile(bfile)
     bottom = bottom_cl('Origin','Esp2','Sample_idx',[]);
     return;
 end
 
-bFilePath = fullfile(outDir,remain_str);
+sample_idx = load_bottom_file(bfile);
 
-sample_idx = load_bottom_file(fullfile(bFilePath,bFileName));
 if isempty(sample_idx)
     bottom = bottom_cl( 'Origin','Esp2','Sample_idx',[],'Tag',[]);
     return;
 end
-bad = load_bad_transmits(fullfile(bFilePath,bFileName))';
+bad = load_bad_transmits(bfile);
 
-bottom = bottom_cl('Origin','Esp2','Sample_idx',sample_idx,'Tag',bad==0);
+bottom = bottom_cl('Origin','Esp2','Sample_idx',sample_idx','Tag',bad==0);
 
 rmdir(outDir,'s');
 

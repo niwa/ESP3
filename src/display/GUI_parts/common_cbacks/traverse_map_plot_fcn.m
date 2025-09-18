@@ -1,4 +1,4 @@
-function traverse_map_plot_fcn(src,evt,hplot)
+function traverse_map_plot_fcn(src,~,~)
 set(src, 'Pointer', 'hand');
 % ax=ancestor(hplot,'geoaxes');
 % cp=ax.CurrentPoint;

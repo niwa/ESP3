@@ -104,7 +104,7 @@ else
         all_words = words(line,',');
         if isempty(all_words)
             return;
-        end;
+        end
        
         data{i,1} = str2double(all_words(1,:));
         data{i,2} = strcat(all_words(2,:)); % strcat removes trailing spaces

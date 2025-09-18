@@ -32,6 +32,6 @@ layer.load_echo_logbook_db();
 
 update_tree_layer_tab(main_figure);
 display_survdata_lines(main_figure);
-load_logbook_tab_from_db(main_figure,1);
+update_logbook_panel_f(layer.Filename);
 
 end

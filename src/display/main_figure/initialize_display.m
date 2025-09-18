@@ -38,17 +38,11 @@ function initialize_display(esp3_obj)
 
 main_figure=esp3_obj.main_figure;
 curr_disp=esp3_obj.curr_disp;
+pan_height=get_top_panel_height(9.25);
 
-pan_height=get_top_panel_height(8.25);
 load_loading_bar_panel_v2(main_figure);
-load_info_panel(main_figure);
-
 load_bar_comp=getappdata(main_figure,'Loading_bar');
-inf_h_tmp=load_bar_comp.panel.Position(4);
-info_panel=getappdata(main_figure,'Info_panel');
-inf_h=info_panel.info_panel.Position(4);
-
-inf_h=inf_h_tmp+inf_h;
+inf_h=load_bar_comp.panel.Position(4);
 
 pix_pos=getpixelposition(main_figure);
 
@@ -66,14 +60,12 @@ iptSetPointerBehavior(algo_panel,pt_int);
 
 echo_tab_panel=uitabgroup(main_figure,'Units','pixels','Position',[0 inf_h pix_pos(3) pix_pos(4)-pan_height-inf_h]);
 
-load_info_panel(main_figure);
-
 setappdata(main_figure,'echo_tab_panel',echo_tab_panel);
 setappdata(main_figure,'option_tab_panel',opt_panel);
 setappdata(main_figure,'algo_tab_panel',algo_panel);
 
 create_menu(main_figure);
-load_esp3_panel(main_figure,echo_tab_panel);
+
 load_file_panel(main_figure,echo_tab_panel);
 load_echo_int_tab(main_figure,echo_tab_panel)
 load_secondary_freq_win(main_figure);
@@ -94,18 +86,22 @@ load_st_tracks_tab(main_figure,opt_panel);
 load_multi_freq_disp_tab(main_figure,opt_panel,'sv_f');
 load_multi_freq_disp_tab(main_figure,opt_panel,'ts_f');
 
+%Algo tabs
 load_bottom_tab(main_figure,algo_panel);
 load_bad_pings_tab(main_figure,algo_panel);
 load_denoise_tab(main_figure,algo_panel);
 load_school_detect_tab(main_figure,algo_panel);
 load_track_target_tab(main_figure,algo_panel);
-
+load_canopy_height_tab(main_figure,algo_panel);
 load_multi_freq_tab(main_figure,algo_panel);
+load_CFAR_tab(main_figure,algo_panel);
 
 display_tab_comp=getappdata(main_figure,'Display_tab');
 opt_panel.SelectedTab=display_tab_comp.display_tab;
-esp3_tab_comp=getappdata(main_figure,'esp3_tab');
-echo_tab_panel.SelectedTab=esp3_tab_comp.esp3_tab;
+
+file_tab_comp=getappdata(main_figure,'file_tab');
+
+echo_tab_panel.SelectedTab=file_tab_comp.file_tab;
 order_option_tab(main_figure);
 obj_enable=findobj(main_figure,'Enable','on','-not','Type','uimenu');
 set(obj_enable,'Enable','off');
@@ -121,6 +117,7 @@ end
 function enter_panel(figHandle,~)
 %set(figHandle, 'Pointer', 'hand');
 replace_interaction(figHandle,'interaction','WindowButtonMotionFcn','id',1);
+replace_interaction(figHandle,'interaction','WindowScrollWheelFcn','id',1);
 end
 
 

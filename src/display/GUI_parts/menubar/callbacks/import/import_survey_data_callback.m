@@ -2,10 +2,10 @@ function import_survey_data_callback(~,~,main_figure)
 layers=get_esp3_prop('layers');
 
 if ~isempty(layers)
-    for i=1:length(layers)
-        switch layers(i).Filetype
+    for ilay=1:length(layers)
+        switch layers(ilay).Filetype
             case {'EK80','EK60','ASL'}
-                layers(i).add_survey_data_db();
+                layers(ilay).add_survey_data_db();
         end
     end
 else
