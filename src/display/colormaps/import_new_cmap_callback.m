@@ -14,11 +14,13 @@ end
 
 for i=1:numel(Filename)
     try
-        [cmap, lims, ticks, bfncol, ctable]=cpt_to_cmap(fullfile(PathToFile,Filename{i}));
-%         B=bfncol(1,:);
-%         F=bfncol(2,:);
-%         N=bfncol(3,:);
-        copyfile(fullfile(PathToFile,Filename{i}),cmaps_folder,'f');
+        [~, ~, ~, ~, ~]=cpt_to_cmap(fullfile(PathToFile,Filename{i}));
+        %         B=bfncol(1,:);
+        %         F=bfncol(2,:);
+        %         N=bfncol(3,:);
+        if ~strcmpi(fullfile(PathToFile,Filename{i}),fullfile(cmaps_folder,Filename{i}))
+            copyfile(fullfile(PathToFile,Filename{i}),cmaps_folder,'f');
+        end
         fprintf('Added %s\n',Filename{i});
     catch err
         print_errors_and_warnings([],'error',err);

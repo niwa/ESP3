@@ -6,23 +6,23 @@ curr_disp=get_esp3_prop('curr_disp');
 
 [trans_obj,idx_freq]=layer.get_trans(curr_disp);
 
-cal_fm_cell =layer.get_fm_cal(idx_freq);
+[cal_fm_cell,~] =layer.get_fm_cal(idx_freq);
 show_status_bar(main_figure);
 load_bar_comp=getappdata(main_figure,'Loading_bar');
-
+update_algos('algo_name',{'SingleTarget'});
 switch class(select_plot)
     case 'region_cl'
         active_reg=select_plot;
     otherwise
-        idx_pings=round(nanmin(select_plot.XData)):round(nanmax(select_plot.XData));
-        idx_r=round(nanmin(select_plot.YData)):round(nanmax(select_plot.YData));
-        active_reg=region_cl('Idx_pings',idx_pings,'Idx_r',idx_r);
+        idx_ping=round(min(select_plot.XData)):round(max(select_plot.XData));
+        idx_r=round(min(select_plot.YData)):round(max(select_plot.YData));
+        active_reg=region_cl('Idx_ping',idx_ping,'Idx_r',idx_r);
 end
 
 if strcmp(trans_obj.Mode,'FM')
 
    
-    [cmap,~,~,col_grid,~,~,~]=init_cmap(curr_disp.Cmap);
+    cmap_struct = init_cmap(curr_disp.Cmap,curr_disp.ReverseCmap);
     
     
     [TS_f,f_vec,pings,range]=trans_obj.TS_f_from_region(active_reg,'envdata',layer.EnvData,'cal',cal_fm_cell{1},'load_bar_comp',load_bar_comp,'mode','mat');
@@ -31,8 +31,8 @@ if strcmp(trans_obj.Mode,'FM')
     TS_f_per=permute(TS_f,[1 3 2]);
     
     
-    f_val=floor(nanmean(f_vec));
-    [~,idx_freq]=nanmin(abs(f_vec-f_val));
+    f_val=floor(mean(f_vec));
+    [~,idx_freq]=min(abs(f_vec-f_val));
     f_val=f_vec(idx_freq);
     
     [X,Y,Z] = meshgrid(f_vec/1e3,pings,range);
@@ -50,8 +50,8 @@ if strcmp(trans_obj.Mode,'FM')
     hx = surface(ax,squeeze(X(:,idx_freq,:)),squeeze(Y(:,idx_freq,:)),squeeze(Z(:,idx_freq,:)),squeeze(TS_f_per(:,idx_freq,:)));
     
     view(3);
-    colormap(ax,cmap);
-    caxis(ax,curr_disp.getCaxField('sp'));
+    colormap(ax,cmap_struct.cmap);
+    clim(ax,curr_disp.getCaxField('sp'));
     
     set([hx hy],'FaceAlpha', 'interp','FaceColor','interp','EdgeColor','none');
     set(hx,'alphadata',double(hx.CData>ax.CLim(1)));
@@ -84,7 +84,7 @@ function change_freq_cback_2(src,~,TS_f_per,f_vec,X,hx,ax,type)
 switch type
     case 'f'
         f_val=get(src,'value')*1e3;
-        [~,idx_freq]=nanmin(abs(f_vec-f_val));
+        [~,idx_freq]=min(abs(f_vec-f_val));
         
         set(hx,'Cdata',squeeze(TS_f_per(:,idx_freq,:)),'XData',squeeze(X(:,idx_freq,:)),'alphadata',double(squeeze(TS_f_per(:,idx_freq,:))>ax.CLim(1)));
         
@@ -96,7 +96,7 @@ switch type
         sl_val = get(src,'value');
         f_val = (sl_min + sl_max) - sl_val;
         
-        [~,ip]=nanmin(abs(f_vec-f_val));
+        [~,ip]=min(abs(f_vec-f_val));
         
         set(hx,'Cdata',squeeze(TS_f_per(ip,:,:)),'YData',squeeze(X(ip,:,:)),'alphadata',double(squeeze(TS_f_per(ip,:,:))>ax.CLim(1)));
         ylabel(ax,sprintf('Ping Number %.0f',f_vec(ip)));
@@ -107,7 +107,7 @@ end
 % function change_freq_cback(src,~,TS_f,f_vec,im,ax)
 %
 % f_val=get(src,'value');
-% [~,idx_freq]=nanmin(abs(f_vec/1e3-f_val));
+% [~,idx_freq]=min(abs(f_vec/1e3-f_val));
 %
 % set(im,'Cdata',TS_f(:,:,idx_freq)','alphadata',double(TS_f(:,:,idx_freq)'>ax.CLim(1)));
 % title(ax,sprintf('%.0f kHz',f_vec(idx_freq)/1e3));

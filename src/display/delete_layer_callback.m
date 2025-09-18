@@ -43,17 +43,21 @@ if isempty(layers)
 end
 layer=get_current_layer();
 lay_ID=layer.Unique_ID;
-
+can = false;
 if isempty(IDs)
-    IDs=layer.Unique_ID;
-    check_saved_bot_reg(main_figure);
+    IDs=layer.Unique_ID; 
+    can = check_saved_bot_reg(main_figure); 
+end
+
+if can
+    return;
 end
 
 if ~iscell(IDs)
     IDs={IDs};
 end
 
-for idi=1:numel(IDs)    
+for idi=1:numel(IDs)
     [idx,found]=find_layer_idx(layers,IDs{idi});
     if found==0
         continue;
@@ -70,9 +74,9 @@ end
 if ~isempty(layers)
     
     set_esp3_prop('layers',layers);
- 
+    
     if any(contains(IDs,lay_ID))
-        layer=layers(nanmin(idx,length(layers)));
+        layer=layers(min(idx,length(layers)));
         set_current_layer(layer);
         clear_regions(main_figure,{},{});
         loadEcho(main_figure);
@@ -81,15 +85,14 @@ if ~isempty(layers)
     end
     
 else
-  
-    
+
     layer_obj=layer_cl.empty();
     set_esp3_prop('layers',layers);
     set_current_layer(layer_obj);
     
     update_display_no_layers(main_figure);
     
-
+    
 end
 update_map_tab(main_figure);
 %profile off;

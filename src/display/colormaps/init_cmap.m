@@ -1,37 +1,54 @@
-function [cmap,col_ax,col_lab,col_grid,col_bot,col_txt,col_tracks]=init_cmap(cmap_name)
+function cmap_struct =init_cmap(cmap_name,varargin)
 
 cmap_folder=fullfile(whereisEcho,'private','cmaps');
-cmap=[];
-if isfile(fullfile(cmap_folder,[cmap_name '.cpt']))
+cmap_struct.cmap=[];
+cmap_struct.cmap_name = cmap_name;
+if isfile(fullfile(cmap_folder,[cmap_struct.cmap_name '.cpt']))
     try
-        [cmap, lims, ticks, bfncol, ctable]=cpt_to_cmap(fullfile(cmap_folder,[cmap_name '.cpt'])); 
+        [cmap_struct.cmap, ~, ~, bfncol, ~]=cpt_to_cmap(fullfile(cmap_folder,[cmap_struct.cmap_name '.cpt'])); 
         B=bfncol(1,:);
         F=bfncol(2,:);
         N=bfncol(3,:);
     catch err
         print_errors_and_warnings([],'error',err);
-        fprintf('Could not read colormap file: %s\n',fullfile(cmap_folder,[cmap_name '.cpt']));
+        fprintf('Could not read colormap file: %s\n',fullfile(cmap_folder,[cmap_struct.cmap_name '.cpt']));
     end
 end
 
-if isempty(cmap)
-    cmap=colormap('Parula');
+if isempty(cmap_struct.cmap)
+    cmap_struct.cmap=colormap('Parula');
     B=[1 1 1];
     N=[1 1 1];
     F=[0 0 0];    
 end
 
-col_ax=B;
-col_grid=F;
-col_txt=F;
-col_lab=F;
-col_bot=F;
+cmap_struct.col_ax=B;
+cmap_struct.col_grid=F;
+cmap_struct.col_txt=F;
+cmap_struct.col_lab=F;
+cmap_struct.col_bot=F;
 
-sc=size(cmap,1);
+if nargin >= 2
+    if strcmpi(varargin{1},'on')
+        cmap_struct.cmap = flipud(cmap_struct.cmap);
+        cmap_struct.col_ax = 1-cmap_struct.col_ax;
+        cmap_struct.col_grid = 1-cmap_struct.col_grid;
+        cmap_struct.col_txt = 1-cmap_struct.col_txt;
+        cmap_struct.col_lab = 1-cmap_struct.col_lab;
+        cmap_struct.col_bot = 1-cmap_struct.col_bot;
+    end
+end
 
-idx_t=nanmax(floor(sc/10),1);
+switch cmap_name
+    case 'beer-lager'
+        cmap_struct.cmap  =flipud (cmap_struct.cmap);
+end
 
-col_tracks=cmap(nanmin(idx_t*6,sc),:);
+sc=size(cmap_struct.cmap,1);
+
+idx_t=max(floor(sc*9/10),1);
+
+cmap_struct.col_tracks=cmap_struct.cmap(min(idx_t,sc),:);
 
 
 end

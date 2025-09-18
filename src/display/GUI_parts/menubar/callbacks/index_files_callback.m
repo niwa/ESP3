@@ -27,33 +27,33 @@ if ~isempty(load_bar_comp)
 else
     disp(str_disp);
 end
-for i=1:length(Filename)
+for ifif=1:length(Filename)
     if ~isempty(load_bar_comp)
-        set(load_bar_comp.progress_bar, 'Minimum',0, 'Maximum',length(Filename), 'Value',i);
+        set(load_bar_comp.progress_bar, 'Minimum',0, 'Maximum',length(Filename), 'Value',ifif);
     end
-    fileN=Filename{i};
-    [PathToFile,fname,ext]=fileparts(Filename{i});
+    fileN=Filename{ifif};
+    [PathToFile,fname,ext]=fileparts(Filename{ifif});
+
     if ~strcmpi(ext,'.raw')
         continue;
     end
+    echo_folder = get_esp3_file_folder(PathToFile,true);
+
+    fileIdx=fullfile(echo_folder,[fname '_echoidx.mat']);
     
-    if ~isfolder(fullfile(PathToFile,'echoanalysisfiles'))
-        mkdir(fullfile(PathToFile,'echoanalysisfiles'));
-    end
-    fileIdx=fullfile(PathToFile,'echoanalysisfiles',[fname '_echoidx.mat']);
-    
-    
-    if exist(fileIdx,'file')==0
-        idx_raw_obj=idx_from_raw_v2(fileN,load_bar_comp);
+    if ~isfile(fileIdx)
+        idx_raw_obj=raw_idx_cl(fileN,load_bar_comp);
         save(fileIdx,'idx_raw_obj');
     else
-        load(fileIdx);
+        obj_load = load(fileIdx);
+        idx_raw_obj = obj_load.idx_raw_obj;
         [~,et]=start_end_time_from_file(fileN);
-        dgs=find((strcmp(idx_raw_obj.type_dg,'RAW0')|strcmp(idx_raw_obj.type_dg,'RAW3'))&idx_raw_obj.chan_dg==nanmin(idx_raw_obj.chan_dg));
-        if et-idx_raw_obj.time_dg(dgs(end))>2*nanmax(diff(idx_raw_obj.time_dg(dgs)))
-            fprintf('Re-Indexing file: %s\n',Filename{i});
+        dgs=find((strcmp(idx_raw_obj.type_dg,'RAW0')|...
+            strcmp(idx_raw_obj.type_dg,'RAW3'))&idx_raw_obj.chan_dg==min(idx_raw_obj.chan_dg,[],'omitnan'));
+        if et-idx_raw_obj.time_dg(end)>2*max(diff(idx_raw_obj.time_dg(dgs)),[],'omitnan')||idx_raw_obj.Version<raw_idx_cl.get_curr_raw_idx_cl_version()
+            fprintf('Re-Indexing file: %s\n',Filename{ifif});
             delete(fileIdx);
-            idx_raw_obj=idx_from_raw_v2(fileN,load_bar_comp);
+            idx_raw_obj=raw_idx_cl(fileN,load_bar_comp);
             save(fileIdx,'idx_raw_obj');
         end
     end

@@ -6,7 +6,7 @@ if isempty(layer)
 end
 curr_disp=get_esp3_prop('curr_disp');
 [~,idx_freq]=layer.get_trans(curr_disp);
-layer.create_motion_comp_subdata(idx_freq,1);
+layer.create_motion_comp_subdata(idx_freq, getappdata(main_figure,'Loading_bar'));
 
 curr_disp.setField('motioncompensation');
 

@@ -1,4 +1,4 @@
-function listenEchoQuality(src,listdata,main_figure)
+function listenEchoQuality(~,listdata,main_figure)
 show_status_bar(main_figure,0);
 main_menu=getappdata(main_figure,'main_menu');
 layer=get_current_layer();
@@ -17,15 +17,17 @@ if ~isempty(layer)
     echo_tab_panel=getappdata(main_figure,'echo_tab_panel');
     axes_panel_comp=getappdata(main_figure,'Axes_panel');
     
-    if ~isempty(axes_panel_comp)
-        x=double(get(axes_panel_comp.main_axes,'xlim'));
-        y=double(get(axes_panel_comp.main_axes,'ylim'));
+    if ~isempty(axes_panel_comp)&&isvalid(axes_panel_comp.echo_obj.main_ax)
+        x=double(get(axes_panel_comp.echo_obj.main_ax,'xlim'));
+        y=double(get(axes_panel_comp.echo_obj.main_ax,'ylim'));
         up_lim=1;
     else
         up_lim=0;
     end
-    
-    
+    if ~isempty(axes_panel_comp)&&isvalid(axes_panel_comp.axes_panel)
+        delete(axes_panel_comp.axes_panel.Parent);
+    end
+
     axes_panel=uitab(echo_tab_panel,'BackgroundColor',[1 1 1],'tag','axes_panel');
     load_axis_panel(main_figure,axes_panel);
     
@@ -41,10 +43,9 @@ if ~isempty(layer)
     
     if up_lim>0
         axes_panel_comp=getappdata(main_figure,'Axes_panel');
-        set(axes_panel_comp.main_axes,'xlim',x);
-        set(axes_panel_comp.main_axes,'ylim',y);
+        set(axes_panel_comp.echo_obj.main_ax,'xlim',x);
+        set(axes_panel_comp.echo_obj.main_ax,'ylim',y);
     end
-    reverse_y_axis(main_figure);
     initialize_interactions_v2(main_figure);
 end
 

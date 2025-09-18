@@ -57,9 +57,9 @@ for l = 0:50
    B2 = A2 .* q1.*q1 .* (beta .* j_q1 - alpha .* j_q1dd) - A1 .* alpha .* (j_q2 - q2 .* j_q2d);
    B1 = q .* (A2 .* q1 .* j_q1d - A1 .* j_q2);
    neta = atan(-(B2 .* j_qd - B1 .* j_q)./(B2 .* y_qd - B1 .* y_q));
-   newterm = (-1)^l * (2*l+1) * sin(neta) .* exp((0+i) * neta);
+   newterm = (-1)^l * (2*l+1) * sin(neta) .* exp((0+1i) * neta);
    form = form + newterm;
-   if (abs(newterm)./abs(form) < tol) 
+   if (abs(newterm)/abs(form) < tol) 
       break;
   end
 end

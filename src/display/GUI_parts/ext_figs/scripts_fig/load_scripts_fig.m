@@ -85,13 +85,13 @@ set(script_table.table_main,'ColumnWidth',{2*pos_t(3)/10, pos_t(3)/10, pos_t(3)/
 set(script_table.table_main,'CellSelectionCallback',{@store_selected_script_callback,script_fig})
 
 rc_menu = uicontextmenu(ancestor(script_table.table_main,'figure'));
-script_table.table_main.UIContextMenu =rc_menu;
+script_table.table_main.ContextMenu =rc_menu;
 uimenu(rc_menu,'Label','Edit Script','Callback',{@edit_script_callback,script_fig,main_figure,flag});
 
 switch flag
     case 'mbs'
-        uimenu(rc_menu,'Label','Run on Crest Files','Callback',{@run_script_callback_v2,script_fig,main_figure,flag,0},'tag','crest');
-        uimenu(rc_menu,'Label','Run on Raw Files','Callback',{@run_script_callback_v2,script_fig,main_figure,flag,0},'tag','raw');
+        uimenu(rc_menu,'Label','Run on Crest Files','Callback',{@run_script_callback_v2,script_fig,main_figure,flag,0},'tag','CREST');
+        uimenu(rc_menu,'Label','Run on Raw Files','Callback',{@run_script_callback_v2,script_fig,main_figure,flag,0},'tag','EK60');
         uimenu(rc_menu,'Label','Generate Equivalent  Script','Callback',{@generate_xml_scripts_callback,script_fig,main_figure});
         uimenu(rc_menu,'Label','Populate Logbook from MBS Script','Callback',{@populate_logbook_from_script_callback,script_fig,main_figure});
         
@@ -125,7 +125,7 @@ delete(script_fig);
 load_xml_scripts_callback([],[],main_figure);
 end
 
-function generate_xml_scripts_callback(~,~,hObject,main_figure)
+function generate_xml_scripts_callback(~,~,hObject,~)
 selected_scripts=getappdata(hObject,'SelectedScripts');
 app_path=get_esp3_prop('app_path');
 
@@ -139,7 +139,7 @@ mbs=mbs_cl();
 mbs.readMbsScript(app_path.data_root.Path_to_folder,fileNames{1});
 rmdir(outDir,'s');
 surv_obj=survey_cl();
-surv_obj.SurvInput=mbs.mbs_to_survey_obj('type','raw');
+surv_obj.SurvInput=mbs.mbs_to_survey_obj('type','EK60');
 
 
 [filename, pathname] = uiputfile('*.xml',...
@@ -167,7 +167,7 @@ mbs=mbs_cl();
 mbs.readMbsScript(app_path.data_root.Path_to_folder,fileNames{1});
 rmdir(outDir,'s');
 surv_obj=survey_cl();
-surv_obj.SurvInput=mbs.mbs_to_survey_obj('type','raw');
+surv_obj.SurvInput=mbs.mbs_to_survey_obj('type','EK60');
 infos=surv_obj.SurvInput.Infos;
 for ifile=1:length(mbs.Input.snapshot)
     if ~strcmpi(deblank(mbs.Input.rawFileName{ifile}),'')
@@ -185,7 +185,7 @@ delete(hObject);
 load_xml_scripts_callback([],[],main_figure)
 end
 
-function open_xml_scripts_callback(src,~,hObject,main_figure,flag)
+function open_xml_scripts_callback(~,~,hObject,~,~)
 selected_scripts=getappdata(hObject,'SelectedScripts');
 app_path=get_esp3_prop('app_path');
 %layers=get_esp3_prop('layers');
@@ -194,11 +194,11 @@ selected_scripts_full=cellfun(@(x) fullfile(app_path.scripts.Path_to_folder,x),s
 surv_obj = survey_cl();
 surv_obj.SurvInput = parse_survey_xml(selected_scripts_full{end});
 
- xml_scrip_fig=create_xml_script_gui('main_figure',main_figure,'survey_input_obj',surv_obj.SurvInput,'existing',1);
-waitfor(xml_scrip_fig);
+xml_scrip_fig=create_xml_script_gui('survey_input_obj',surv_obj.SurvInput,'existing',1);
+%waitfor(xml_scrip_fig);
 end
 
-function delete_script_callback(src,~,hObject,main_figure)
+function delete_script_callback(~,~,hObject,main_figure)
 selected_scripts=getappdata(hObject,'SelectedScripts');
 app_path=get_esp3_prop('app_path');
 selected_scripts=cellfun(@(x) fullfile(app_path.scripts.Path_to_folder,x),selected_scripts,'UniformOutput',0);
@@ -216,58 +216,20 @@ end
 reload_callback([],[],hObject,main_figure);
 end
 
-function run_script_callback_v2(src,~,hObject,main_figure,flag,discard_lay)
+function run_script_callback_v2(src,~,hObject,~,flag,discard_lay)
 
 selected_scripts=getappdata(hObject,'SelectedScripts');
 app_path=get_esp3_prop('app_path');
-layers=get_esp3_prop('layers');
-show_status_bar(main_figure);
 
-if ispc()
-    choice=question_dialog_fig(main_figure,'Update display','Do you want show the echograms as you load them (takes more time...)','timeout',5);
-    switch choice
-        case 'Yes'
-            update_display=1;
-        otherwise
-            update_display=0;
-    end
-else
-    update_display=0;
-end
+selected_scripts=cellfun(@(x) fullfile(app_path.scripts.Path_to_folder,x),selected_scripts,'UniformOutput',0);
 
 
+esp3_obj=getappdata(groot,'esp3_obj');
 
-switch flag
-    case 'mbs'
-        [layers,~]=process_surveys(selected_scripts,...
-            'discard_loaded_layers',discard_lay,... 
-            'PathToResults',app_path.results.Path_to_folder,...
-            'PathToMemmap',app_path.data_temp.Path_to_folder,...
-            'layers',layers,'origin','mbs',...
-            'cvs_root',app_path.cvs_root.Path_to_folder,...
-            'data_root',app_path.data_root.Path_to_folder,...
-            'tag',src.Tag,'gui_main_handle',main_figure,'update_display_at_loading',update_display);
-    case 'xml'
-        selected_scripts_full=cellfun(@(x) fullfile(app_path.scripts.Path_to_folder,x),selected_scripts,'UniformOutput',0);
-        [layers,~]=process_surveys(selected_scripts_full,...
-            'discard_loaded_layers',discard_lay,...
-            'PathToResults',app_path.results.Path_to_folder,...
-            'PathToMemmap',app_path.data_temp.Path_to_folder,...
-            'layers',layers,...
-            'origin','xml','gui_main_handle',main_figure,...
-            'update_display_at_loading',update_display);
-end
-
-
-if ~isempty(layers)
-    layer=layers(end);
-    set_esp3_prop('layers',layers);
-    
-    
-    loadEcho(main_figure);
-end
-
-hide_status_bar(main_figure);
+    esp3_obj.run_scripts(selected_scripts,...
+    'discard_loaded_layers',discard_lay>0,...
+    'origin',flag,...
+    'tag',src.Tag);
 
 end
 
@@ -287,12 +249,12 @@ for uis=1:numel(selected_scripts)
     if valid==0
         print_errors_and_warnings([],'warning',sprintf('It looks like there is a problem with XML survey file %s\n',selected_scripts{uis}));
     else
-        disp_perso(main_figure,'Script appears to be valid...')
+        disp_perso(main_figure,'Script appears to be valid...');
     end
 end
 end
 
-function edit_script_callback(~,~,hObject,main_figure,flag)
+function edit_script_callback(~,~,hObject,~,flag)
 selected_scripts=getappdata(hObject,'SelectedScripts');
 app_path=get_esp3_prop('app_path');
 switch flag

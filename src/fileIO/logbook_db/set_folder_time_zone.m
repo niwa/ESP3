@@ -4,32 +4,25 @@ if ~isempty(main_figure)
     curr_disp=get_esp3_prop('curr_disp');
     if ~isempty(curr_disp)
         font=curr_disp.Font;
-    cmap=curr_disp.Cmap;
+        cmap=curr_disp.Cmap;
     else
-       font=[];
-       cmap=[];
+        font=[];
+        cmap=[];
     end
 else
-           font=[];
-       cmap=[];
+    font=[];
+    cmap=[];
 end
 
-db_file=fullfile(path_to_db,'echo_logbook.db');
-if ~isfile(db_file)
-    initialize_echo_logbook_dbfile(path_to_db,[],0);
-end
-dbconn=sqlite(db_file);
+dbconn = initialize_echo_logbook_dbfile(path_to_db,0);
+
 createsurveyTable(dbconn);
 
 sql_command='SELECT TimeZone FROM survey';
 
 tz=dbconn.fetch(sql_command);
-if iscell(tz)
-    tz=tz{1};
-end
-if isempty(tz)
-    tz=0;
-end
+tz = tz.TimeZone;
+
 dbconn.close();
 T=timezones('Etc');
 T=sortrows(T,'UTCOffset','descend');
@@ -68,12 +61,16 @@ drawnow;
 if ishghandle(QuestFig)
     % Go into uiwait if the figure handle is still valid.
     % This is mostly the case during regular use.
-    c = matlab.ui.internal.dialog.DialogUtils.disableAllWindowsSafely();
+    if will_it_work([],'9.10',true)
+        c = matlab.ui.internal.dialog.DialogUtils.disableAllWindowsSafely(true);
+    else
+        c = matlab.ui.internal.dialog.DialogUtils.disableAllWindowsSafely();
+    end
     uiwait(QuestFig);
     delete(c);
 end
 db_file=fullfile(path_to_db,'echo_logbook.db');
-dbconn=sqlite(db_file);
+dbconn=connect_to_db(db_file);
 sql_command=sprintf('UPDATE survey SET Timezone=%f',T.UTCOffset(choice_list.Value));
 dbconn.exec(sql_command);
 dbconn.close();
@@ -88,7 +85,7 @@ set(gcbf,'UserData',get(obj,'String'));
 uiresume(gcbf);
 end
 
-function doControlKeyPress(obj, evd)
+function doControlKeyPress(~, evd)
 switch(evd.Key)
     case {'return'}
         uiresume(gcbf);

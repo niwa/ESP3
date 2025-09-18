@@ -51,7 +51,7 @@ if ischar(ac_db_filename)
 else
     dbconn=ac_db_filename;
 end
-dbconn.insert('t_transceiver',fieldnames(struct_in),t);
+dbconn.sqlwrite('t_transceiver',t);
 
 if ischar(ac_db_filename)
     

@@ -11,7 +11,7 @@ while 1
     regout(i).spec = r(2:end);
 
     in =  strfind(regout(i).spec, ',');
-    if isempty(in);
+    if isempty(in)
         depths = regout(i).spec;
         slices = [];
     else

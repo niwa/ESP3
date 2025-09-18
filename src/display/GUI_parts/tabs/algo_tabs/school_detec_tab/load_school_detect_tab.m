@@ -36,24 +36,32 @@
 
 %% Function
 function load_school_detect_tab(main_figure,algo_tab_panel)
-[h,l] = get_top_panel_height(7.25);
+[h,l] = get_top_panel_height(8);
+
+%%%%%%%%%%%%%%%% School Detection%%%%%%%%%%%%%%%%%%%%%%%%%
 algo_name = 'SchoolDetection';
 school_detect_tab=uitab(algo_tab_panel,'Title','Schools');
 
-load_algo_panel('main_figure',main_figure,...
+t = load_algo_panel('main_figure',main_figure,...
     'panel_h',uipanel(school_detect_tab,'Units','Pixels','Position',[0 0 2*l h]),...
     'algo_name',algo_name,...
-    'title','School Detection',...
+    'save_fcn_bool',true);
+
+%%%%%%%%%%%%%%%% School Detection%%%%%%%%%%%%%%%%%%%%%%%%%
+algo_name = 'school_detect_3D';
+t_3D_school_panel=uipanel(school_detect_tab,'Units','Pixels','Position',[t.container.Position(1)+t.container.Position(3) 0 2*l h],'Title','3D school detection');
+tt = load_algo_panel('main_figure',main_figure,...
+    'panel_h',t_3D_school_panel,...
+    'algo_name',algo_name,...
     'save_fcn_bool',true);
 
 %%%%%%%%%%%%%%%% Classification Panel%%%%%%%%%%%%%%%%%%%%%%%%%
-classification_panel=uipanel(school_detect_tab,'Units','Pixels','Position',[2*l 0 2*l h],'Title','Classification');
+classification_panel=uipanel(school_detect_tab,'Units','Pixels','Position',[tt.container.Position(1)+tt.container.Position(3) 0 2*l h],'Title','Classification');
 algo_name= 'Classification';
 
 load_algo_panel('main_figure',main_figure,...
     'panel_h',classification_panel,...
     'algo_name',algo_name,...
-    'title','School Classification',...
     'save_fcn_bool',false);
 
 gui_fmt=init_gui_fmt_struct();
@@ -91,10 +99,14 @@ end
 [files_classif,~,~]=list_classification_files();
 
 if isempty(files_classif)
-    files_classif='--';
+    files_classif={'--'};
 end
 set(al_c_panel.classification_file,'string',files_classif,'value',1);
-update_algos(main_figure,'algo_name',{'Classification'});
+if ~all(cellfun(@(x) strcmpi(x,'--'),files_classif))
+    al_c_panel.algo.set_input_param_value_range('classification_file',files_classif);
+end
+update_algos('algo_name',{'Classification'});
+
 end
 
 

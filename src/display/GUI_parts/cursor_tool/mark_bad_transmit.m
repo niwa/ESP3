@@ -45,7 +45,7 @@ end
 layer=get_current_layer();
 axes_panel_comp=getappdata(main_figure,'Axes_panel');
 curr_disp=get_esp3_prop('curr_disp');
-ah=axes_panel_comp.main_axes;
+ah=axes_panel_comp.echo_obj.main_ax;
 
 if gca~=ah
     return;
@@ -54,11 +54,11 @@ end
 clear_lines(ah);
 
 
-[~,idx_ping_ori]=get_ori(layer,curr_disp,axes_panel_comp.main_echo);
-xdata=double(get(axes_panel_comp.main_echo,'XData'));
-ydata=double(get(axes_panel_comp.main_echo,'YData'));
+[~,idx_ping_ori]=get_ori(layer,curr_disp,axes_panel_comp.echo_obj.echo_surf);
+xdata=double(get(axes_panel_comp.echo_obj.echo_surf,'XData'));
+ydata=double(get(axes_panel_comp.echo_obj.echo_surf,'YData'));
 
-[trans_obj,idx_freq]=layer.get_trans(curr_disp);
+[trans_obj,~]=layer.get_trans(curr_disp);
 ping_number=trans_obj.get_transceiver_pings();
 
 old_bot=trans_obj.Bottom;
@@ -73,10 +73,10 @@ else
 end
 
 
- [cmap,col_ax,line_col,col_grid,col_bot,col_txt,~]=init_cmap(curr_disp.Cmap);
+ cmap_struct = init_cmap(curr_disp.Cmap,curr_disp.ReverseCmap);
 
 
- switch axes_panel_comp.main_echo.Type
+ switch axes_panel_comp.echo_obj.echo_surf.Type
      case 'surface'
          xdata=xdata+1/2;
  end
@@ -100,7 +100,7 @@ switch src.SelectionType
         x_bad=[xinit xinit];
         replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2,'interaction_fcn',@wbmcb);
         replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',1,'interaction_fcn',@wbucb);
-        hp=plot(ah,x_bad,[yinit yinit],'color',line_col,'linewidth',1,'marker','x','tag','bt_temp');
+        hp=plot(ah,x_bad,[yinit yinit],'color',cmap_struct.col_lab,'linewidth',1,'marker','x','tag','bt_temp');
         
     otherwise
         [~,idx_bad]=min(abs(xdata-xinit));
@@ -116,22 +116,22 @@ end
         X = sort([xinit ,cp(1,1)]);
         Y=  [cp(1,2),cp(1,2)];
         
-        x_min=nanmin(X);
-        x_min=nanmax(xdata(1),x_min);
+        x_min=min(X);
+        x_min=max(xdata(1),x_min);
         
-        x_max=nanmax(X);
-        x_max=nanmin(xdata(end),x_max);
+        x_max=max(X);
+        x_max=min(xdata(end),x_max);
         
         x_bad=round([x_min x_max]);
         if isvalid(hp)
             set(hp,'XData',x_bad,'YData',Y);
         else
-            hp=plot(ah,x_bad,Y,'color',line_col,'linewidth',1,'marker','x','tag','bt_temp');
+            hp=plot(ah,x_bad,Y,'color',cmap_struct.col_lab,'linewidth',1,'marker','x','tag','bt_temp');
         end
             
     end
 
-    function wbucb(src,~)
+    function wbucb(~,~)
         delete(hp);
         
 %         switch obj.Type
@@ -165,8 +165,9 @@ end
 
         set_alpha_map(main_figure,'update_cmap',0,'update_under_bot',0);
         %update_info_panel([],[],1);
-%         profile off;
-%         profile viewer;
+        %drawnow;
+        %profile off;
+         %profile viewer;
     end
 
 end

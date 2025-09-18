@@ -20,17 +20,19 @@ if isempty(idx_axes)
 end
 
 [idx_field,~]=trans_obj.Data.find_field_idx(curr_disp.Fieldname);
-curr_disp=init_grid_val(main_figure);
+curr_disp.init_grid_val(trans_obj);
 [dx,dy]=curr_disp.get_dx_dy();
 
 set(display_tab_comp.grid_x,'String',int2str(dx));
 set(display_tab_comp.grid_y,'String',int2str(dy));
 
-set(display_tab_comp.tog_freq,'String',num2str(layer_obj.Frequencies'/1e3,'%.0f kHz'),'Value',idx_freq);
+ss = layer_obj.Transceivers.get_CID_freq_str();
+
+set(display_tab_comp.tog_freq,'String',ss,'Value',idx_freq);
 set(display_tab_comp.tog_type,'String',trans_obj.Data.Type,'Value',idx_field);
 set(display_tab_comp.tog_axes,'String',Axes_type,'Value',idx_axes);
-set(display_tab_comp.caxis_up,'String',int2str(curr_disp.Cax(2)));
-set(display_tab_comp.caxis_down,'String',int2str(curr_disp.Cax(1)));
+set(display_tab_comp.caxis_up,'String',num2str(curr_disp.Cax(2),'%.1f'));
+set(display_tab_comp.caxis_down,'String',num2str(curr_disp.Cax(1),'%.1f'));
 
 %set(findobj(display_tab_comp.display_tab, '-property', 'Enable'), 'Enable', 'on');
 

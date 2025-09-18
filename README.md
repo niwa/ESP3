@@ -12,13 +12,13 @@ ESP3 is currently under active development (particularly in terms of broadband p
 
 ## Getting Started
 
-ESP3 is written in **MATLAB**. Provided you have a licence for the appropriaate version of MATLAB (R2019b or later) and required toolboxes, these instructions will get you a copy of the source code to get ESP3 up and running on your local machine for development and testing purposes.
+ESP3 is written in **MATLAB**. Provided you have a licence for the appropriate version of MATLAB (R2020b) and required toolboxes, these instructions will get you a copy of the source code to get ESP3 up and running on your local machine for development and testing purposes.
 
 See the section "Software Download"" for notes on how to install a compiled version on a Windows 64bits platform.
 
 ### Prerequisites
 
-* **MATLAB R2019b** (or more recent).
+* **MATLAB R2020b** (or more recent).
 
 * **Licenced MATLAB toolboxes**: 
     * Signal Processing
@@ -53,7 +53,7 @@ A compiled version of the latest stable release is available for install on a Wi
 
 ### Prerequisites
 
-* Download and install the (free) [Matlab Compiler Runtime R2019b (9.7)](https://au.mathworks.com/products/compiler/matlab-runtime.html). 
+* Download and install the (free) [Matlab Compiler Runtime R2020b (9.9)](https://au.mathworks.com/products/compiler/matlab-runtime.html). 
 
 ### Installing
 
@@ -89,7 +89,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 * **Yoann Ladroit**, NIWA - *Initial work and main developer* - Yoann.ladroit@niwa.co.nz - [yladroit](https://bitbucket.org/yladroit)
 * **Alexandre C.G. Schimel**, NIWA  - *Developer* - Alexandre.Schimel@niwa.co.nz - [AlexandreSchimel](https://bitbucket.org/AlexandreSchimel)
-* **Pablo Escobar-Flores**,NIWA - *Developer* - Pablo.Escobar@niwa.co.nz - [Pabloe1982](https://bitbucket.org/Pabloe1982)
+* **Pablo Escobar-Flores**,NIWA - *Developer - tester* - Pablo.Escobar@niwa.co.nz - [Pabloe1982](https://bitbucket.org/Pabloe1982)
 
 ---
 

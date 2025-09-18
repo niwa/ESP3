@@ -8,7 +8,7 @@ addRequired(p,'y_lim',@isnumeric);
 addParameter(p,'x_lim_tot',x_lim,@isnumeric);
 addParameter(p,'y_lim_tot',y_lim,@isnumeric);
 addParameter(p,'VerticalScrollCount',1,@isnumeric);
-addParameter(p,'Position',[nanmean(x_lim) nanmean(y_lim)],@isnumeric);
+addParameter(p,'Position',[mean(x_lim) mean(y_lim)],@isnumeric);
 
 parse(p,x_lim,y_lim,varargin{:});
 

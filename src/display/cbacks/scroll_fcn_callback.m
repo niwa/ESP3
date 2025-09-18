@@ -1,8 +1,9 @@
-function scroll_fcn_callback(src,callbackdata,main_figure)
+function scroll_fcn_callback(src,callbackdata)
 
-
+main_figure = get_esp3_prop('main_figure');
 echo_tab_panel=getappdata(main_figure,'echo_tab_panel');
 curr_obj=gco;
+
 if isfield(curr_obj,'Type')
     type_obj=curr_obj.Type;
 else
@@ -25,7 +26,7 @@ if isempty(layer)
 end
 
 axes_panel_comp=getappdata(main_figure,'Axes_panel');
-ah=axes_panel_comp.main_axes;
+ah=axes_panel_comp.echo_obj.main_ax;
 
 x_lim=get(ah,'XLim');
 y_lim=get(ah,'YLim');
@@ -40,7 +41,7 @@ if src==main_figure
             pos=ah.CurrentPoint(1,1:2);
     end
 else
-    pos=[nanmean(x_lim) nanmean(y_lim)];
+    pos=[mean(x_lim) mean(y_lim)];
 end
 
 

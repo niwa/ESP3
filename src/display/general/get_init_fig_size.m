@@ -6,7 +6,7 @@ if isempty(main_figure)
     [~,id_screen]=max(size_max(:,3));
 else
     pos_main=getpixelposition(main_figure);
-   [~,id_screen]=nanmin(abs(size_max(:,1)-pos_main(1))); 
+   [~,id_screen]=min(abs(size_max(:,1)-pos_main(1))); 
 end
 
 %ratio=size_max(id_screen,3)/size_max(id_screen,4);

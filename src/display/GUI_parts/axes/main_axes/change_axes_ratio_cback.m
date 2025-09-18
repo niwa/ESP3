@@ -1,4 +1,4 @@
-function change_axes_ratio_cback(src,evt_data,main_figure,hov)
+function change_axes_ratio_cback(src,~,main_figure,hov)
 curr_disp=get_esp3_prop('curr_disp');
 
 if ~strcmpi(curr_disp.CursorMode,'normal')
@@ -15,7 +15,8 @@ switch curr_fig.SelectionType
         pos_ax=getpixelposition(src,true);
         cp = curr_fig.CurrentPoint;
         x1 = cp(1,1)-pos_ax(1);
-        y1 = pos_panel(2)+pos_panel(4)-cp(1,2);
+        y1 = pos_panel(4)-cp(1,2);
+        
         switch(hov)
             case 'h'
                 ptr='top';
@@ -46,9 +47,8 @@ end
         cp = curr_fig.CurrentPoint;
         pos_ax=getpixelposition(src,true);
         x1 = cp(1,1)-pos_ax(1);
-        y1 = pos_panel(2)+pos_panel(4)-cp(1,2);
+        y1 = pos_ax(2)+pos_ax(4)-cp(1,2);
         
-        pos_panel(2);
         %y1/pos_panel(4);
         switch(hov)
             case 'h'

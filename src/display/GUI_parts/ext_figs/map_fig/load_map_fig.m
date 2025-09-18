@@ -16,7 +16,7 @@ if isempty(obj_vec)
     [box.lat_lim,box.lon_lim,box.lat_lays,box.lon_lays] = get_lat_lon_lim(layers);
 
     
-    list_Str = list_layers(layers);
+    list_Str = list_layers(layers,'valid_filename',false);
     
 else
     
@@ -40,7 +40,7 @@ end
 [box.lat_lim,box.lon_lim] = ext_lat_lon_lim_v2(box.lat_lim,box.lon_lim,0.2);
 
 
-if nansum(isnan(box.lat_lim)) == 2
+if sum(isnan(box.lat_lim)) == 2
     return;
 end
 
@@ -49,7 +49,6 @@ box.val_max = 0.000001;
 box.r_max = 2;
 box.nb_pts = 100;
 
-box.depth_contour_size = 1000;
 
 map_fig = new_echo_figure(main_figure,'Units','pixels','Position',[100 100 800 600],...
     'Resize','off',...
@@ -134,17 +133,6 @@ box.tog_circle_color = uicontrol(map_fig,'Style','popupmenu','String',{'Proporti
 
 box.hist_ax = axes(map_fig,'units','normalized','OuterPosition', [0.7 0.25 0.25 0.35],'Box','on','XGrid','off','Ygrid','off','visible','off','YTick',[],'YTickLabels',{});
 
-box.depth_box = uicontrol(map_fig,'Style','checkbox','Value',0,...
-    'String','Depth Contours every (m)','units','normalized','Position',[0.6 0.2 0.25 0.05],...
-    'BackgroundColor','w',...
-    'callback',{@update_map_callback,map_fig});
-
-box.depth_contour_box = uicontrol(map_fig,'Style','edit',...
-    'Units','normalized',...
-    'Position',[0.85 0.2 0.05 0.05],...
-    'String',num2str(box.depth_contour_size,'%d'),...
-    'BackgroundColor','w',...
-    'Tag','slice_size','Callback',{@check_depth_contour_size,map_fig});
 
 uicontrol(map_fig,'Style','text','BackgroundColor','White',...
     'Units','normalized',...
@@ -163,7 +151,7 @@ if ~isempty(obj_vec)
     set(box.slice_size_box,'enable','off');
     switch class(obj_vec)
         case 'survey_cl'
-            set(box.slice_size_box,'String',num2str(obj_vec(1).SurvInput.Options.Vertical_slice_size,'%d'));
+            set(box.slice_size_box,'String',num2str(obj_vec(1).SurvInput.Options.Vertical_slice_size.Value,'%d'));
         case 'mbs_cl'
             % nothing?
     end
@@ -241,18 +229,6 @@ for i=1:length(box.lat_lays)
     end
 end
 
-if box.depth_box.Value>0
-    try
-        [box.hs,box.ht]=plot_cont_from_etopo1(box.lim_axes,box.depth_contour_size);
-    catch
-        box.ht=[];
-        box.hs=[];
-        disp('No Geographical data available...');
-    end
-else
-    box.ht=[];
-    box.hs=[];
-end
 
 
 setappdata(map_fig,'Box',box);
@@ -322,7 +298,7 @@ else
         return;
     end
     histogram(box.hist_ax,values,'BinMethod','fd');
-    title(box.hist_ax,sprintf('Min: %f\n Max: %f',nanmin(values),nanmax(values)))
+    title(box.hist_ax,sprintf('Min: %f\n Max: %f',min(values),max(values)))
     set(box.hist_ax,'YTickLabels',{});
     switch str_field
         case 'SliceAbscf'
@@ -355,29 +331,10 @@ if isempty(index_selected)
     return;
 end
 
-latlim=[nanmin(cellfun(@nanmin,box.lat_lays(index_selected))) nanmax(cellfun(@nanmax,box.lat_lays(index_selected)))];
-lonlim=[nanmax(cellfun(@nanmin,box.lon_lays(index_selected))) nanmax(cellfun(@nanmax,box.lon_lays(index_selected)))];
+latlim=[min(cellfun(@min,box.lat_lays(index_selected))) max(cellfun(@max,box.lat_lays(index_selected)))];
+lonlim=[max(cellfun(@min,box.lon_lays(index_selected))) max(cellfun(@max,box.lon_lays(index_selected)))];
 [latlim,lonlim]=ext_lat_lon_lim_v2(latlim,lonlim,0.1);
 geolimits(box.lim_axes,latlim,lonlim);
-
-if get(box.depth_box,'Value')>0
-    if ~isempty(box.hs)
-        set(box.hs,'visible','on');
-        set(box.ht,'visible','on');
-    else
-        try
-            [box.hs,box.ht]=plot_cont_from_etopo1(box.lim_axes,box.depth_contour_size);
-        catch
-            box.ht=[];
-            box.hs=[];
-            disp('No Geographical data available...');
-        end
-    end
-else
-    set(box.hs,'visible','off');
-    set(box.ht,'visible','off');
-end
-
 
 
 update_hist([],[],map_fig);
@@ -421,18 +378,7 @@ setappdata(map_fig,'Box',box);
 end
 
 
-function check_depth_contour_size(src,~,map_fig)
-box=getappdata(map_fig,'Box');
-str=get(src,'string');
-if isnan(str2double(str))||str2double(str)<=0
-    set(src,'string',num2str(box.depth_contour_size,'%d'));
-else
-    box.depth_contour_size=ceil(str2double(str));
-    set(src,'string',num2str(box.depth_contour_size,'%d'));
-end
-setappdata(map_fig,'Box',box);
-init_map([],[],map_fig);
-end
+
 
 % callback for "Create Map" push button
 function create_map_callback(~,~,map_fig,main_figure,obj_vec_tot)
@@ -442,11 +388,7 @@ hfigs = getappdata(main_figure,'ExternalFigures');
 curr_disp=get_esp3_prop('curr_disp');
 index_selected = get(box.listbox,'Value');
 
-if get(box.depth_box,'Value')>0
-    cont = box.depth_contour_size;
-else
-    cont = 0;
-end
+
 
 id_em=find(cellfun(@isempty,box.lat_lays));
 index_selected=setdiff(index_selected,id_em);
@@ -472,14 +414,14 @@ cc=cc_type{get(box.tog_circle_color,'value')};
 
 
 if isempty(obj_vec_tot)
-    map_input = map_input_cl.map_input_cl_from_obj(obj,'ValMax',box.val_max,'Rmax',box.r_max,'SliceSize',box.slice_size,'Basemap',basemap_str,'Depth_Contour',cont,'Freq',curr_disp.Freq);
+    map_input = map_input_cl.map_input_cl_from_obj(obj,'ValMax',box.val_max,'Rmax',box.r_max,'SliceSize',box.slice_size,'Basemap',basemap_str,'Freq',curr_disp.Freq);
     if isempty(map_input)
         return;
     end
     map_input.PlotType = p_type;
 else
     for ui = 1:length(obj)
-        map_input(ui) = map_input_cl.map_input_cl_from_obj(obj(ui),'ValMax',box.val_max,'Rmax',box.r_max,'SliceSize',box.slice_size,'Basemap',basemap_str,'Depth_Contour',cont);
+        map_input(ui) = map_input_cl.map_input_cl_from_obj(obj(ui),'ValMax',box.val_max,'Rmax',box.r_max,'SliceSize',box.slice_size,'Basemap',basemap_str);
         map_input(ui).PlotType = p_type;
     end
     %map_input = map_input.concatenate_map_input();
@@ -495,13 +437,22 @@ switch class(obj)
             folders=unique([folders tmp]);
         end      
 end
+app_path_main=whereisEcho();
+config_path=fullfile(app_path_main,'config','maps');
+folders=unique([folders config_path]);
 
-[cmap,col_ax,col_lab,col_grid,col_bot,col_txt,~]=init_cmap(curr_disp.Cmap);
+cmap_struct = init_cmap(curr_disp.Cmap,curr_disp.ReverseCmap);
 
 % create the map here
 % box.lim_axes.LatitudeLimits
 % box.lim_axes.LatitudeLimits
-hfig = map_input.display_map_input_cl('main_figure',main_figure,'field',str_field,'LatLim',box.lim_axes.LatitudeLimits,'LongLim',box.lim_axes.LongitudeLimits,'Colormap',cmap,'coloredCircle',cc,'echomaps',folders);
+hfig = map_input.display_map_input_cl('main_figure',main_figure,...
+    'field',str_field,'LatLim',box.lim_axes.LatitudeLimits,'LongLim',box.lim_axes.LongitudeLimits,...
+    'Colormap',cmap_struct.cmap,'coloredCircle',cc,'echomaps',folders);
+
+%  uu = map_input.display_map_input_cl_geobubbles('main_figure',main_figure,...
+%      'field',str_field,'LatLim',box.lim_axes.LatitudeLimits,'LongLim',box.lim_axes.LongitudeLimits,...
+%      'Colormap',cmap,'coloredCircle',cc,'echomaps',folders);
 
 hfigs_new = [hfigs hfig];
 setappdata(main_figure,'ExternalFigures',hfigs_new);

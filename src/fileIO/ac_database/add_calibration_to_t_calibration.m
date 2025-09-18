@@ -40,14 +40,6 @@ end
 
 struct_in.calibration_date={datestr(struct_in.calibration_date,'yyyy-mm-dd')};
 
-% t=struct2table(struct_in);
-% 
-% dbconn=connect_to_db(ac_db_filename);  
-% dbconn.insert('t_calibration',fieldnames(struct_in),t);
-% dbconn.close();
-% 
-% struct_in=rmfield(struct_in,'calibration_comments');
-% [~,calibration_pkey]=get_cols_from_table(ac_db_filename,'t_calibration','input_struct',struct_in,'output_cols',{'calibration_pkey'});
 cal.calibration_acquisition_method_type=struct_in.calibration_acquisition_method_type;
 cal.calibration_acquisition_method_type_pkey=1;
 calibration_acquisition_method_key=insert_data_controlled(ac_db_filename,'t_calibration_acquisition_method_type',cal,cal,'calibration_acquisition_method_type_pkey');

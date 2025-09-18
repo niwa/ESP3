@@ -106,7 +106,7 @@ for i = 1:num_regions
     d = num2str(vertices(:,1));
 %     t = num2str(vertices(:,2));
     t = [];
-    for k = 1:size(vertices,1);
+    for k = 1:size(vertices,1)
         t = horzcat(t, num2str(sprintf('%010d\n',vertices(k,2))));  % I added this in because some times that started at midnight 00 created errors (Johannes)
     end    
     timestamp = datenum(str2num(d(:,1:4)), str2num(d(:,5:6)), str2num(d(:,7:8)), ...

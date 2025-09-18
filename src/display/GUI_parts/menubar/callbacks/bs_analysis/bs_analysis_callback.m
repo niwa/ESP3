@@ -1,5 +1,5 @@
 function bs_analysis_callback(~,~,main_figure)
-update_algos(main_figure);
+update_algos();
 curr_disp=get_esp3_prop('curr_disp');
 layer=get_current_layer();
 

@@ -63,7 +63,7 @@ if ischar(ac_db_filename)
 else
     dbconn=ac_db_filename;
 end
-dbconn.insert('t_transducer',fieldnames(struct_in),t);
+dbconn.sqlwrite('t_transducer',t);
 if ischar(ac_db_filename)
     
     dbconn.close();

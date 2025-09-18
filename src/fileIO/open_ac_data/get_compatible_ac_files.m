@@ -1,7 +1,9 @@
 function Filename=get_compatible_ac_files(file_path)
 
 % dialog box
-[Filename,path_f] = uigetfile( {fullfile(file_path,'*.raw;d*;*A;*.lst;*.ini;*.db')}, 'Pick a raw/crest/asl/fcv30/logbook file','MultiSelect','on');
+[ftypes,ext,~] = get_ftypes_and_extensions();
+
+[Filename,path_f] = uigetfile( {fullfile(file_path,strjoin(ext,';'))}, sprintf('Pick a %s  file',strjoin(ftypes,'/')),'MultiSelect','on');
 
 % nothing opened
 if isempty(Filename)

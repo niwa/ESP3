@@ -41,15 +41,21 @@ layer=get_current_layer();
 if isempty(layer)
     return;
 end
-curr_disp=get_esp3_prop('curr_disp');
-
-axes_panel_comp=getappdata(main_figure,'Axes_panel');
-ah=axes_panel_comp.main_axes;
-clear_lines(ah);
+curr_disp = get_esp3_prop('curr_disp');
+map_tab_comp = getappdata(main_figure,'Map_tab');
 
 if isempty(ID)
     ID=curr_disp.Active_reg_ID;
 end
+
+if ~isempty(map_tab_comp) && isvalid(map_tab_comp.ax)
+    gax = map_tab_comp.ax;
+    cellfun(@(x) rem_reg_tag_lim(gax,x),ID);
+end
+
+axes_panel_comp=getappdata(main_figure,'Axes_panel');
+ah=axes_panel_comp.echo_obj.main_ax;
+clear_lines(ah);
 
 [trans_obj,~]=layer.get_trans(curr_disp);
 
@@ -59,13 +65,15 @@ layer.delete_regions_from_uid(curr_disp,ID);
 
 add_undo_region_action(main_figure,trans_obj,old_regs,trans_obj.Regions);
 
-display_regions(main_figure,'both');
+display_regions('both');
 
 update_multi_freq_disp_tab(main_figure,'sv_f',0);
 update_multi_freq_disp_tab(main_figure,'ts_f',0);
 
 curr_disp.setActive_reg_ID({});
-
+curr_disp.Reg_changed_flag=1;
 update_reglist_tab(main_figure,0);
 end
+
+
 

@@ -36,7 +36,7 @@ c_interp=interpn(z_c,c,z_interp,'linear');
 
 trans_obj=layer.get_trans(curr_disp);
 
-depth=trans_obj.get_transceiver_depth([],1);
+depth=trans_obj.get_samples_depth([],1);
 
 idx_disp=z_interp>depth(end);
 
@@ -45,7 +45,7 @@ plot(c_interp(idx_disp),z_interp(idx_disp),'-o');
 hold on;
 plot(c,z_c,'-+');
 axis ij;
-ylim([z_interp(1) nanmax(z_interp(idx_disp))]);
+ylim([z_interp(1) max(z_interp(idx_disp))]);
 xlabel('SoundSpeed(m/s)');
 ylabel('Depth (m)');
 grid on;

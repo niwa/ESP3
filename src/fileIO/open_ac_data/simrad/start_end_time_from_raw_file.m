@@ -9,7 +9,8 @@ start_time = 0;
 end_time = 1e9;
 
 %% open file
-fid = fopen(filename,'r','n','US-ASCII');
+fid = fopen(filename,'r','l','US-ASCII');
+
 if fid==-1
     return;
 end
@@ -56,7 +57,7 @@ fseek(fid,0,'eof');
 
 %% find end time in file
 pos = ftell(fid);
-BLCK_SIZE = nanmin(pos,1e6);
+BLCK_SIZE = min(pos,BLCK_SIZE);
 fseek(fid,-BLCK_SIZE,'cof');
 found_end=false;
 
@@ -89,5 +90,19 @@ end
 
 %% close file
 fclose(fid);
+
+[pathsave,name,ext] = fileparts(filename);
+fsave = append(pathsave,'\',"TimeCorrection.mat");
+
+if isfile(fsave)
+    TimeCorrection = load(fsave);
+    filenames = TimeCorrection.TimeCorrection.File_names;
+    fname=strcat(name,ext);
+    if all(ismember(fname, filenames))
+        t_offset = seconds(TimeCorrection.TimeCorrection.Time_offset{3}*3600+TimeCorrection.TimeCorrection.Time_offset{2}*60+TimeCorrection.TimeCorrection.Time_offset{1});   
+        start_time = datenum(start_time+seconds(t_offset));
+        end_time = datenum(end_time+seconds(t_offset));
+    end
+end
 
 end

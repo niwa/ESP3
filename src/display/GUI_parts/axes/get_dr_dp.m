@@ -1,4 +1,4 @@
-function [dr,dp]=get_dr_dp(ax,nb_samples,nb_pings,echoQuality,echoType)
+function [dr,dp]=get_dr_dp(ax,nb_samples,nb_pings,echoQuality)
 
 screensize = getpixelposition(ax);
 outputSize=screensize(3:4);
@@ -16,8 +16,7 @@ switch echoQuality
         dqf=1.5;
 end
 
-outputSize=round(dqf*outputSize);
+outputSize=ceil(dqf*outputSize);
 
-
-dr=nanmax(ceil(nb_samples/outputSize(2)),1);
-dp=nanmax(floor(nb_pings/outputSize(1)),1);
+dr=max(ceil(nb_samples/outputSize(2)),1);
+dp=max(floor(nb_pings/outputSize(1)),1);

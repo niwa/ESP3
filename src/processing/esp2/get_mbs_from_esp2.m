@@ -12,7 +12,9 @@ parse(p,cvsroot,varargin{:});
 MbsId=p.Results.MbsId;
 Rev=p.Results.Rev;
 
+
 if ~isempty(MbsId)
+    [~,MbsId,~] = fileparts(MbsId);
     if min([isstrprop(MbsId(1:end-14) , 'alpha'), isstrprop(MbsId(end-13:end) , 'digit')]) ~= 1  % check if string is of MBS ID type
         warning('Wrong MBSId Format');
         return;
@@ -20,7 +22,6 @@ if ~isempty(MbsId)
 end
 
 outDir = tempname();
-
 
 if ~mkdir(outDir)
     error('Unable to create temporary cvs directory');
@@ -37,7 +38,6 @@ else
     end
     
 end
-
 
 %run command
 work_path=pwd;

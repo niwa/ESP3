@@ -3,8 +3,6 @@ function load_map_tab(main_figure,tab_panel,varargin)
 p = inputParser;
 addRequired(p,'main_figure',@(obj) isa(obj,'matlab.ui.Figure'));
 addRequired(p,'tab_panel',@(obj) ishghandle(obj));
-addParameter(p,'cont_disp',0,@isnumeric);
-addParameter(p,'cont_val',500,@isnumeric);
 addParameter(p,'basemap','landcover',@ischar);
 addParameter(p,'idx_lays',[],@isnumeric);
 addParameter(p,'all_lays',0,@isnumeric);
@@ -40,30 +38,16 @@ pos=create_pos_3(8,2,gui_fmt.x_sep,gui_fmt.y_sep,gui_fmt.txt_w,gui_fmt.box_w,gui
 % 'Position',pos{1,2}{1}+[0 0 gui_fmt.box_w 0],...
 % 'Callback','');
 
-map_tab_comp.cont_disp=p.Results.cont_disp;
-map_tab_comp.cont_val=p.Results.cont_val;
 map_tab_comp.idx_lays=p.Results.idx_lays;
 map_tab_comp.all_lays=p.Results.all_lays;
 
-map_tab_comp.cont_checkbox=uicontrol(...
-    'Parent',map_tab_comp.opt_panel,...
-    'String','Contours(m)',...
-    gui_fmt.chckboxStyle,...
-    'Position',pos{1,1}{1},...
-    'Callback',{@update_map_cback,main_figure},'Value',p.Results.cont_disp);
-
-map_tab_comp.contour_edit_box=uicontrol(...
-    'Parent',map_tab_comp.opt_panel,...
-    'String',num2str(p.Results.cont_val),...
-    gui_fmt.edtStyle,...
-    'Position',pos{1,1}{2},...
-    'Callback',{@update_map_cback,main_figure});
 
 curr_disp=get_esp3_prop('curr_disp');
+reload = false;
 
-if isempty(curr_disp)||~isdeployed
+if (isempty(curr_disp)||~isdeployed) && reload
     base_curr=p.Results.basemap;   
-    [basemap_list,~,~,basemap_dispname_list]=list_basemaps(~isdeployed,curr_disp.Online);
+    [basemap_list,~,~,basemap_dispname_list]=list_basemaps(~isdeployed,true);
 else
     base_curr=curr_disp.Basemap;
     [basemap_list,~,~,basemap_dispname_list]=list_basemaps(~isdeployed,curr_disp.Online,curr_disp.Basemaps);
@@ -124,18 +108,19 @@ map_tab_comp.ax=geoaxes('Parent',map_tab_comp.map_tab,...
     'ActivePositionProperty','position');
 
 format_geoaxes(map_tab_comp.ax);
+map_tab_comp.ax.UserData.Cols = {};
+map_tab_comp.ax.UserData.Tags = {};
+
 
 geolimits(map_tab_comp.ax,[-90 90],[-180 180]);
 
 map_tab_comp.boat_pos=matlab.graphics.chart.primitive.Line('Parent',map_tab_comp.ax,'marker','s','markersize',10,'markeredgecolor','r','markerfacecolor','k','tag','boat_pos');
 map_tab_comp.boat_pos.LatitudeDataMode='manual';
-map_tab_comp.curr_track=matlab.graphics.chart.primitive.Line('Parent',map_tab_comp.ax,'Color','r','linestyle','--','linewidth',1,'tag','curr_track');
+map_tab_comp.curr_track=matlab.graphics.chart.primitive.Line('Parent',map_tab_comp.ax,'Color',[0.8 0 0]','linestyle','--','linewidth',1,'tag','curr_track');
 map_tab_comp.curr_track.LatitudeDataMode='manual';
 
 map_tab_comp.tracks_plots=[];
 map_tab_comp.map_info=[];
-map_tab_comp.contour_plots=[];
-map_tab_comp.contour_texts=[];
 map_tab_comp.shapefiles_plot=[];
 
 setappdata(main_figure,'Map_tab',map_tab_comp);
@@ -144,8 +129,9 @@ update_map_tab(main_figure);
 
 end
 
-function resize_map_tab(src,evt,main_figure)
+function resize_map_tab(~,~,main_figure)
 try
+    drawnow;
     map_tab_comp=getappdata(main_figure,'Map_tab');
     size_tab=getpixelposition(map_tab_comp.map_tab);
     
@@ -159,19 +145,20 @@ try
 end
 end
 
-function update_map_cback(src,evt,main_figure)
+function update_map_cback(src,~,main_figure)
 
 update_map_tab(main_figure,'src',src);
 
 end
 
-function update_basemap_cback(src,evt,main_figure)
+function update_basemap_cback(~,~,main_figure)
 map_tab_comp=getappdata(main_figure,'Map_tab');
 
 basemap_str=map_tab_comp.basemap_list.UserData{map_tab_comp.basemap_list.Value};
 curr_disp=get_esp3_prop('curr_disp');
 curr_disp.Basemap=basemap_str;
 geobasemap(map_tab_comp.ax,basemap_str);
+
 if isappdata(main_figure,'file_tab')
     file_tab_comp=getappdata(main_figure,'file_tab');
     geobasemap(file_tab_comp.map_axes,basemap_str);

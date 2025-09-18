@@ -41,7 +41,7 @@ layer=get_current_layer();
 axes_panel_comp=getappdata(main_figure,'Axes_panel');
 curr_disp=get_esp3_prop('curr_disp');
 
-ah=axes_panel_comp.main_axes;
+ah=axes_panel_comp.echo_obj.main_ax;
 
 
 switch main_figure.SelectionType
@@ -51,19 +51,21 @@ switch main_figure.SelectionType
 
         return;
 end
-axes_panel_comp.bad_transmits.UIContextMenu=[];
-axes_panel_comp.bottom_plot.UIContextMenu=[];
+axes_panel_comp.echo_obj.echo_bt_surf.UIContextMenu=[];
+axes_panel_comp.echo_obj.bottom_line_plot.UIContextMenu=[];
 clear_lines(ah);
- [cmap,col_ax,col_line,col_grid,col_bot,col_txt,~]=init_cmap(curr_disp.Cmap);
+cmap_struct = init_cmap(curr_disp.Cmap,curr_disp.ReverseCmap);
 
-[trans_obj,idx_freq]=layer.get_trans(curr_disp);
+[trans_obj,~]=layer.get_trans(curr_disp);
 
 
 cp = ah.CurrentPoint;
 
 xinit(1) = cp(1,1);
 yinit(1)=cp(1,2);
+
 u=2;
+
 xdata=trans_obj.get_transceiver_pings();
 ydata=trans_obj.get_transceiver_samples();
 
@@ -73,10 +75,9 @@ y_lim=get(ah,'ylim');
 if xinit(1)<x_lim(1)||xinit(1)>xdata(end)||yinit(1)<y_lim(1)||yinit(1)>y_lim(end)
     return;
 end
-rr=trans_obj.get_transceiver_range();
-hp=patch(ah,'XData',xinit,'YData',yinit,'FaceColor',col_line,'FaceAlpha',0.4,'EdgeColor',col_line,'linewidth',0.5,'Tag','reg_temp');
-txt=text(ah,cp(1,1),cp(1,2),sprintf('%.2f m',rr(nanmin(ceil(cp(1,2)),numel(rr)))),'color',col_line,'Tag','reg_temp');
-
+rr=trans_obj.get_samples_range();
+hp=patch(ah,'XData',xinit,'YData',yinit,'FaceColor',cmap_struct.col_lab,'FaceAlpha',0.4,'EdgeColor',cmap_struct.col_lab,'linewidth',0.5,'Tag','reg_temp');
+txt=text(ah,cp(1,1),cp(1,2),sprintf('%.2f m',rr(min(ceil(cp(1,2)),numel(rr)))),'color',cmap_struct.col_lab,'Tag','reg_temp');
 
 replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2,'interaction_fcn',@wbmcb_ext);
 replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',@wbdcb_ext);
@@ -91,19 +92,19 @@ replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'inte
         end
         
         xinit(u)=cp(1,1);
-        yinit(u)=nanmin(nanmax(ceil(cp(1,2)),1),numel(rr));
+        yinit(u)=min(max(round(cp(1,2)),1),numel(rr));
             
         
         if isvalid(hp)
             set(hp,'XData',xinit,'YData',yinit);
         else
-            hp=patch(ah,'XData',xinit,'YData',yinit,'FaceColor',col_line,'FaceAlpha',0.4,'EdgeColor',col_line,'linewidth',0.5,'Tag','reg_temp');
+            hp=patch(ah,'XData',xinit,'YData',yinit,'FaceColor',cmap_struct.col_lab,'FaceAlpha',0.4,'EdgeColor',cmap_struct.col_lab,'linewidth',0.5,'Tag','reg_temp');
         end
         
         if isvalid(txt)
             set(txt,'position',[cp(1,1) yinit(u) 0],'string',sprintf('%.2f m',rr(yinit(u))));
         else
-            txt=text(ah,cp(1,1),yinit(u),sprintf('%.2f m',rr(yinit(u))),'color',col_line,'Tag','reg_temp');
+            txt=text(ah,cp(1,1),yinit(u),sprintf('%.2f m',rr(yinit(u))),'color',cmap_struct.col_lab,'Tag','reg_temp');
         end
    end
 
@@ -125,7 +126,7 @@ replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'inte
         if isvalid(hp)
             set(hp,'XData',xinit,'YData',yinit);
         else
-            hp=plot(ah,xinit,yinit,'color',col_line,'linewidth',1,'Tag','reg_temp');
+            hp=plot(ah,xinit,yinit,'color',cmap_struct.col_lab,'linewidth',1,'Tag','reg_temp');
         end
         
         
@@ -157,13 +158,11 @@ replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'inte
         yinit(yinit>ydata(end))=ydata(end);
         yinit(yinit<ydata(1))=ydata(1);
         
-        poly_r=nan(size(yinit));
-        poly_pings=nan(size(xinit));
-        for i=1:length(xinit)
-            [~,poly_pings(i)]=nanmin(abs(xinit(i)-double(x_data_disp)));
-            [~,poly_r(i)]=nanmin(abs(yinit(i)-double(ydata)));
-            
-        end
+
+        [~,poly_pings]=min(abs(xinit-double(x_data_disp')));
+        [~,poly_r]=min(abs(yinit-double(ydata)));
+
+
         clear_lines(ah)
         delete(txt);
         delete(hp);

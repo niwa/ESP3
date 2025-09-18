@@ -1,5 +1,5 @@
 
-function load_default_params(src,main_figure,algo_name)
+function load_default_params(src,~,algo_name)
 layer=get_current_layer();
 
 if isempty(layer)
@@ -26,7 +26,7 @@ end
 idx_algo_xml=strcmpi(names,src.String{src.Value});
 
 if ~isempty(idx_algo_xml)
-    varin=algo_alt(idx_algo_xml).init_input_params();
+    varin=algo_alt(idx_algo_xml).init_algo_input_params();
     fields_to_up=fields(varin);
     
     for i=1:numel(fields_to_up)

@@ -10,7 +10,7 @@ end
 try
     system(sprintf('start "%s"',f_out))
 catch
-    warndlg_perso([],'',sprintf('Could not open created script, but it has been saved here: %s',f_out));
+    dlg_perso([],'',sprintf('Could not open created script, but it has been saved here: %s',f_out));
 end
 
 end

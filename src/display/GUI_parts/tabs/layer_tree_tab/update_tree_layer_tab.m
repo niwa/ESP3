@@ -13,6 +13,7 @@ end
 iconpath = fullfile(whereisEcho(),'icons');
 
 layers_curr=get_esp3_prop('layers');
+
 layer=get_current_layer();
 layer_tree_tab_comp=getappdata(main_figure,'Layer_tree_tab');
 
@@ -48,7 +49,7 @@ if ~isempty(layers)
                 
                 for ilay=1:length(userdata.ids)
                     [idx,~]=find_layer_idx(layers,userdata.ids{ilay});
-                    layers_Str_comp=list_layers(layers(idx));
+                    layers_Str_comp=list_layers(layers(idx),'valid_filename',false);
                     newlNode = uitreenode('v0',[],layers_Str_comp, fullfile(iconpath,'layer_icon.gif'), false);
                     userdatal.level='layer';
                     userdatal.ids=userdata.ids{ilay};
@@ -91,13 +92,13 @@ if ~isempty(layers)
                 
                 newNode = uitreenode('v0',[],disp_str, fullfile(iconpath,'book_link.gif'), false);
                 userdata.level='folder';
-                [userdata.ids,~,idx_lay]=unique(layer_IDs(idx_lay_cell{isurv}),'stable');
+                [userdata.ids,~,~]=unique(layer_IDs(idx_lay_cell{isurv}),'stable');
                 userdata.files=list_files_layers(layer_out_cell{isurv});
                 newNode.UserData=userdata;
                 
                 for ilay=1:length(userdata.ids)
                     [idx,~]=find_layer_idx(layers,userdata.ids{ilay});
-                    layers_Str_comp=list_layers(layers(idx));
+                    layers_Str_comp=list_layers(layers(idx),'valid_filename',false);
                     newlNode = uitreenode('v0',[],layers_Str_comp, fullfile(iconpath,'layer_icon.gif'), false);
                     userdatal.level='layer';
                     userdatal.ids=userdata.ids{ilay};

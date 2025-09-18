@@ -5,7 +5,7 @@ tags={tab_group.Children(:).Tag};
 
 tag_order={'disp' 'laylist' 'map' 'proc' 'cal' 'env' 'reglist' 'sv_f' 'st_tracks' 'ts_f' 'lines'};
 tag_order(~ismember(tag_order,tags))=[];
-idx=cellfun(@(x) find(strcmpi(x,tags)),tag_order);
+idx=cellfun(@(x) find(strcmpi(x,tags),1),tag_order);
 
 tab_group.Children=tab_group.Children(idx);
 

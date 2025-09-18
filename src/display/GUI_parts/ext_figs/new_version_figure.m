@@ -2,8 +2,7 @@ function online=new_version_figure(main_figure)
 echo_ver = get_ver();
 fprintf('Version %s\n',echo_ver);
 online=true;
-    try
-        
+    try     
         fprintf('Checking for updates...\n');
         tmp=webread('http://sourceforge.net/projects/esp3/best_release.json',weboptions('ContentType','json'));
         
@@ -24,7 +23,6 @@ online=true;
         curr_ver=sscanf(echo_ver,'%d.%d.%d');
         new_bool=last_ver>curr_ver;
         new_same_bool=last_ver>=curr_ver;
-        
         new=0;
         
         if new_bool(1)>0
@@ -35,8 +33,7 @@ online=true;
             new=1;
         end
         
-        if new>0
-            
+        if new>0 
             QuestFig=new_echo_figure(main_figure,'units','pixels','position',[200 200 400 100],...
                 'WindowStyle','modal','Visible','on','resize','off','tag','dlnewversion','Name','Update Available');
             bgcolor = num2cell([0.8 0.8 0.8]);
@@ -52,14 +49,13 @@ online=true;
             %hjLabel.setToolTipText(['Visit the ' real_struct.url ' website']);
             
             % Set the mouse-click callback
-            set(hjLabel, 'MouseClickedCallback', @(h,e)web(real_struct.url, '-browser'))
-            
+            set(hjLabel, 'MouseClickedCallback', @(h,e)web(real_struct.url, '-browser'));          
         else
             disp_perso(main_figure,'ESP3 seems to be up to date...');
         end
     catch err
         online=false;
-        print_errors_and_warnings([],'error',err);
+        print_errors_and_warnings([],'','Could not check for updates online');
         disp_perso(main_figure,'Could not check for updates online');
     end
 

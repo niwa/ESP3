@@ -13,25 +13,24 @@ addParameter(p,'v_filt',1.5,@isnumeric);
 addParameter(p,'v_buffer',2,@isnumeric);
 addParameter(p,'denoised',true,@(x) isnumeric(x)||islogical(x));
 addParameter(p,'flag_bad_pings',100,@isnumeric)
-addParameter(p,'block_len',get_block_len(10,'cpu'),@(x) x>0);
+addParameter(p,'block_len',[],@(x) x>0 || isempty(x));
 addParameter(p,'reg_obj',region_cl.empty(),@(x) isa(x,'region_cl'));
 addParameter(p,'load_bar_comp',[]);
 
 parse(p,trans_obj,varargin{:});
 nb_spikes=0;
 
-
 if isempty(p.Results.reg_obj)
-    idx_r_tot=1:length(trans_obj.get_transceiver_range());
-    idx_pings_tot=1:length(trans_obj.get_transceiver_pings());
-    trans_obj.set_spikes(idx_r_tot,idx_pings_tot,0)
+    idx_r_tot=1:length(trans_obj.get_samples_range());
+    idx_ping_tot=1:length(trans_obj.get_transceiver_pings());
 else
-    idx_pings_tot=p.Results.reg_obj.Idx_pings;
+    idx_ping_tot=p.Results.reg_obj.Idx_ping;
     idx_r_tot=p.Results.reg_obj.Idx_r;
 end
+
 ouptut_struct.done=false;
 
-range_tot=trans_obj.get_transceiver_range(idx_r_tot);
+range_tot=trans_obj.get_samples_range(idx_r_tot);
 
 if ~isempty(idx_r_tot)
     idx_r_tot(range_tot<p.Results.r_min|range_tot>p.Results.r_max)=[];
@@ -42,14 +41,16 @@ if isempty(idx_r_tot)
     return; 
 end
 
-range_tot=trans_obj.get_transceiver_range(idx_r_tot);
+trans_obj.set_spikes(idx_r_tot,idx_ping_tot,0);
 
-Np=floor(p.Results.v_filt/nanmean(diff(range_tot)))*2;
+range_tot=trans_obj.get_samples_range(idx_r_tot);
 
-Np_buff=floor(p.Results.v_buffer/nanmean(diff(range_tot)))*2;
+Np=floor(p.Results.v_filt/mean(diff(range_tot)))*2;
 
-block_size=nanmin(ceil(p.Results.block_len/numel(idx_r_tot)),numel(idx_pings_tot));
-num_ite=ceil(numel(idx_pings_tot)/block_size);
+Np_buff=floor(p.Results.v_buffer/mean(diff(range_tot)))*2;
+block_len = get_block_len(50,'cpu',p.Results.block_len);
+block_size=min(ceil(block_len/numel(idx_r_tot)),numel(idx_ping_tot));
+num_ite=ceil(numel(idx_ping_tot)/block_size);
 
 load_bar_comp=p.Results.load_bar_comp;
 if ~isempty(p.Results.load_bar_comp)
@@ -57,27 +58,29 @@ if ~isempty(p.Results.load_bar_comp)
 end
 tag=trans_obj.Bottom.Tag;
 
-if p.Results.denoised
-    field='spdenoised';
+
+if p.Results.denoised > 0
+    field = 'spdenoised';
+    alt_fields = {'sp','img_intensity'};
 else
     field = 'sp';
+    alt_fields = {'img_intensity'};
 end
-
-if ~ismember(field,trans_obj.Data.Fieldname)
-    field='sp';
-end
-
 
 
 for ui=1:num_ite
-    idx_pings=idx_pings_tot((ui-1)*block_size+1:nanmin(ui*block_size,numel(idx_pings_tot)));
+    idx_ping=idx_ping_tot((ui-1)*block_size+1:min(ui*block_size,numel(idx_ping_tot)));
     
 
-    reg_temp=region_cl('Name','Temp','Idx_r',idx_r_tot,'Idx_pings',idx_pings);
+    reg_temp=region_cl('Name','Temp','Idx_r',idx_r_tot,'Idx_ping',idx_ping);
     
-    [sp_spikes,idx_r,idx_pings,bad_data_mask,bad_trans_vec,inter_mask,below_bot_mask,~]=trans_obj.get_data_from_region(reg_temp,'field',field,...
+    [sp_spikes,~,idx_ping,~,bad_data_mask,~,inter_mask,below_bot_mask,~]=trans_obj.get_data_from_region(reg_temp,'field',field,'alt_fields',alt_fields,...
         'intersect_only',1,...
         'regs',p.Results.reg_obj);
+
+    if isempty(sp_spikes)
+        return;
+    end
     
     if ~isempty(p.Results.reg_obj)
         mask=bad_data_mask|below_bot_mask|~inter_mask;
@@ -92,18 +95,18 @@ for ui=1:num_ite
     Fx=nan(size(sp_filtered));
     [~,nb_pings]=size(sp_filtered);
     Fx(:,1:nb_pings-1)=-(sp_filtered(:,2:nb_pings)-sp_filtered(:,1:nb_pings-1));
-    Fx(:,2:nb_pings)=nanmin(Fx(:,2:nb_pings),(sp_filtered(:,2:nb_pings)-sp_filtered(:,1:nb_pings-1)));
+    Fx(:,2:nb_pings)=min(Fx(:,2:nb_pings),(sp_filtered(:,2:nb_pings)-sp_filtered(:,1:nb_pings-1)));
     
     Fx2=nan(size(sp_filtered));
     Fx2(:,1:nb_pings-2)=-(sp_filtered(:,3:nb_pings)-sp_filtered(:,1:nb_pings-2));
-    Fx2(:,3:nb_pings)=nanmin(Fx2(:,3:nb_pings),(sp_filtered(:,3:nb_pings)-sp_filtered(:,1:nb_pings-2)));
+    Fx2(:,3:nb_pings)=min(Fx2(:,3:nb_pings),(sp_filtered(:,3:nb_pings)-sp_filtered(:,1:nb_pings-2)));
     
     mask=Fx>p.Results.thr_spikes&sp_spikes>p.Results.thr_sp|Fx2>p.Results.thr_spikes&sp_spikes>p.Results.thr_sp;
 
     mask=floor(filter2_perso(ones(Np,1),mask))==1;
     mask=ceil(filter2_perso(ones(Np_buff,1),mask))==1;
     
-    nb_spikes=nb_spikes+nansum(mask(:));
+    nb_spikes=nb_spikes+sum(mask(:));
     
 % 
 %     sp_spikes_ori=sp_spikes;
@@ -112,21 +115,21 @@ for ui=1:num_ite
 %     figure();
 %     ax1=subplot(1,3,1);
 %     imagesc(sp_spikes_ori,'alphadata',double(sp_spikes_ori>p.Results.thr_sp))
-%     caxis([p.Results.thr_sp p.Results.thr_sp+35]);
+%     clim([p.Results.thr_sp p.Results.thr_sp+35]);
 %     
 %     ax=subplot(1,3,2);
 %     imagesc(ax,Fx,'alphadata',mask);
 %     
 %     ax2=subplot(1,3,3);
 %     imagesc(sp_spikes,'alphadata',double(sp_spikes>p.Results.thr_sp))
-%     caxis([p.Results.thr_sp p.Results.thr_sp+35]);
+%     clim([p.Results.thr_sp p.Results.thr_sp+35]);
 %     linkaxes([ax1 ax2 ax ],'xy');
      
-    trans_obj.set_spikes(idx_r_tot,idx_pings,mask);
+    trans_obj.set_spikes(idx_r_tot,idx_ping,mask);
      
     if p.Results.flag_bad_pings<100
         
-        tag(idx_pings(nansum(mask)./nansum(below_bot_mask==0)*100>p.Results.flag_bad_pings))=0;
+        tag(idx_ping(sum(mask)./sum(below_bot_mask==0)*100>p.Results.flag_bad_pings))=0;
         
 
         trans_obj.Bottom.Tag = tag;
@@ -138,7 +141,7 @@ for ui=1:num_ite
     end
    
 end
-nb_samples=numel(idx_r_tot)*numel(idx_pings_tot);
+nb_samples=numel(idx_r_tot)*numel(idx_ping_tot);
 fprintf('%d samples removed from %d\n',nb_spikes,nb_samples); 
 ouptut_struct.done=true;
 if ~isempty(p.Results.load_bar_comp)

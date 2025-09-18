@@ -11,7 +11,7 @@ if isempty(survey_table)
     dbconn.exec(createsurveyTable_str);
 else
     isthereatypecolumn=dbconn.fetch('SELECT sql FROM sqlite_master WHERE type=''table'' AND name=''survey''');
-    if ~contains(isthereatypecolumn{1},'Timezone')
+    if ~contains(isthereatypecolumn.sql{1},'Timezone')
         dbconn.exec(['ALTER TABLE survey '...
             'ADD Timezone FLOAT DEFAULT 0']);
     end  

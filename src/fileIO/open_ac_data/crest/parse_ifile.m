@@ -8,36 +8,54 @@ if  ischar(ifile)
     if (tok == 'd' || tok == 'n' || tok == 't') && ~isempty(str2double(num))
         ifile(end-7) = 'i';
     end
-
+    
 end
 
+ifileInfo=struct('version','','compression','',...
+    'snapshot',nan,'stratum','','transect',nan,...
+    'ADC_sample_frequency',nan,'decimation_count',nan,...
+    'Crest_to_esp_map_factor',1,...
+    'rcpnk',nan,...
+    'gain_compensation_NE',1,...
+    'gain_compensation_SW',1,...
+    'gain_compensation_SE',1,...
+    'gain_NW',1,...
+    'start_date',0,'finish_date',1,...
+    'Lat',[nan nan],'Lon',[nan nan],...
+    'HDG',[nan nan],'SOG',[nan nan],...
+    'GMT',[0 1],....
+    'range_offset',0,...
+    'depth_factor',1/0.1875,...
+    'system_calibration',659200,...
+    'current_rms_offset',0,...
+    'current_rms_scale_factor',1,...
+    'angle_factor',21,...
+    'angle_factor_alongship',21,...
+    'angle_factor_athwartship',21,....
+    'fore_aft_offset',0,...
+    'port_stbd_offset',0,...
+    'effective_beam_angle',nan,...
+    'effective_pulse_width',0.001,...
+    'transmit_pulse_length',0.001,...
+    'absorption_coefficient',9,...
+    'sound_speed',1500,'TVG_type',nan,...
+    'TVG','','transducer_id','',...
+    'sounder_type','',...
+    'channel',nan,....
+    'Cal_crest',nan,...
+    'rawFileName','',...
+    'rawSubDir','ek60',...
+    'G0',0,....
+    'SACORRECT',0,...
+    'convertEk60ToCrest','nope',...
+    'es60_zero_error_ping_num',nan,...
+    'es60error_method',nan,...
+    'es60error_offset',nan,...
+    'es60error_min_std',nan,...
+    'es60error_min_mean',nan,...
+    'es60error_min_GOF',nan);
 
-parameters_search={'version','compression','snapshot','stratum','transect',....
-    'start_date','LAT','HDG','GMT','finish_date',....
-    'depth_factor','system_calibration','current_rms_offset','current_rms_scale_factor'...
-    'angle_factor','angle_factor_alongship',...
-    'angle_factor_athwartship',...
-    'transmit_pulse_length',...
-    'absorption_coefficient',...
-    'sound_speed',...
-    'TVG_type',...
-    'TVG',...
-    'transducer_id',...
-    'sounder_type',...
-    'convertEk60ToCrest',...
-    'es60_zero_error_ping_num',...
-    'es60error_method',...
-    'es60error_offset',...
-    'es60error_min_std',...
-    'es60error_min_mean',...
-    'es60error_min_GOF'};
-
-ifileInfo=struct('version','','compression','','snapshot',nan,'stratum','','transect',nan,....
-    'start_date',nan,'finish_date',nan,'Lat',[nan nan],'Lon',[nan nan],'HDG',[nan nan],'SOG',[nan nan],'GMT',[nan nan],....%2x1vector [start end]
-    'depth_factor',nan,'system_calibration',nan,'current_rms_offset',0,'current_rms_scale_factor',1,'angle_factor',nan,'angle_factor_alongship',nan,'angle_factor_athwartship',nan,'transmit_pulse_length',nan,...
-    'absorption_coefficient',nan,'sound_speed',nan,'TVG_type',nan,'TVG','','transducer_id','','sounder_type','',...
-    'channel',nan,'Cal_crest',nan,'rawFileName','','rawSubDir','ek60','G0',nan,'SACORRECT',nan,...
-    'es60_zero_error_ping_num',nan,'es60error_method',nan,'es60error_offset',nan,'es60error_min_std',nan,'es60error_min_mean',nan,'es60error_min_GOF',nan);
+parameters_search=[fieldnames(ifileInfo); {'start';'finish'}];
 
 %fid=fopen(ifile,'r');
 fid=fopen(ifile,'r','n','US-ASCII');
@@ -48,32 +66,50 @@ if fid == -1
 end
 
 tline = fgetl(fid);
+
+
 while 1
-    if feof(fid)
-        break;
+
+    idx_com = strfind(tline,'#');
+    if ~isempty(idx_com)&&idx_com(1)>1
+        tline(idx_com(1):end) = [];
+    elseif ~isempty(idx_com)
+        tline(idx_com) = [];
     end
-    for i=1:length(parameters_search)
-        idx_str=strfind(tline,parameters_search{i});
-        if ~isempty(idx_str)
-            switch parameters_search{i}
+    tline = strtrim(tline);
+    if isempty(tline)
+        if feof(fid)
+            break;
+        end
+        tline = fgetl(fid);
+        continue;
+    end
+    
+    for iparams=1:length(parameters_search)
+        idx_str=contains(tline,parameters_search{iparams});
+        if idx_str
+            switch parameters_search{iparams}
                 case 'start_date'
                     idx_dots=strfind(tline,':');
-                    ifileInfo.start_date = datenum(strtrim(tline(idx_dots(1)+6:end)));
+                    sdl = strtrim(tline(idx_dots(1)+6:end));
+                    if ~isempty(sdl)
+                        ifileInfo.start_date = datenum(sdl);
+                    end
                 case 'LAT'
-                    if strfind(tline,'start');
+                    if contains(tline,'start')
                         [ifileInfo.Lat(1),ifileInfo.Lon(1)]=parse_lat_long(tline);
                     else
                         [ifileInfo.Lat(2),ifileInfo.Lon(2)]=parse_lat_long(tline);
                     end
-                case 'HDG'
-                    if strfind(tline,'start');
+                case {'HDG' 'SOG'}
+                    if contains(tline,'start')
                         [ifileInfo.HDG(1),ifileInfo.SOG(1)]=parse_HDG_SOG(tline);
                     else
                         [ifileInfo.HDG(2),ifileInfo.SOG(2)]=parse_HDG_SOG(tline);
                     end
                 case 'GMT'
                     idx_dots=strfind(tline,':');
-                    if strfind(tline,'start');
+                    if contains(tline,'start')
                         nz = datevec(ifileInfo.start_date);
                         gmt = datevec(tline(idx_dots(2)+1:end));
                         tmp = [nz(1) nz(2) nz(3) gmt(4) gmt(5) gmt(6)];
@@ -88,9 +124,11 @@ while 1
                     end
                 case 'finish_date'
                     idx_dots=strfind(tline,':');
-                    ifileInfo.finish_date = datenum(tline(idx_dots(1)+6:end));
-                case 'convertEk60ToCrest'
-                    
+                    edl = strtrim(tline(idx_dots(1)+6:end));
+                    if ~isempty(edl)
+                        ifileInfo.finish_date = datenum(edl);
+                    end
+                case 'convertEk60ToCrest'            
                     expr='(-r).*(\w+).*(raw)';
                     subline=regexp(tline,expr,'match');
                     if ~isempty(subline)
@@ -123,19 +161,43 @@ while 1
                         continue;
                     end
                     if ~isnan(str2double(tline(idx_dots(1)+1:end)))
-                        ifileInfo.(parameters_search{i})=str2double(tline(idx_dots(1)+1:end));
+                        ifileInfo.(parameters_search{iparams})=str2double(tline(idx_dots(1)+1:end));
                     else
-                        ifileInfo.(parameters_search{i})=strtrim(tline(idx_dots(1)+1:end));
+                        ifileInfo.(parameters_search{iparams})=strtrim(tline(idx_dots(1)+1:end));
                     end
-                    parameters_search(i)=[];
+                    parameters_search(iparams)=[];
                     break;
             end
         end
+    end
+    if feof(fid)
+        break;
     end
     tline = fgetl(fid);
     
 end
 fclose(fid);
+
+if ~isnan(ifileInfo.ADC_sample_frequency)
+    ifileInfo.depth_factor  =  1e3/(ifileInfo.decimation_count/ifileInfo.ADC_sample_frequency*ifileInfo.sound_speed/2);
+end
+
+if ~isnan(ifileInfo.angle_factor)&&isnan(ifileInfo.angle_factor_alongship)
+    ifileInfo.angle_factor_alongship = ifileInfo.angle_factor;
+end
+if ~isnan(ifileInfo.angle_factor)&&isnan(ifileInfo.angle_factor_athwartship)
+    ifileInfo.angle_factor_athwartship = ifileInfo.angle_factor;
+end
+
+switch ifileInfo.sounder_type
+    case 'CREST'
+        ifileInfo.transmit_pulse_length = ifileInfo.transmit_pulse_length/38000;
+end
+
+if isnan(ifileInfo.effective_pulse_width)
+    ifileInfo.effective_pulse_width = ifileInfo.transmit_pulse_length;
+end
+
 
 end
 
@@ -146,7 +208,7 @@ subline_opt=tline(idx_opt:end);
 idx_opt=strfind(subline_opt,' ');
 if length(idx_opt)>=2
     opt=str2double(subline_opt(idx_opt(1):idx_opt(2)));
-elseif length(idx_opt)==1
+elseif isscalar(idx_opt)
     opt=str2double(subline_opt(idx_opt(1):end));
 else
     opt=[];
@@ -165,20 +227,26 @@ while l_new<l_old
 end
 
 out = textscan(tline,formatSpec,'delimiter',',');
-switch out{4}{1}
-    case 'S'
-        lat=-(double(out{2}) + out{3} / 60);
-    otherwise
-        lat=(double(out{2}) + out{3} / 60);
+lat = nan;
+lon = nan;
+
+if ~isempty(out{2})
+    switch out{4}{1}
+        case 'S'
+            lat=-(double(out{2}) + out{3} / 60);
+        otherwise
+            lat=(double(out{2}) + out{3} / 60);
+    end
 end
 
-switch out{7}{1}
-    case 'E'
-        lon=(double(out{5}) + out{6} / 60);
-    otherwise
-        lon=-(double(out{5}) + out{6} / 60);
+if ~isempty(out{5})
+    switch out{7}{1}
+        case 'E'
+            lon=(double(out{5}) + out{6} / 60);
+        otherwise
+            lon=-(double(out{5}) + out{6} / 60);
+    end
 end
-
 end
 
 
@@ -194,8 +262,14 @@ while l_new<l_old
 end
 
 out = textscan(tline,formatSpec,'delimiter',',');
-hdg=out{2};
-sog=out{3};
+hdg = nan;
+sog = nan;
+if ~isempty(out{2})
+    hdg=out{2};
+end
+if ~isempty(out{3})
+    sog=out{3};
+end
 end
 
 

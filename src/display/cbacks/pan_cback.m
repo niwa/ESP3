@@ -10,7 +10,7 @@ end
 
 axes_panel_comp=getappdata(main_figure,'Axes_panel');
 
-ah=axes_panel_comp.main_axes;
+ah=axes_panel_comp.echo_obj.main_ax;
 xlim_n = ah.XLim;
 ylim_n = ah.YLim;
 
@@ -32,7 +32,7 @@ switch src.SelectionType
         return;
 end
 
-    function wbmfcb_pan(src,~)
+    function wbmfcb_pan(~,~)
         %setptr(main_figure,'hand');
         pt = ah.CurrentPoint;
         if pt(1,1)<ah.XLim(1) || pt(1,1)>ah.XLim(2) || pt(1,2)<ah.YLim(1) || pt(1,2)>ah.YLim(2)

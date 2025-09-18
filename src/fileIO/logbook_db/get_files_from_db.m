@@ -5,7 +5,7 @@ addRequired(p,'dbconn',@(obj) isa(obj,'sqlite')||isa(dbconn,'database.jdbc.conne
 addRequired(p,'surv_data_obj',@(obj) isa(obj,'survey_data_cl'));
 parse(p,dbconn,surv_data_obj);
 
-sql_cmd='select Filename from logbook where';
+sql_cmd='SELECT Filename FROM logbook WHERE';
 att={'Snapshot' 'Stratum' 'Type' 'Transect'};
 
 u=0;
@@ -14,7 +14,7 @@ for iatt=1:numel(att)
     if ~isempty(surv_data_obj.(att{iatt}))
         if ischar(surv_data_obj.(att{iatt}))
             if ~isempty(deblank(surv_data_obj.(att{iatt})))
-                sql_cmd=[sql_cmd sprintf(' %s is "%s" and',att{iatt},surv_data_obj.(att{iatt}))];
+                sql_cmd=[sql_cmd sprintf(' %s IS "%s" and',att{iatt},surv_data_obj.(att{iatt}))];
             end
         else
             if surv_data_obj.(att{iatt})~=0

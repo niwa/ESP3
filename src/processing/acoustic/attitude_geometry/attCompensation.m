@@ -4,14 +4,14 @@ function compensation = attCompensation(faBW, psBW, roll_t, pitch_t,roll_r,pitch
 
 alpha=(faBW+psBW)/2/180*pi;
 
-[phi_t, theta_t] = splitbeam_angle_to_spherical(pitch_t/180*pi, roll_t/180*pi);
+[phi_t, theta_t] = simradAnglesToSpherical(pitch_t, roll_t);
 
-[phi_r, theta_r] = splitbeam_angle_to_spherical(pitch_r/180*pi, roll_r/180*pi);
+[phi_r, theta_r] = simradAnglesToSpherical(pitch_r, roll_r);
 
 
-cosmu=sin(phi_t).*cos(theta_t).*sin(phi_r).*cos(theta_r) +...
-    sin(phi_t).*sin(theta_t).*sin(phi_r).*sin(theta_r) + ...
-    cos(phi_t).*cos(phi_t);
+cosmu=sind(phi_t).*cosd(theta_t).*sind(phi_r).*cosd(theta_r) +...
+    sind(phi_t).*sind(theta_t).*sind(phi_r).*sind(theta_r) + ...
+    cosd(phi_t).*cosd(phi_t);
 
 mu = abs(acos(cosmu)) ;
 

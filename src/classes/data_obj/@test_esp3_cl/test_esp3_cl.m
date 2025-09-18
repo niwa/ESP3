@@ -1,0 +1,249 @@
+classdef test_esp3_cl < matlab.unittest.TestCase
+    
+    properties
+        esp3_obj
+    end
+    
+    methods(TestMethodSetup)
+        function launchESP3(testCase)
+            testCase.esp3_obj=EchoAnalysis();
+            fprintf('Starting ESP3\n');
+            testCase.addTeardown(@close,testCase.esp3_obj.main_figure);
+        end
+    end
+    
+    methods (Test)
+        function open_test_files(testCase)
+            
+            file_path= fullfile(testCase.esp3_obj.app_path.test_folder.Path_to_folder,'files');
+            echo_folder = get_esp3_file_folder(file_path,false);
+            if isfolder(echo_folder)
+                fprintf('Deleting echoanalysisfiles folder for tests files\n');
+                rmdir(echo_folder,'s');
+            end
+            bot_reg_folder = get_bot_reg_folder(file_path,false);
+            if isfolder(bot_reg_folder)
+                fprintf('Deleting bot_reg folder for tests files\n');
+                rmdir(bot_reg_folder,'s');
+            end
+            
+            if isfile(fullfile(file_path,'echo_logbook.db'))
+                fprintf('Deleting logbook db for tests files\n');
+                delete(fullfile(file_path,'echo_logbook.db'));
+            end
+            
+            
+            [file_list,~]=list_ac_files(file_path,1);
+            
+            n_files=numel(file_list);
+            
+
+            idx_proc=1:n_files;
+            idx_proc=unique(idx_proc);
+            file_list=file_list(idx_proc);
+            
+            fprintf(1,'Openning files: \n')
+            cellfun(@(x) fprintf(1,'%s\n',x),file_list);
+            
+            output=testCase.esp3_obj.open_file('file_id',fullfile(file_path,file_list));
+
+            testCase.verifyEqual(all(output), true, ...
+                [sprintf('The following files were not successfully opened: \n') sprintf('%s\n',file_list{~output})]);
+        end
+        
+        function run_scripts(testCase)
+            script_path= fullfile(testCase.esp3_obj.app_path.test_folder.Path_to_folder,'scripts');
+            
+            PathToResults = fullfile(testCase.esp3_obj.app_path.test_folder.Path_to_folder,'results');
+            
+            f=dir(fullfile(script_path,'*.xml'));
+            scripts_to_run = {f([f(:).isdir]==0).name};
+            
+            surv_objs_out = testCase.esp3_obj.run_scripts(fullfile(script_path,scripts_to_run),...
+                'PathToResults',PathToResults);
+            
+            
+            testCase.verifyEqual(numel(surv_objs_out)==numel(scripts_to_run), true, ...
+                sprintf('It looks like not all scripts were able to be run....'));
+        end
+        
+        function compare_scripts_results(testCase)
+            
+            Path_esp3 = fullfile(testCase.esp3_obj.app_path.test_folder.Path_to_folder,'results');
+            Path_ref = fullfile(testCase.esp3_obj.app_path.test_folder.Path_to_folder,'reference_results');
+            
+            f=dir(fullfile(Path_ref,'*_mbs_output.txt'));
+            files = {f([f(:).isdir]==0).name};
+            ref_files=fullfile(Path_ref,files);
+            esp3_files=fullfile(Path_esp3,files);
+            
+                      
+            same=true(1,numel(esp3_files));
+            diff_cell=cell(1,numel(esp3_files));
+            surv_obj_cell=cell(1,numel(esp3_files));
+            fig=new_echo_figure([]);
+            %fig=[];
+            for ii=1:numel(esp3_files)
+                if isfile(esp3_files{ii})
+                    fprintf('File %s:\n',esp3_files{ii});
+                    [same(ii),diff_cell{ii},surv_obj_cell{ii},~]=check_diff(fig,esp3_files{ii},ref_files{ii},1);
+                else
+                    same(ii)=false;
+                    diff_cell{ii}=[];
+                end
+            end
+            
+            testCase.verifyEqual(all(same), true, ...
+                [sprintf('The following files did not contained similar results to previous runs:\n') sprintf('%s\n',esp3_files{~same})]);
+            for ui=1:numel(same)
+                if ~same(ui)&&~isempty(diff_cell{ui})
+                    fprintf('\nDifferent results on files %s from script %s:\n',esp3_files{ui},surv_obj_cell{ui}.SurvInput.Infos.Script);
+                    fprintf('%s\n',diff_cell{ui}{:});
+                elseif ~same(ui)&&isempty(diff_cell{ui})
+                    fprintf('No new results files for %s:\nYou might need to rerun the corresponding script\n',esp3_files{ui});
+                end
+            end
+        end
+        
+        function compare_cw_calibration_results(testCase)
+            
+            cal_file = fullfile(testCase.esp3_obj.app_path.test_folder.Path_to_folder,'cw_calibration','tan1610-D20160826-T224922.raw');
+            if isfile(cal_file)
+                testCase.esp3_obj.open_file('file_id',cal_file);
+                
+                layers=get_esp3_prop('layers');
+                [idx_lay,found]=layers.find_layer_idx_files(cal_file);
+                
+                if found
+                    layer=layers(idx_lay);
+                    layer.EnvData.Depth=25;
+                    layer.EnvData.Salinity=35;
+                    layer.EnvData.Temperature=11.8;
+                    layer.EnvData.AttModel='doonan';
+                    
+                    [cal_cw,~,idx_cal]=TS_calibration_curves_func(testCase.esp3_obj.main_figure,layer,1:numel(layer.Transceivers));
+                else
+                    testCase.assertTrue(false,'Failed loading calibration file');
+                    return;
+                end
+                
+                cal_cw_ori.G0=[22.80 26.23 26.33 26.19 24.92];
+                cal_cw_ori.SACORRECT=[-0.71 -0.62 -0.31 -0.33 -0.17];
+                
+                %cal_cw_ori.EQA=nan(1,numel(layer.Transceivers));
+                %cal_cw_ori.AngleOffsetAlongship=nan(1,numel(layer.Transceivers));
+                %cal_cw_ori.AngleOffsetAthwartship=nan(1,numel(layer.Transceivers));
+                cal_cw_ori.BeamWidthAlongship=[10.6 7.0 6.4 6.3 6.4];
+                cal_cw_ori.BeamWidthAthwartship=[10.9 7.1 6.6 6.5 6.3];
+                
+                thr_warn = [0.05 0.05 0.1 0.1];
+                
+                fnames=fieldnames(cal_cw_ori);
+                
+                same=true(numel(fnames),numel(layer.Transceivers));
+                
+                for uif=1:numel(fnames)
+                    if isfield(cal_cw_ori,fnames{uif})
+                        same(uif,idx_cal)=abs(cal_cw_ori.(fnames{uif})(idx_cal)-cal_cw.(fnames{uif})(idx_cal))<thr_warn(uif);
+                    end
+                end
+                
+                str_fail = '';
+                for it=1:numel(layer.Transceivers)
+                    for uif=1:numel(fnames)
+                        if ~same(uif,it)
+                            str_fail =[str_fail  sprintf('%s different for channel %s: %.2f instead of %.2f\n',fnames{uif},layer.ChannelID{it},cal_cw.(fnames{uif})(it),cal_cw_ori.(fnames{uif})(it))];
+                        end
+                    end
+                end
+                
+                testCase.verifyEqual(all(same(:)),true, ...
+                    sprintf('The following results were disimilar results to previous calibration runs:\n    %s',str_fail));
+                
+                for it=1:numel(layer.Transceivers)
+                    for uif=1:numel(fnames)
+                        if ~same(uif,it)
+                            fprintf('%s different for channel %s: %.2f instead of %.2f\n',fnames{uif},layer.ChannelID{it},cal_cw.(fnames{uif})(it),cal_cw_ori.(fnames{uif})(it));
+                        end
+                    end
+                end
+            else
+                testCase.verifyEqual(false,true, ...
+                    sprintf('Could not find Calibration file %s',cal_file));
+            end
+        end
+        
+        function test_algos(testCase)
+            file_path= fullfile(testCase.esp3_obj.app_path.test_folder.Path_to_folder,'files');
+            
+            [files,~]=list_ac_files(file_path,1);
+            
+            n_files=numel(files);
+            nb_files_max=10;
+
+            
+            idx_proc=randi(n_files,[1 min(nb_files_max,n_files)]);
+            
+            idx_proc=unique(idx_proc);
+            
+            fff_ori=fullfile(file_path,files(idx_proc));
+
+            testCase.esp3_obj.open_file('file_id',fff_ori);
+
+            layers=testCase.esp3_obj.layers;
+
+            al_names=list_algos();
+            sucess=cell(numel(fff_ori),numel(al_names));
+           
+            fff = unique(fff_ori,'stable');
+            
+            load_bar_comp=getappdata(testCase.esp3_obj.main_figure,'Loading_bar');
+            show_status_bar(testCase.esp3_obj.main_figure);
+            pass=true;
+            
+            for ial=1:numel(al)
+                for ui=1:numel(fff)
+                    [idx_lay,found]=layers.find_layer_idx_files(fff{ui});
+                    if found
+
+                        load_bar_comp.progress_bar.setText(sprintf('Applying %s on %s',al_names{ial},fff{ui}));
+                        try
+                            out_tmp=layers(idx_lay(1)).apply_algo(al_names{ial},'load_bar_comp',load_bar_comp);
+                            sucess{ui,ial}=false(1,numel(out_tmp));
+                            for ifi=1:numel(out_tmp)
+                                sucess{ui,ial}(ifi)=out_tmp{ifi}.done;
+                            end
+                        catch
+                            sprintf('Could not apply %s to %s\n',al_names{ial},fff{ui})
+                        end
+                    end
+
+                    pass=pass&all(sucess{ui,ial});
+
+                end
+            end
+            
+            hide_status_bar(testCase.esp3_obj.main_figure);
+            update_display(testCase.esp3_obj.main_figure,1,1);
+            str_fail = '';
+            for ial=1:numel(al_names)
+                for uj=1:numel(fff)
+                    if any(~sucess{uj,ial})
+                        str_fail = [str_fail sprintf('Could not apply %s to %s\n',al_names{ial},fff{uj})];
+                    end
+                end
+            end
+            
+            testCase.verifyEqual(pass, true, ...
+                sprintf('Error applying algorithms :\n    %s',str_fail));
+            
+
+            
+            
+        end
+        
+        
+    end
+end
+
+

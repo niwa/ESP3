@@ -12,7 +12,7 @@ function [output_cols,output_vals,SQL_query] = get_cols_from_table(database_file
 
 %% input parser
 p = inputParser;
-addRequired(p,'database_filename',@(x) ischar(x)||isa(x,'database.jdbc.connection'));
+addRequired(p,'database_filename',@(x) ischar(x)||isa(x,'database.jdbc.connection')||isa(x,'sqlite'));
 addRequired(p,'SQL_table_name',@ischar);
 addParameter(p,'input_cols',{},@iscell);
 addParameter(p,'input_vals',{},@iscell);

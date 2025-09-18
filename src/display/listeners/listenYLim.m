@@ -34,7 +34,7 @@
 % Yoann Ladroit, NIWA. Type |help EchoAnalysis.m| for copyright information.
 
 %% Function
-function listenYLim(src,evt,main_figure)
+function listenYLim(~,evt,main_figure)
 if ~isdeployed
     disp('listenYLim')
     %profile on;
@@ -51,7 +51,7 @@ x_lim=get(ax,'XLim');
 y_lim=get(ax,'YLim');
 
 
-range=trans_obj.get_transceiver_range();
+range=trans_obj.get_samples_range();
 %time=trans_obj.get_transceiver_time();
 y_lim=ceil(y_lim);
 
@@ -66,6 +66,7 @@ cids=union({'main'},curr_disp.SecChannelIDs,'stable');
 up=update_axis(main_figure,0,'main_or_mini',cids);
 
 mini_ax_comp=getappdata(main_figure,'Mini_axes');
+main_ax=getappdata(main_figure,'Axes_panel');
 
 patch_obj=mini_ax_comp.patch_obj;
 new_vert=patch_obj.Vertices;
@@ -73,15 +74,14 @@ new_vert(:,1)=[x_lim(1) x_lim(2) x_lim(2) x_lim(1)];
 new_vert(:,2)=[y_lim(1) y_lim(1) y_lim(2) y_lim(2)];
 set(patch_obj,'Vertices',new_vert);
 
-ah=findobj(ax,'Tag','echo');
-xd=get(ah,'xdata');
-yd=get(ah,'ydata');
+xd=get(main_ax.echo_obj.echo_surf,'xdata');
+yd=get(main_ax.echo_obj.echo_surf,'ydata');
 
-v2 = [nanmin(xd) nanmin(yd);nanmax(xd) nanmin(yd);nanmax(xd) nanmax(yd);nanmin(xd) nanmax(yd)];
+v2 = [min(xd) min(yd);max(xd) min(yd);max(xd) max(yd);min(xd) max(yd)];
 
 set(mini_ax_comp.patch_lim_obj,'Vertices',v2);
 
-if ~any(up)
+if isempty(up)
     drawnow;
     if ~isdeployed
         toc;
@@ -89,7 +89,6 @@ if ~any(up)
     return;
 end
 
-set_axes_position(main_figure);
 
 display_bottom(main_figure);
 display_tracks(main_figure);
@@ -97,7 +96,6 @@ display_file_lines(main_figure);
 display_survdata_lines(main_figure);
 
 set_alpha_map(main_figure,'main_or_mini',cids);
-
 
 update_info_panel([],[],1);
 drawnow;

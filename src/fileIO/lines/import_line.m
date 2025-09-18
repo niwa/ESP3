@@ -20,7 +20,9 @@ try
             case '.log'
                 line=create_line_from_SupervisorLog(fileN);
             case {'.xls' '.xlsx' '.csv'}
-                line=create_line_from_xls(fileN);
+                line = create_line_from_xls(fileN);
+            case {'.xml'}
+                line = line_from_line_xml(fileN);
             otherwise
                 line=[];
         end

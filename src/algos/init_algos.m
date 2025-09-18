@@ -11,8 +11,8 @@ if~iscell(name)
 end
 algo_vec(length(name))=algo_cl();
 
-for i=1:length(name)
-    algo_vec(i)=algo_cl('Name',name{i});
+for ial=1:length(name)
+    algo_vec(ial)=algo_cl('Name',name{ial});
 end
 
 end

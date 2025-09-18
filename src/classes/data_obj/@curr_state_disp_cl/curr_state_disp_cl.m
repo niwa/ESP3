@@ -1,0 +1,333 @@
+classdef curr_state_disp_cl <handle
+    
+    properties (SetObservable = true)
+        ChannelID='';
+        Freq
+        CurrFolder = '';
+        SecChannelIDs={};
+        SecFreqs=[];
+        AllChannels={};
+        DispSecFreqs=1;
+        DispSecFreqsWithOffset=1;
+        DispSecFreqsOr='vert';
+        Fieldname='sv';
+        SecFieldnames={};
+        Fieldnames={'sv'};
+        Type='Sv'
+        Xaxes={'meters' 'pings' 'seconds'};
+        Xaxes_current={'meters'};
+        Cax     
+        Caxes
+        YDir = 'reverse'
+        DispBottom='on';
+        DispUnderBottom='off';
+        UnderBotTransparency=90;
+        DispTracks='on';
+        DispBadTrans='on';
+        DispSpikes='on';
+        DispReg='on';
+        DispFeatures='off';
+        DispLines='on';
+        DispColorbar = 'on';
+        DispSurveyLines='on';
+        CursorMode='Normal'
+        BeamAngularLimit = [-5 5];
+        Grid_x=[100 10 10];
+        Grid_y=10;
+        CurrLayerID='';
+        GPU_computation=1;
+        NbLayers=0;
+        Cmap='ek60';
+        ReverseCmap = 'off';
+        Font='Nirmala UI';
+        Bot_changed_flag=0;%flag=0 nothing change flag=1 : changes made nothing saved; flag=2  changes made saved to the xml file; flag=3  changes made saved to db file
+        UIupdate=0;
+        Online = 1;
+        Basemap = 'World_Ocean_Base';
+        Basemaps={};
+        Move_dy_dx=[0.2 0.4];
+        Disp_dy_dx=[1/4 1];
+        Active_reg_ID={};
+        Active_line_ID='';
+        Al_opt_tab_size_ratio = 0.5;
+        Reg_changed_flag=0; %flag=0 nothing change flag=1 : changes made nothing saved; flag=2  changes made saved to the xml file; flag=3  changes made saved to db file
+        R_disp=[1 inf];
+        V_axes_ratio=0.05;
+        H_axes_ratio=0.15;
+        EchoQuality='high';
+    end
+    
+    methods
+        function obj =curr_state_disp_cl(varargin)
+            
+            p = inputParser;
+            addParameter(p,'Freq',38000,@isnumeric);
+            addParameter(p,'Active_reg_ID',{},@iscell);   
+            addParameter(p,'CurrFolder','',@ischar);
+            addParameter(p,'ChannelID','',@ischar);
+            addParameter(p,'SecChannelIDs',{},@iscell);
+            addParameter(p,'AllChannels',{},@iscell);
+            addParameter(p,'SecFreqs',[],@isnumeric);
+            addParameter(p,'DispSecFreqs',1,@isnumeric);
+            addParameter(p,'DispSecFreqsWithOffset',1,@isnumeric);
+            addParameter(p,'GPU_computation',1,@isnumeric);
+            addParameter(p,'Fieldname','sv',@ischar);
+            addParameter(p,'SecFieldnames',{'sv'},@iscell);
+            addParameter(p,'DispBottom','on',@ischar);          
+            addParameter(p,'Basemap','landcover',@ischar);
+            addParameter(p,'DispFeatures','off',@ischar);
+            addParameter(p,'DispUnderBottom','on',@ischar);
+            addParameter(p,'DispColorbar','on',@ischar);
+            addParameter(p,'DispTracks','on',@ischar);
+            addParameter(p,'DispSpikes','on',@ischar);
+            addParameter(p,'DispBadTrans','on',@ischar);
+            addParameter(p,'DispReg','on',@ischar);
+            addParameter(p,'DispLines','on',@ischar);
+            addParameter(p,'DispSurveyLines','on',@ischar);
+            addParameter(p,'Xaxes',{'meters' 'pings' 'seconds'},@iscell);
+            addParameter(p,'Xaxes_current','meters',@ischar);
+            addParameter(p,'Grid_x',[100 10 10],@isnumeric);
+            addParameter(p,'Grid_y',10,@isnumeric);
+            addParameter(p,'Move_dy_dx',[0.2 .4],@isnumeric);
+            addParameter(p,'Disp_dy_dx',[0.2 0.2],@isnumeric);
+            addParameter(p,'CursorMode','Normal',@ischar);
+            addParameter(p,'CurrLayerID','',@ischar);
+            addParameter(p,'NbLayers',0,@isnumeric);
+            addParameter(p,'Bot_changed_flag',0,@isnumeric);
+            addParameter(p,'Reg_changed_flag',0,@isnumeric);
+            addParameter(p,'Cmap','ek60',@ischar);
+            addParameter(p,'Font','default',@ischar);
+            addParameter(p,'UIupdate',0,@isnumeric);
+            addParameter(p,'Online',1,@isnumeric);
+            addParameter(p,'Al_opt_tab_size_ratio',0.5,@isnumeric);
+            addParameter(p,'UnderBotTransparency',90,@isnumeric);
+            addParameter(p,'V_axes_ratio',0.05,@isnumeric);
+            addParameter(p,'H_axes_ratio',0.15,@isnumeric);
+            addParameter(p,'EchoQuality','high',@ischar);
+            addParameter(p,'YDir','reverse',@(x) ismember(x,{'reverse','normal'}));
+            parse(p,varargin{:});
+            results=p.Results;
+            props=fieldnames(results);
+            
+            for i=1:length(props)
+                obj.(props{i})=results.(props{i});
+            end
+            
+            obj.Fieldnames={};
+            obj.Caxes={};            
+            obj.setTypeCax();
+            
+        end
+    end
+    
+    methods
+        
+        function setActive_reg_ID(obj,ID)
+           if~iscell(ID)
+               ID={ID};
+           end   
+           ID=unique(ID);
+           obj.Active_reg_ID=ID;
+        end
+        
+        function [dx,dy]=get_dx_dy(obj)
+            dy=obj.Grid_y;
+            dx=obj.Grid_x(strcmp(obj.Xaxes_current,obj.Xaxes));
+        end
+        
+        function set_dx_dy(obj,dx,dy,curr_axes)
+            if ~isempty(dy)
+                obj.Grid_y=dy;
+            end
+            if~isempty(curr_axes)
+                obj.Xaxes_current=curr_axes;
+            end
+            if ~isempty(dx)
+                obj.Grid_x(strcmp(obj.Xaxes_current,obj.Xaxes))=dx;
+            end
+        end
+
+        function Alphamap = get_alphamap(obj)
+
+            switch obj.DispBadTrans
+                case 'off'
+                    alpha_bt=0;
+                case 'on'
+                    alpha_bt=0.8;
+            end
+
+            switch obj.DispReg
+                case 'off'
+                    alpha_reg=0;
+                case 'on'
+                    alpha_reg=0.4;
+            end
+
+            switch obj.DispSpikes
+                case 'off'
+                    alpha_spikes=0;
+                case 'on'
+                    alpha_spikes=1;
+            end
+
+            switch obj.DispUnderBottom
+                case 'on'
+                    alpha_under_bot=1;
+                case 'off'
+                    alpha_under_bot=(1-obj.UnderBotTransparency/100);
+            end
+
+            switch obj.DispFeatures
+                 case 'on'
+                    alpha_non_features=0.05;
+                case 'off'
+                    alpha_non_features=1;
+            end
+
+            Alphamap=[0 alpha_under_bot alpha_bt alpha_reg alpha_spikes alpha_non_features 1];
+
+        end
+
+
+        function setCax(obj,cax)
+            if cax(2)>cax(1)
+                field = obj.Fieldname;
+                rm_str = {'denoised' 'unmatched' '_filtered'};
+                
+                for istr = 1:numel(rm_str)
+                    field = strrep(field,rm_str{istr},'');
+                end
+               
+                idx_field=find(cellfun(@(x) strcmpi(field,x),obj.Fieldnames));
+                
+                if ~isempty(idx_field)
+                    obj.Caxes{idx_field}=cax;
+                    obj.Cax=cax;
+                else
+                    obj.Cax=cax;
+                    obj.Caxes=[obj.Cax {cax}];
+                    obj.Fieldnames = [obj.Fieldnames {obj.Fieldname}];
+                end
+            end
+        end
+        
+                
+        function pointer=get_pointer(obj)
+            %Choice of pointer being: ‘hand’, ‘hand1’, ‘hand2’, ‘closedhand’, ‘glass’, ‘glassplus’, ‘glassminus’, 
+            %‘lrdrag’, ‘ldrag’, ‘rdrag’, ‘uddrag’, ‘udrag’, ‘ddrag’, ‘add’, ‘addzero’, ‘addpole’, ‘eraser’, 
+            %‘help’, ‘modifiedfleur’, ‘datacursor’, ‘rotate’
+            switch obj.CursorMode
+                case 'Pan'
+                    pointer='hand';
+                case 'Zoom In'
+                    pointer='glassplus';
+                case 'Zoom Out'
+                    pointer='glassminus';
+                case 'Bad Pings'
+                    pointer='lrdrag';
+                case 'Edit Bottom'
+                    pointer='crosshair';
+                case 'Add ST'
+                    pointer='crosshair';
+                case 'Measure'
+                    pointer='datacursor';
+                case 'Create Region'
+                    pointer='cross';
+                case 'Draw Line'
+                    pointer='addpole';
+                case 'Erase and fill Soundings'
+                    pointer='eraser';
+                case 'Normal'
+                    pointer='arrow';
+                otherwise
+                     pointer='arrow';
+            end
+        end
+        
+        function setTypeCax(obj)
+            
+            [cax,obj.Type,~]=init_cax(obj.Fieldname);
+            
+            field = obj.Fieldname;
+            rm_str = {'denoised' 'unmatched' '_filtered'};
+            
+            for istr = 1:numel(rm_str)
+                field = strrep(field,rm_str{istr},'');
+            end
+
+            idx_field=find(cellfun(@(x) strcmpi(field,x),obj.Fieldnames));
+            
+            if ~isempty(idx_field)
+                obj.Cax=obj.Caxes{idx_field};
+            else
+                obj.Caxes=[obj.Caxes cax];
+                obj.Fieldnames=[obj.Fieldnames field];
+                obj.Cax=cax;    
+            end
+            
+        end
+        
+        function setType(obj)
+            
+            [~,obj.Type,~]=init_cax(obj.Fieldname);
+            
+            idx_field=find(cellfun(@(x) strcmpi(obj.Fieldname,x),obj.Fieldnames));
+            
+            if ~any(idx_field)
+                obj.Fieldnames=[obj.Fieldnames obj.Fieldname];
+            end
+        end
+        
+        function setField(obj,field)
+            [~,obj.Type,~]=init_cax(field);
+            obj.SecFieldnames(strcmpi(obj.Fieldname,obj.SecFieldnames)) = [];
+            obj.SecFieldnames = union(obj.SecFieldnames,field);
+            obj.Fieldname = field;
+         
+            obj.setTypeCax();
+        end
+        
+        function cax=getCaxField(obj,field)
+                       
+            rm_str = {'denoised' 'unmatched' '_filtered'};
+            
+            [cax,~,~]=init_cax(field);
+
+            for istr = 1:numel(rm_str)
+                field = strrep(field,rm_str{istr},'');
+            end
+
+            idx_field=find(cellfun(@(x) strcmpi(field,x),obj.Fieldnames));
+            
+            if ~isempty(idx_field)
+                cax=obj.Caxes{idx_field};
+            else
+               
+            end
+        end
+        
+        function delete(obj)
+            
+            if  isdebugging
+                c = class(obj);
+                disp(['ML object destructor called for class ',c]);
+            end
+        end
+        
+    end
+
+    methods (Static)
+        function [AlphaMapDispStr,AlphaMapDispStrMenu] = getAlphamapDispProp()
+            AlphaMapDispStrMenu = {'Display Under bottom data' 'Display bad transmits' 'Display detected spikes' 'Display features'};
+            AlphaMapDispStr = {'DispUnderBottom' 'DispBadTrans' 'DispSpikes' 'DispFeatures'};
+        end
+
+
+        function [HandleDispStr,HandleDispStrMenu] = getHandleDispProp()
+            HandleDispStrMenu = {'Display bottom line' 'Display Tracks' 'Display Regions' 'Display lines' 'Display Colorbar' 'Display Survey lines'};
+            HandleDispStr = {'DispBottom' 'DispTracks' 'DispReg' 'DispLines' 'DispColorbar' 'DispSurveyLines'};
+        end
+    end
+    
+end
+

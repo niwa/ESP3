@@ -88,15 +88,15 @@ switch main_figure.SelectionType
         
         switch obj.Type
             case 'patch'
-               r_min=nanmin(obj.YData(:));
-               idx_p_min=ceil(nanmin(obj.XData(:)));
+               r_min=min(obj.YData(:));
+               idx_p_min=ceil(min(obj.XData(:)));
             case 'polygon'
-                r_min=nanmin(obj.Shape.Vertices(:,2));
-                idx_p_min=ceil(nanmin(obj.Shape.Vertices(:,1)));
+                r_min=min(obj.Shape.Vertices(:,2));
+                idx_p_min=ceil(min(obj.Shape.Vertices(:,1)));
                 reg_curr.Poly.Vertices=round(obj.Shape.Vertices);
             case 'image'
-                r_min=nanmin(obj.YData(:));
-                idx_p_min=ceil(nanmin(obj.XData(:)));
+                r_min=min(obj.YData(:));
+                idx_p_min=ceil(min(obj.XData(:)));
         end
         
         samples=trans_obj.get_transceiver_samples();
@@ -105,13 +105,13 @@ switch main_figure.SelectionType
             return;
         end
         
-        [~,idx_r_min]=nanmin(abs(r_min-samples)); 
+        [~,idx_r_min]=min(abs(r_min-samples)); 
         
-        if reg_curr.Idx_pings(1)==idx_p_min&&reg_curr.Idx_r(1)==idx_r_min
+        if reg_curr.Idx_ping(1)==idx_p_min&&reg_curr.Idx_r(1)==idx_r_min
            return; 
         end
         
-        reg_curr.Idx_pings=reg_curr.Idx_pings-reg_curr.Idx_pings(1)+idx_p_min;
+        reg_curr.Idx_ping=reg_curr.Idx_ping-reg_curr.Idx_ping(1)+idx_p_min;
         reg_curr.Idx_r=reg_curr.Idx_r-reg_curr.Idx_r(1)+idx_r_min;
         
        
@@ -129,7 +129,7 @@ switch main_figure.SelectionType
                      
         curr_disp.Reg_changed_flag=1;
         clear_regions(main_figure,old_ID,{});
-        display_regions(main_figure,'both');
+        display_regions('both');
 
         curr_disp.setActive_reg_ID(reg_curr.Unique_ID);
         update_multi_freq_disp_tab(main_figure,'sv_f',0);

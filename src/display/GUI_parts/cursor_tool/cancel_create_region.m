@@ -33,7 +33,7 @@
 % Yoann Ladroit, NIWA. Type |help EchoAnalysis.m| for copyright information.
 
 %% Function
-function cancel_create_region(src,callbackdata,main_figure)
+function cancel_create_region(~,callbackdata,main_figure)
 
 curr_disp=get_esp3_prop('curr_disp');
 
@@ -46,7 +46,7 @@ switch callbackdata.Key
     case {'escape'}
         axes_panel_comp=getappdata(main_figure,'Axes_panel');
         
-        ah=axes_panel_comp.main_axes;
+        ah=axes_panel_comp.echo_obj.main_ax;
         
         u=findobj(ah,'Tag','reg_temp');
         delete(u);

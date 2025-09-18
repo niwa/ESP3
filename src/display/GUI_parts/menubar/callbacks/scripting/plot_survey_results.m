@@ -25,18 +25,18 @@ for i=1:length(obj_vec)
     time(i)=(obj_vec(i).SurvOutput.stratumSum.time_start+obj_vec(i).SurvOutput.stratumSum.time_end)/2;
     
     nb_trans=length(obj_vec(i).SurvOutput.transectSum.dist);
-    nb_st_per_km(i)=nanmean(obj_vec(i).SurvOutput.transectSum.nb_st(1:nb_trans)./obj_vec(i).SurvOutput.transectSum.dist);
-    nb_tracks_per_km(i)=nanmean(obj_vec(i).SurvOutput.transectSum.nb_tracks(1:nb_trans)./obj_vec(i).SurvOutput.transectSum.dist);
+    nb_st_per_km(i)=mean(obj_vec(i).SurvOutput.transectSum.nb_st(1:nb_trans)./obj_vec(i).SurvOutput.transectSum.dist);
+    nb_tracks_per_km(i)=mean(obj_vec(i).SurvOutput.transectSum.nb_tracks(1:nb_trans)./obj_vec(i).SurvOutput.transectSum.dist);
     
     for i_reg=1:length(obj_vec(i).SurvOutput.regionsIntegrated.snapshot)
         out=obj_vec(i).SurvOutput.regionsIntegrated.RegOutput{i_reg};
         if ~isempty(out)
             depth=out.Depth_min;
-            nb_idx(:,i)=nb_idx(:,i)+nansum(nanmax(out.Nb_good_pings));
+            nb_idx(:,i)=nb_idx(:,i)+sum(max(out.Nb_good_pings),'omitnan');
             for i_d=1:(length(strat_lim)-1)
                 idx_depth=depth>=strat_lim(i_d)&depth<strat_lim(i_d+1);
                 if ~isempty(idx_depth)
-                    abscf_strat(i_d,i)=nansum([abscf_strat(i_d,i) nansum(out.eint(idx_depth))]);
+                    abscf_strat(i_d,i)=sum([abscf_strat(i_d,i) sum(out.eint(idx_depth))],'omitnan');
                 end
             end
         end
@@ -52,7 +52,7 @@ ax=subplot(2,1,1);
 errorbar(time_s,abscf_wmean(idx_sort),abscf_wstd(idx_sort),'marker','s','color','k');
 hold on;grid on;
 errorbar(time_s,abscf_mean(idx_sort),abscf_std(idx_sort),'marker','d');
-plot(time_s,nansum(abscf_strat(:,idx_sort)),'marker','d');
+plot(time_s,sum(abscf_strat(:,idx_sort),'omitnan'),'marker','d');
 set(ax,'xtick',time_s);
 set(ax,'xticklabel',datestr(time_s,'mmm yy'));
 title('abscf_{mean}')

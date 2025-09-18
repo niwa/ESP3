@@ -15,7 +15,7 @@ checksum = double(checksum);
 checksum = dec2hex(checksum);
 
 
-if length(checksum) == 1
+if isscalar(checksum)
     checksum = strcat('0',checksum);
 end
 

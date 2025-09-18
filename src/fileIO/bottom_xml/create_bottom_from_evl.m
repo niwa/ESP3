@@ -17,7 +17,7 @@ end
 [timestamp,depth,tag]=read_evl(filename);
 
 depth_resampled=resample_data_v2(depth,timestamp,timevec);
-sample_idx=resample_data_v2(1:length(range),range,depth_resampled,'Opt','Nearest');
+[~,sample_idx] = min(abs(depth_resampled-range));
 tag_resampled=resample_data_v2(tag,timestamp,timevec,'Opt','Nearest');
 
 obj = bottom_cl('Origin','EVL',...

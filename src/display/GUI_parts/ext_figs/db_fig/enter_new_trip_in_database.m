@@ -1,4 +1,5 @@
 function enter_new_trip_in_database(main_figure,db_file)
+
 if isempty(db_file)
     db_folder= fullfile(whereisEcho(),'config','db');
     handles.db_file= fullfile(db_folder,'ac_db.db');
@@ -7,20 +8,31 @@ else
 end
 
 if~isfile(handles.db_file)
-    create_ac_database(handles.db_file,1);
+    file_sql=fullfile(whereisEcho,'config','db','ac_db.sql');
+    create_ac_database(handles.db_file,file_sql,1,true);
 end
 
 size_max = get(0,'ScreenSize');
+gui_fmt=init_new_gui_fmt_struct();
+gui_fmt.txt_w=gui_fmt.txt_w*2;
+gui_fmt.box_w=gui_fmt.box_w*2;
+pdd = [0 0 0 0];
+
 
 db_fig=new_echo_figure(main_figure,'Resize','on',...
-    'Position',[0 0 size_max(3)*0.95 size_max(4)*0.8],'Name','Database loading tool','tag','ac_db_tool');
+    'Visible','off',...
+    'Position',[0 0 size_max(3)*0.95 size_max(4)*0.80],'Name','Database loading tool','tag','ac_db_tool','UiFigureBool',true);
+
+if ~isdeployed
+    db_fig.HandleVisibility  = 'on';
+end
 
 main_menu_db.m_files = uimenu(db_fig,'Label','File(s)');
 
-%uimenu(m_files,'Label','Save current db_file','Callback',{@save_init_db,db_fig});
-uimenu(main_menu_db.m_files,'Label','Create empty db file','Callback',{@create_empty_db_file_cback,db_fig});
-uimenu(main_menu_db.m_files,'Label','Import db file from ESP3 database','Callback',{@import_other_db_cback,db_fig,'esp3'});
-uimenu(main_menu_db.m_files,'Label','Import another initial db_file','Callback',@load_db_file_cback);
+%uimenu(m_files,'Label','Save current db_file','MenuSelectedFcn',{@save_init_db,db_fig});
+uimenu(main_menu_db.m_files,'Label','Create empty db file','MenuSelectedFcn',{@create_empty_db_file_cback,db_fig});
+uimenu(main_menu_db.m_files,'Label','Import db file from ESP3 database','MenuSelectedFcn',{@import_other_db_cback,db_fig,'esp3'});
+uimenu(main_menu_db.m_files,'Label','Import another initial db_file','MenuSelectedFcn',@load_db_file_cback);
 
 setappdata(db_fig,'main_menu_db',main_menu_db);
 
@@ -125,62 +137,29 @@ deployment_colnames={...
     'deployment_comments'        ,...
     };
 
-load_loading_bar_panel_v2(db_fig);
-load_bar_comp=getappdata(db_fig,'Loading_bar');
-pos_init=load_bar_comp.panel.Position;
-set(load_bar_comp.panel,'Units','norm');
-pos_main=getpixelposition(db_fig);
-pos_main(4)=pos_main(4)-pos_init(4);
 
-mission_panel=uipanel(db_fig,'units','pixels','Position',[0 3*pos_main(4)/4+pos_init(4) pos_main(3) pos_main(4)/4],'title','Mission','BackgroundColor','white');
-m_panel_pos=mission_panel.Position;
-set(mission_panel,'units','norm');
+handles.general_layout = uigridlayout(db_fig,[4 1]);
+handles.general_layout.ColumnWidth = {'1x'};
+handles.general_layout.RowHeight = {'1x' '1x' '1x' '1.2x' 25};
+handles.general_layout.BackgroundColor = [1 1 1];
+handles.general_layout.Padding = pdd;
 
-handles.mission_table = uitable('Parent',mission_panel,...
+handles.mission_table = uitable(handles.general_layout,...
     'Data',[],...
     'ColumnName',mission_colnames,...
     'ColumnFormat',mission_col_fmt,...
     'ColumnEditable',true,...
     'CellEditCallBack',{@cell_edit_cback,db_fig},...
     'CellSelectionCallback',@cell_select_cback,...
+    'ColumnWidth','fit',...
     'RowName',[],...
-    'Position',[0 0 m_panel_pos(3) m_panel_pos(4)*0.90],...
     'Tag','t_mission');
+handles.mission_table.Layout.Row = 1;
+handles.mission_table.Layout.Column = 1;
 handles.mission_table.UserData.select=[];
-%set(mission_panel,'units','norm','SizeChangedFcn',@resize_table);
-set(handles.mission_table,'units','norm');
-
-set_auto_resize_table(handles.mission_table);
-
-ship_panel=uipanel(db_fig,'units','pixels','Position',[0 1*pos_main(4)/4+pos_init(4) pos_main(3) pos_main(4)/4],'title','Ship','BackgroundColor','white');
-s_panel_pos=ship_panel.Position;
-set(ship_panel,'units','norm');
 
 
-handles.ship_table = uitable('Parent',ship_panel,...
-    'Data',[],...
-    'ColumnName', ship_colnames,...
-    'ColumnFormat',ship_col_fmt,...
-    'ColumnEditable',true,...
-    'CellEditCallBack',{@cell_edit_cback,db_fig},...
-    'CellSelectionCallback',@cell_select_cback,...
-    'RowName',[],...
-    'Position',[0 0 s_panel_pos(3) s_panel_pos(4)*0.9],...
-    'Tag','t_ship');
-%set(ship_panel,'units','norm','SizeChangedFcn',@resize_table);
-set(handles.ship_table,'units','norm');
-
-set_auto_resize_table(handles.ship_table);
-
-handles.ship_table.UserData.empty_data=empty_ship_data;
-handles.ship_table.UserData.select=[];
-
-deployment_panel=uipanel(db_fig,'units','pixels','Position',[0 2*pos_main(4)/4+pos_init(4) pos_main(3) pos_main(4)/4],'title','Deployment','BackgroundColor','white');
-d_panel_pos=deployment_panel.Position;
-set(deployment_panel,'units','norm');
-
-
-handles.deployment_table = uitable('Parent',deployment_panel,...
+handles.deployment_table = uitable(handles.general_layout,...
     'Data',[],...
     'ColumnName',deployment_colnames,...
     'ColumnFormat',deployment_col_fmt,...
@@ -188,170 +167,252 @@ handles.deployment_table = uitable('Parent',deployment_panel,...
     'CellEditCallBack',{@cell_edit_cback,db_fig},...
     'CellSelectionCallback',@cell_select_cback,...
     'RowName',[],...
-    'Position',[0 0 d_panel_pos(3) d_panel_pos(4)*0.90],...
+    'ColumnWidth','fit',...
     'Tag','t_deployment');
 handles.deployment_table.UserData.select=[];
-%set(deployment_panel,'units','norm','SizeChangedFcn',@resize_table);
-set(handles.deployment_table,'units','norm');
+handles.ship_table.Layout.Row = 2;
+handles.ship_table.Layout.Column = 1;
 
-set_auto_resize_table(handles.ship_table);
+handles.ship_table = uitable(handles.general_layout,...
+    'Data',[],...
+    'ColumnName', ship_colnames,...
+    'ColumnFormat',ship_col_fmt,...
+    'ColumnEditable',true,...
+    'CellEditCallBack',{@cell_edit_cback,db_fig},...
+    'CellSelectionCallback',@cell_select_cback,...
+    'RowName',[],...
+    'ColumnWidth','fit',...
+    'Tag','t_ship');
+handles.ship_table.Layout.Row = 3;
+handles.ship_table.Layout.Column = 1;
 
+handles.ship_table.UserData.empty_data=empty_ship_data;
+handles.ship_table.UserData.select=[];
 
 create_table_txt_menu([handles.mission_table handles.ship_table handles.deployment_table])
 
-% set_multi_select(ship_table,0);
-% set_multi_select(mission_table,0);
-% set_multi_select(deployment_table,0);
+% Create add_panel_Layout
+add_panel_Layout = uigridlayout(handles.general_layout,[1 4]);
+add_panel_Layout.Layout.Row = 4;
+add_panel_Layout.Layout.Column = 1;
+add_panel_Layout.ColumnWidth = {'1x' '1x' '2x' '3x'};
+add_panel_Layout.RowHeight = {'1x'};
+add_panel_Layout.BackgroundColor = [1 1 1];
+add_panel_Layout.Padding = pdd;
 
-add_panel=uipanel(db_fig,'units','pixels','Position',[0 0*pos_main(4)/4+pos_init(4) pos_main(3) pos_main(4)/4],'title','Database creation','BackgroundColor','white');
-add_panel.Units='Characters';
-a_panel_pos=add_panel.Position;
-gui_fmt=init_gui_fmt_struct();
-gui_fmt.txt_w=gui_fmt.txt_w*2;
-gui_fmt.box_w=gui_fmt.box_w*2;
-uicontrol(add_panel,gui_fmt.txtTitleStyle,'position',[2 a_panel_pos(4)*0.8 gui_fmt.txt_w a_panel_pos(4)*0.1],'string','Mission');
-handles.mission_pop=uicontrol(add_panel,gui_fmt.lstboxStyle,'position',[2 a_panel_pos(4)*0.10 gui_fmt.txt_w a_panel_pos(4)*0.7],'string','--','min',0,'max',0);
-uicontrol(add_panel,gui_fmt.txtTitleStyle,'position',[gui_fmt.txt_w+4 a_panel_pos(4)*0.8 gui_fmt.txt_w a_panel_pos(4)*0.1],'string','Deployment');
-handles.deployment_pop=uicontrol(add_panel,gui_fmt.lstboxStyle,'position',[gui_fmt.txt_w+4 a_panel_pos(4)*0.10 gui_fmt.txt_w a_panel_pos(4)*0.7],'string','--','min',0,'max',0);
+mission_layout = uigridlayout(add_panel_Layout);
+mission_layout.ColumnWidth = {'1x'};
+mission_layout.RowHeight = {gui_fmt.txt_h '1x'};
+mission_layout.Layout.Row = 1;
+mission_layout.Layout.Column = 1;
+mission_layout.BackgroundColor = [1 1 1];
+mission_layout.Padding = pdd;
+
+mission_str_h = uilabel(mission_layout,gui_fmt.txtTitleStyle,'text','Mission');
+mission_str_h.Layout.Row = 1;
+mission_str_h.Layout.Column = 1;
+
+
+handles.mission_pop=uilistbox(mission_layout,gui_fmt.lstboxStyle,'Items',{'--'},'Multiselect','off');
+handles.mission_pop.Layout.Row = 2;
+handles.mission_pop.Layout.Column = 1;
+
+deployment_layout = uigridlayout(add_panel_Layout,[2 1]);
+deployment_layout.ColumnWidth = {'1x'};
+deployment_layout.RowHeight = {gui_fmt.txt_h '1x'};
+deployment_layout.Layout.Row = 1;
+deployment_layout.Layout.Column = 2;
+deployment_layout.BackgroundColor = [1 1 1];
+deployment_layout.Padding = pdd;
+
+
+deployment_str_h = uilabel(deployment_layout,gui_fmt.txtTitleStyle,'text','Deployment');
+deployment_str_h.Layout.Row = 1;
+deployment_str_h.Layout.Column = 1;
+
+handles.deployment_pop=uilistbox(deployment_layout,gui_fmt.lstboxStyle,'Items',{'--'},'Multiselect','off');
+handles.deployment_pop.Layout.Row = 2;
+handles.deployment_pop.Layout.Column = 1;
 
 app_path_main=whereisEcho();
-icon=get_icons_cdata(fullfile(app_path_main,'icons'));
+% icon = get_icons_cdata(fullfile(app_path_main,'icons'));
+
+fold_icon = fullfile(app_path_main,'icons','folder.png');
+
+folder_layout = uigridlayout(add_panel_Layout,[3 5]);
+folder_layout.ColumnWidth = {'1x' gui_fmt.txt_h gui_fmt.box_w '1x' gui_fmt.box_w/2};
+folder_layout.RowHeight = {gui_fmt.txt_h gui_fmt.box_h '1x'};
+folder_layout.Layout.Row = 1;
+folder_layout.Layout.Column = 3;
+folder_layout.BackgroundColor = [1 1 1];
+folder_layout.Padding = pdd;
 
 
-uicontrol(add_panel,gui_fmt.txtStyle,...
-    'Position',[2*gui_fmt.txt_w+8 a_panel_pos(4)*0.80 gui_fmt.txt_w a_panel_pos(4)*0.1],...
-    'string','Input Data Folder',...
+input_folder_label = uilabel(folder_layout,...
+    'text','Input Data Folder',...
     'HorizontalAlignment','left');
+input_folder_label.Layout.Row = 1;
+input_folder_label.Layout.Column = 1;
 
-handles.path_edit = uicontrol(add_panel,gui_fmt.edtStyle,...
-    'Position',[2*gui_fmt.txt_w+8 a_panel_pos(4)*0.70 gui_fmt.txt_w a_panel_pos(4)*0.1],...
+
+handles.path_edit = uitextarea(folder_layout,...
     'BackgroundColor','w',...
-    'string','',...
+    'Value','',...
     'HorizontalAlignment','left');
+handles.path_edit.WordWrap = 'on';
+handles.path_edit.Layout.Row = 2;
+handles.path_edit.Layout.Column = 1;
 
-handles.path_button=uicontrol(add_panel,gui_fmt.pushbtnStyle,...
-    'Position',[3*gui_fmt.txt_w+8 a_panel_pos(4)*0.70 gui_fmt.box_w a_panel_pos(4)*0.1],...
-    'Cdata',icon.folder,...
-    'callback',{@select_folder_callback,handles.path_edit});
+handles.path_button = uibutton(folder_layout,'push',...
+    'Text','',...
+    'Icon',fold_icon);
+handles.path_button.Layout.Row = 2;
+handles.path_button.Layout.Column = 2;
+handles.path_button.ButtonPushedFcn = {@select_folder_callback,handles.path_edit};
 
-handles.add_button=uicontrol(add_panel,gui_fmt.pushbtnStyle,...
-    'Position',[3*gui_fmt.txt_w+8+gui_fmt.box_w a_panel_pos(4)*0.70 gui_fmt.box_w a_panel_pos(4)*0.1],...
-    'String','Add',...
-    'callback',{@add_folder_callback,db_fig});
+handles.add_button=uibutton(folder_layout,...
+    'Text','Add');
+handles.add_button.Layout.Row = 2;
+handles.add_button.Layout.Column = 3;
+handles.add_button.ButtonPushedFcn = {@add_folder_callback,db_fig};
 
-handles.summary_table = uitable('Parent',add_panel,...
+
+output_folder_label = uilabel(folder_layout,...
+    'Text','Ouput MINIDB file',...
+    'HorizontalAlignment','left');
+output_folder_label.Layout.Row = 1;
+output_folder_label.Layout.Column = 4;
+
+handles.sqlite_schema = uitextarea(folder_layout,...
+    'Value','',...
+    'Enable','off',...
+    'HorizontalAlignment','left');
+handles.sqlite_schema.WordWrap = 'on';
+handles.sqlite_schema.Layout.Row = 2;
+handles.sqlite_schema.Layout.Column = 4;
+
+tmp1 = uibutton(folder_layout,'push',...
+    'Text','',...
+    'Icon',fold_icon,...
+    'BackgroundColor','white');
+tmp1.Layout.Row = 2;
+tmp1.Layout.Column = 5;
+tmp1.ButtonPushedFcn = {@choose_output_file,db_fig};
+
+handles.summary_table = uitable(folder_layout,...
     'Data',[],...
     'ColumnName',{'------Input Data folder------' 'Mission PKEY' 'Deploy. PKEY' 'Deploy. ID' 'Platform Type' 'Transd. Location' 'Trand. Orientation'},...
     'ColumnFormat',{'char' 'numeric' 'numeric' 'char' pt tlt tot},...
     'ColumnEditable',[false false false false true true true],...
     'CellSelectionCallback',@cell_select_cback,...
     'RowName',[],...
-    'Units','Characters',...
-    'Position',[2*gui_fmt.txt_w+8 a_panel_pos(4)*0.10 gui_fmt.txt_w*2+gui_fmt.box_w*3+2 a_panel_pos(4)*0.6],...
+    'ColumnWidth','fit',...
     'Tag','t_deployment');
+handles.summary_table.Layout.Row = 3;
+handles.summary_table.Layout.Column = [1 5];
 handles.summary_table.UserData.select=[];
 
-
-
 rc_menu = uicontextmenu(ancestor(handles.summary_table,'figure'));
-uimenu(rc_menu,'Label','Remove','Callback',{@rm_folder_cback,handles.summary_table});
-handles.summary_table.UIContextMenu =rc_menu;
+uimenu(rc_menu,'Label','Remove','MenuSelectedFcn',{@rm_folder_cback,handles.summary_table});
+handles.summary_table.ContextMenu =rc_menu;
 
-uicontrol(add_panel,gui_fmt.txtStyle,...
-    'Position',[3*gui_fmt.txt_w+10+gui_fmt.box_w*2 a_panel_pos(4)*0.80 gui_fmt.txt_w a_panel_pos(4)*0.1],...
-    'string','Ouput MINIDB file',...
-    'HorizontalAlignment','left');
+db_layout = uigridlayout(add_panel_Layout,[3 3]);
+db_layout.ColumnWidth = {'1x' '1x' '1x'};
+db_layout.RowHeight = {gui_fmt.txt_h gui_fmt.box_h gui_fmt.box_h '1x'};
+db_layout.Layout.Row = 1;
+db_layout.Layout.Column = 4;
+db_layout.BackgroundColor = [1 1 1];
+db_layout.Padding = pdd;
 
-handles.sqlite_schema = uicontrol(add_panel,gui_fmt.edtStyle,...
-    'Position',[3*gui_fmt.txt_w+10+gui_fmt.box_w*2 a_panel_pos(4)*0.70 gui_fmt.txt_w a_panel_pos(4)*0.1],...
-    'string','',...
-    'Enable','off',...
-    'HorizontalAlignment','left');
 
-uicontrol(add_panel,gui_fmt.pushbtnStyle,...
-    'Position',[4*gui_fmt.txt_w+10+gui_fmt.box_w*2 a_panel_pos(4)*0.70 gui_fmt.box_w a_panel_pos(4)*0.1],...
-    'Cdata',icon.folder,...
-    'BackgroundColor','white','callback',{@choose_output_file,db_fig});
+tmp2 = uibutton(db_layout,'push',...
+    'Text','Generate MINIDB');
+tmp2.Layout.Row = 2;
+tmp2.Layout.Column = 1;
+tmp2.ButtonPushedFcn = {@generate_db_cback,db_fig};
 
-uicontrol(add_panel,gui_fmt.pushbtnStyle,...
-    'Position',[4*gui_fmt.txt_w+12+gui_fmt.box_w*3 a_panel_pos(4)*0.70 gui_fmt.box_w*4 a_panel_pos(4)*0.1],...
-    'String','Generate MINIDB',...
-    'callback',{@generate_db_cback,db_fig});
-
-handles.sqlite_table = uitable('Parent',add_panel,...
+handles.sqlite_table = uitable(db_layout,...
     'Data',[],...
     'ColumnName',{'Mission' 'Deploy' 'ID'},...
     'ColumnFormat',{'char' 'char' 'char'},...
     'ColumnEditable',[false false false],...
     'CellSelectionCallback',@cell_select_cback,...
     'RowName',[],...
-    'Units','Characters',...
-    'Position',[4*gui_fmt.txt_w+12+gui_fmt.box_w*3 a_panel_pos(4)*0.10 gui_fmt.box_w*4 a_panel_pos(4)*0.6],...
+    'ColumnWidth','fit',...
     'Tag','sqlite');
-% handles.sqlite_table.ColumnWidth='auto';
+handles.sqlite_table.Layout.Row = [3 4];
+handles.sqlite_table.Layout.Column = 1;
 handles.sqlite_table.UserData.select=[];
 
-
-
-uicontrol(add_panel,gui_fmt.txtStyle,...
-    'Position',[4*gui_fmt.txt_w+14+gui_fmt.box_w*7 a_panel_pos(4)*0.80 gui_fmt.box_w*5 a_panel_pos(4)*0.1],...
-    'string','Loading to Database process',...
+load_label = uilabel(db_layout,...
+    'Text','Loading to Database process',...
     'HorizontalAlignment','left');
+load_label.Layout.Row = 1;
+load_label.Layout.Column = 2;
 
-handles.load_bttn=uicontrol(add_panel,gui_fmt.pushbtnStyle,...
-    'Position',[4*gui_fmt.txt_w+14+gui_fmt.box_w*7 a_panel_pos(4)*0.70 gui_fmt.box_w*3 a_panel_pos(4)*0.1],...
-    'String','Load to LOAD schema',...
-    'Enable','off',...
-    'callback',{@load_to_db_cback,db_fig,'load'});
+handles.load_bttn = uibutton(db_layout,'push',...
+    'Text','Load to LOAD schema',...
+    'Enable','off');
+handles.load_bttn.Layout.Row = 2;
+handles.load_bttn.Layout.Column = 2;
+handles.load_bttn.ButtonPushedFcn = {@load_to_db_cback,db_fig,'load'};
 
+handles.load_schema = uitextarea(db_layout,...
+    'Value','dbfisheriesprod:acoustic:load',...
+    'HorizontalAlignment','left');
+handles.load_schema.WordWrap = 'on';
+handles.load_schema.Layout.Row = 3;
+handles.load_schema.Layout.Column = 2;
+handles.load_schema.ValueChangedFcn = {@check_connection_cback,db_fig,'load'};
 
-handles.load_schema = uicontrol(add_panel,gui_fmt.edtStyle,...
-    'Position',[4*gui_fmt.txt_w+14+gui_fmt.box_w*7 a_panel_pos(4)*0.60 gui_fmt.box_w*3 a_panel_pos(4)*0.1],...
-    'string','wellfisheriesdb:acoustic:load',...
-    'HorizontalAlignment','left',...
-    'callback',{@check_connection_cback,db_fig,'load'});
-
-handles.load_table = uitable('Parent',add_panel,...
+handles.load_table = uitable(db_layout,...
     'Data',[],...
     'ColumnName',{'Mission' 'Deploy' 'ID'},...
     'ColumnFormat',{'char' 'char' 'char'},...
     'ColumnEditable',[false false false],...
     'CellSelectionCallback',@cell_select_cback,...
     'RowName',[],...
-    'Units','Characters',...
-    'Position',[4*gui_fmt.txt_w+14+gui_fmt.box_w*7 a_panel_pos(4)*0.10 gui_fmt.box_w*3 a_panel_pos(4)*0.5],...
+    'ColumnWidth','fit',...
     'Tag','load');
+handles.load_table.Layout.Row = 4;
+handles.load_table.Layout.Column = 2;
 handles.load_table.UserData.select=[];
 
-set_auto_resize_table(handles.load_table);
+handles.esp3_bttn=uibutton(db_layout,'push',...
+    'Text','Load to ESP3 schema',...
+    'Enable','off');
+handles.esp3_bttn.Layout.Row = 2;
+handles.esp3_bttn.Layout.Column = 3;
+handles.esp3_bttn.ButtonPushedFcn = {@load_to_db_cback,db_fig,'esp3'};
 
+handles.esp3_schema = uitextarea(db_layout,...
+    'Value','dbfisheriesprod:acoustic:esp3',...
+    'HorizontalAlignment','left');
+handles.esp3_schema.WordWrap = 'on';
+handles.esp3_schema.Layout.Row = 3;
+handles.esp3_schema.Layout.Column = 3;
+handles.esp3_schema.ValueChangedFcn = {@check_connection_cback,db_fig,'esp3'};
 
-handles.esp3_bttn=uicontrol(add_panel,gui_fmt.pushbtnStyle,...
-    'Position',[4*gui_fmt.txt_w+14+gui_fmt.box_w*10 a_panel_pos(4)*0.70 gui_fmt.box_w*3 a_panel_pos(4)*0.1],...
-    'String','Load to ESP3 schema',...
-    'Enable','off',...
-    'callback',{@load_to_db_cback,db_fig,'esp3'});
-
-handles.esp3_schema = uicontrol(add_panel,gui_fmt.edtStyle,...
-    'Position',[4*gui_fmt.txt_w+14+gui_fmt.box_w*10 a_panel_pos(4)*0.60 gui_fmt.box_w*3 a_panel_pos(4)*0.1],...
-    'string','wellfisheriesdb:acoustic:esp3',...
-    'HorizontalAlignment','left',...
-    'callback',{@check_connection_cback,db_fig,'esp3'});
-
-handles.esp3_table = uitable('Parent',add_panel,...
+handles.esp3_table = uitable(db_layout,...
     'Data',[],...
     'ColumnName',{'Mission' 'Deploy' 'ID'},...
     'ColumnFormat',{'char' 'char' 'char'},...
     'ColumnEditable',[false false false],...
     'CellSelectionCallback',@cell_select_cback,...
     'RowName',[],...
-    'Units','Characters',...
-    'Position',[4*gui_fmt.txt_w+14+gui_fmt.box_w*10 a_panel_pos(4)*0.10 gui_fmt.box_w*3 a_panel_pos(4)*0.5],...
+    'ColumnWidth','fit',...
     'Tag','esp3');
+handles.esp3_table.Layout.Row = 4;
+handles.esp3_table.Layout.Column = 3;
 handles.load_table.UserData.select=[];
+db_fig.Visible = 'on';
 
-set(add_panel,'units','norm');
-set_auto_resize_table(handles.esp3_table);
+load_bar_comp.panel=uipanel(handles.general_layout,...
+    'BackgroundColor',[1 1 1],'tag','load_panel','visible','on','BorderType','line');
+load_bar_comp.panel.Layout.Row = 5;
+load_bar_comp.panel.Layout.Column = 1;
+load_bar_comp.progress_bar=progress_bar_panel_cl(load_bar_comp.panel);
+setappdata(db_fig,'Loading_bar',load_bar_comp);
 
 setappdata(db_fig,'handles',handles);
 
@@ -361,12 +422,12 @@ check_connection_cback(handles.esp3_schema,[],db_fig,'esp3');
 create_table_db_menu([handles.sqlite_table handles.load_table handles.sqlite_table handles.esp3_table]);
 
 update_data_tables(db_fig);
-drawnow;
 
 
 end
 
-function  load_db_file_cback(src,evt)
+function  load_db_file_cback(src,~)
+
 db_fig=ancestor(src,'figure');
 handles=getappdata(db_fig,'handles');
 
@@ -383,15 +444,17 @@ import_other_db_cback([],[],db_fig,fullfile(pathname,filename));
 
 end
 
-function import_other_db_cback(src,evt,db_fig,str_db)
+function import_other_db_cback(~,~,db_fig,str_db)
 
 handles=getappdata(db_fig,'handles');
 
 switch str_db
     case 'esp3'
-       new_ac_db_file=retrieve_ac_db_from_other_db(handles.esp3_schema.String);
+       new_ac_db_file=retrieve_ac_db_from_other_db(handles.esp3_schema.Value{1});
+       str_disp = handles.esp3_schema.Value{1};
     otherwise
       new_ac_db_file=str_db;
+      str_disp = str_db;
 end
 
 
@@ -410,9 +473,9 @@ if ~isempty(new_ac_db_file)
    update_str(db_fig,'deployment');
    update_data_tables(db_fig);   
    
-   warndlg_perso([],'Sucess',sprintf('Data imported from %s. Old database saved as %s',handles.esp3_schema.String,old_ac_db_dest));
+   dlg_perso([],'Sucess',sprintf('Data imported from %s. Old database saved as %s',str_disp,old_ac_db_dest));
 else
-    warndlg_perso([],'Failed',sprintf('Could not import data from %s',handles.esp3_schema.String));
+    dlg_perso([],'Failed',sprintf('Could not import data from %s',str_disp));
 end
 
 
@@ -420,7 +483,8 @@ end
 
 function new_ac_db_file=retrieve_ac_db_from_other_db(db_to_copy)
 new_ac_db_file=fullfile(tempdir,'ac_db.db');
-create_ac_database(new_ac_db_file,1);
+file_sql=fullfile(whereisEcho,'config','db','ac_db.sql');
+create_ac_database(new_ac_db_file,file_sql,1,false);
 
 dbconn=connect_to_db(db_to_copy);
 if isempty(dbconn)
@@ -439,18 +503,14 @@ m_struct=table2struct(mission_t,'ToScalar',true);
 dbconn=connect_to_db(new_ac_db_file);
 
 add_mission_struct_to_t_mission(dbconn,'mission_struct',m_struct);
-%dbconn.insert('t_mission',mission_t.Properties.VariableNames,mission_t);
 add_deployment_struct_to_t_deployment(dbconn,'deployment_struct',d_struct);
-%dbconn.insert('t_deployment',deployment_t.Properties.VariableNames,deployment_t);
-dbconn.insert('t_ship',ship_t.Properties.VariableNames,ship_t);
+dbconn.sqlwrite('t_ship',ship_t);
 dbconn.exec('DELETE from t_deployment_type');
-dbconn.insert('t_deployment_type',deployment_type_t.Properties.VariableNames,deployment_type_t);
+dbconn.sqlwrite('t_deployment_type',deployment_type_t);
 dbconn.exec('DELETE from t_ship_type');
-dbconn.insert('t_ship_type',ship_type_t.Properties.VariableNames,ship_type_t);
+dbconn.sqlwrite('t_ship_type',ship_type_t);
 
 dbconn.close();
-
-
 
 
 
@@ -460,7 +520,8 @@ function update_data_tables(db_fig)
 handles=getappdata(db_fig,'handles');
 
 if~isfile(handles.db_file)
-    create_ac_database(handles.db_file,1);
+    file_sql=fullfile(whereisEcho,'config','db','ac_db.sql');
+    create_ac_database(handles.db_file,file_sql,1,false);
 end
 
 db_file=handles.db_file;
@@ -554,12 +615,12 @@ handles=getappdata(db_fig,'handles');
 for i=1:numel(schema)
     try
         if strcmpi(schema{i},'sqlite')
-            if ~isfile(handles.([schema{i} '_schema']).String)
+            if ~isfile(handles.([schema{i} '_schema']).Value{1})
                 return;
             end
         end
-        
-        dbconn=connect_to_db(handles.([schema{i} '_schema']).String);
+		
+        dbconn=connect_to_db(handles.([schema{i} '_schema']).Value{1});
         sql_query=['SELECT m.mission_name,'...
             'd.deployment_name, '...
             'd.deployment_id '...
@@ -582,11 +643,11 @@ end
 end
 
 
-function check_connection_cback(src,evt,db_fig,schema)
+function check_connection_cback(src,~,db_fig,schema)
 handles=getappdata(db_fig,'handles');
 
 try
-    dbconn=connect_to_db(src.String);
+    dbconn=connect_to_db(src.Value{1});
 catch
     dbconn=[];
 end
@@ -612,7 +673,7 @@ end
 
 hb.Enable=state;
 set(he,'BackgroundColor',col);
-update_db_tables(db_fig,{schema});
+%update_db_tables(db_fig,{schema});
 end
 
 function load_to_db_cback(~,~,db_fig,schema)
@@ -622,13 +683,19 @@ handles = getappdata(db_fig,'handles');
 
 switch schema
     case 'load'
-        db_source = handles.sqlite_schema.String;
-        db_dest   = handles.load_schema.String;
+        db_source = handles.sqlite_schema.Value{1};
+        db_dest   = handles.load_schema.Value{1};
         bck_and_rem = 0;
-        clear_dest  = 1;
+        choice=question_dialog_fig([],'Clear destination','Do you want to clear the LOAD schema before starting the transfer?','timeout',10,'default_answer',1);  
+        switch choice
+            case 'Yes'
+                clear_dest = 1;
+            case 'No'
+                clear_dest = 0;
+        end
     case 'esp3'
-        db_source = handles.load_schema.String;
-        db_dest   = handles.esp3_schema.String;
+        db_source = handles.load_schema.Value{1};
+        db_dest   = handles.esp3_schema.Value{1};
         bck_and_rem = 1;
         clear_dest = 0;
     otherwise
@@ -643,7 +710,7 @@ update_db_tables(db_fig,{'sqlite' 'load' 'esp3'});
 
 end
 
-function save_init_db(src,evt,db_fig)
+function save_init_db(~,~,~)
 disp('Saving init_db file...');
 
 end
@@ -652,7 +719,7 @@ function  generate_db_cback(src,evt,db_fig)
 
 handles = getappdata(db_fig,'handles');
 summary_data = handles.summary_table.Data;
-database_filename = handles.sqlite_schema.String;
+database_filename = handles.sqlite_schema.Value{1};
 
 if ~isempty(summary_data)
         
@@ -671,8 +738,8 @@ if ~isempty(summary_data)
     ship_struct       = table2struct(ship_t,'ToScalar',true);
     
     if ~isempty(database_filename)
-        
-        create_ac_database(database_filename,1);
+        file_sql=fullfile(whereisEcho,'config','db','ac_db.sql');
+        create_ac_database(database_filename,file_sql,1,true);
         
         ship_pkeys = add_ship_struct_to_t_ship(database_filename,'ship_struct',ship_struct);
         
@@ -696,14 +763,14 @@ if ~isempty(summary_data)
             
             % see if database already has this deployment in it
             %[~,deployment_pkey,SQL_query] = get_cols_from_table(database_filename,'t_deployment','input_struct',deployment_struct,'output_cols',{'deployment_pkey'},'row_idx',idx_deployment);
-            [~,deployment_pkey,SQL_query] = get_cols_from_table(database_filename,'t_deployment',...
+            [~,deployment_pkey,~] = get_cols_from_table(database_filename,'t_deployment',...
                 'input_cols',{'deployment_id'},'input_vals',deployment_struct.deployment_id(idx_deployment),'output_cols',{'deployment_pkey'});
             
             if isempty(deployment_pkey)
                 % if not, insert it
                 datainsert_perso(database_filename,'t_deployment',deployment_struct,'idx_insert',idx_deployment);
                 %[~,deployment_pkey] = get_cols_from_table(database_filename,'t_deployment','input_struct',deployment_struct,'output_cols',{'deployment_pkey'},'row_idx',idx_deployment);
-                [~,deployment_pkey,SQL_query] = get_cols_from_table(database_filename,'t_deployment',...
+                [~,deployment_pkey,~] = get_cols_from_table(database_filename,'t_deployment',...
                     'input_cols',{'deployment_id'},'input_vals',deployment_struct.deployment_id(idx_deployment),'output_cols',{'deployment_pkey'});
             end
             
@@ -726,7 +793,7 @@ save_init_db(src,evt,db_fig);
 update_db_tables(db_fig,{'sqlite'});
 end
 
-function create_empty_db_file_cback(src,evt,db_fig)
+function create_empty_db_file_cback(~,~,db_fig)
 handles=getappdata(db_fig,'handles');
 folder=fileparts(handles.db_file);
 f_def=fullfile(folder,'empty_ac_db.db');
@@ -736,13 +803,14 @@ f_def=fullfile(folder,'empty_ac_db.db');
 if isequal(filename,0) || isequal(pathname,0)
     return;
 end
-create_ac_database(fullfile(pathname,filename),1);
+file_sql=fullfile(whereisEcho,'config','db','ac_db.sql');
+create_ac_database(fullfile(pathname,filename),file_sql,1,false);
 end
 
-function choose_output_file(src,evt,db_fig)
+function choose_output_file(~,~,db_fig)
 handles=getappdata(db_fig,'handles');
-folder=get(handles.path_edit,'string');
-out_file=get(handles.sqlite_schema,'string');
+folder=handles.path_edit.Value{1};
+out_file=handles.sqlite_schema.Value{1};
 
 if isfile(out_file)
     folder=fileparts(out_file);
@@ -767,19 +835,19 @@ end
 if isequal(filename,0) || isequal(pathname,0)
     return;
 end
-set(handles.sqlite_schema,'string',fullfile(pathname,filename));
+handles.sqlite_schema.Value = fullfile(pathname,filename);
 update_db_tables(db_fig,{'sqlite'});
 end
 
 function add_folder_callback(~,~,db_fig)
 handles=getappdata(db_fig,'handles');
-folder=get(handles.path_edit,'string');
+folder=get(handles.path_edit,'Value');
 data_mission=handles.mission_table.Data;
 data_deployment=handles.deployment_table.Data;
 
 if isfolder(folder)&&~isempty(data_mission)&&~isempty(data_deployment)
-    mission_idx=get(handles.mission_pop,'value');
-    deployment_idx=get(handles.deployment_pop,'value');
+    mission_idx=find(strcmp(handles.mission_pop.Value,handles.mission_pop.Items));
+    deployment_idx=find(strcmp(handles.deployment_pop.Value,handles.deployment_pop.Items));
     data_add={folder data_mission{mission_idx,2} data_deployment{deployment_idx,2} data_deployment{deployment_idx,6} '' '' ''};
     handles.summary_table.Data=table2cell(unique(cell2table([handles.summary_table.Data;data_add])));
 end
@@ -788,18 +856,19 @@ end
 
 function select_folder_callback(~,~,edit_box)
 
-path_ori=get(edit_box,'string');
+path_ori=get(edit_box,'Value');
+path_ori = path_ori{1};
 if ~isfolder(path_ori)
     path_ori=pwd;
 end
 new_path = uigetdir(path_ori);
 if new_path~=0
-    set(edit_box,'string',new_path);
+    set(edit_box,'Value',new_path);
 end
 
 end
 
-function rm_folder_cback(src,evt,tb)
+function rm_folder_cback(~,~,tb)
 if ~isempty(tb.Data)&&~isempty(tb.UserData.select)
     tb.Data(tb.UserData.select(:,1),:)=[];
 end
@@ -809,22 +878,22 @@ function create_table_txt_menu(tb)
 
 for i=1:numel(tb)
     rc_menu = uicontextmenu(ancestor(tb(i),'figure'));
-    uimenu(rc_menu,'Label','Add entry','Callback',{@add_entry_cback,tb(i)});
-    uimenu(rc_menu,'Label','Remove entry(ies)','Callback',{@rm_entry_cback,tb(i)});
-    tb(i).UIContextMenu =rc_menu;
+    uimenu(rc_menu,'Label','Add entry','MenuSelectedFcn',{@add_entry_cback,tb(i)});
+    uimenu(rc_menu,'Label','Remove entry(ies)','MenuSelectedFcn',{@rm_entry_cback,tb(i)});
+    tb(i).ContextMenu =rc_menu;
 end
 end
 
 function create_table_db_menu(tb)
 for i=1:numel(tb)
     rc_menu = uicontextmenu(ancestor(tb(i),'figure'));
-    uimenu(rc_menu,'Label','Edit/View Setups','Callback',{@edit_setup_cback,tb(i)});
-    %uimenu(rc_menu,'Label','Edit/Add calibration','Callback',{@edit_cal_cback,tb(i)});
-    tb(i).UIContextMenu =rc_menu;
+    uimenu(rc_menu,'Label','Edit/View Setups','MenuSelectedFcn',{@edit_setup_cback,tb(i)});
+    %uimenu(rc_menu,'Label','Edit/Add calibration','MenuSelectedFcn',{@edit_cal_cback,tb(i)});
+    tb(i).ContextMenu =rc_menu;
 end
 end
 
-function edit_setup_cback(src,evt,tb)
+function edit_setup_cback(src,~,tb)
 db_fig=ancestor(src,'figure');
 if ~isfield(tb.UserData,'select')
     return;
@@ -832,7 +901,7 @@ end
 if ~isempty(tb.Data)&&~isempty(tb.UserData.select)
     idx=tb.UserData.select(end,1);
     handles=getappdata(db_fig,'handles');
-    dbconn=connect_to_db(handles.([tb.Tag '_schema']).String);
+    dbconn=connect_to_db(handles.([tb.Tag '_schema']).Value{1});
     switch tb.Tag
         case 'sqlite'
             dbtab='';
@@ -870,8 +939,8 @@ if ~isempty(tb.Data)&&~isempty(tb.UserData.select)
     end
     col_names={'transceiver_manufacturer' 'transceiver_model' 'transceiver_serial' 'transducer_manufacturer' 'transducer_model' 'transducer_serial'};
     col_fmt={'char' 'char' 'char' 'char' 'char' 'char'};
-    sub_db_fig=new_echo_figure([],'WindowStyle','modal','Resize','off','Position',[0 0 600 200],'Name',tb.Data{idx,3});
-    uitable('Parent',sub_db_fig,...
+    sub_db_fig=new_echo_figure([],'WindowStyle','normal','Resize','off','Position',[0 0 600 200],'Name',tb.Data{idx,3});
+    uitable(sub_db_fig,...
         'Data',data_t,...
         'ColumnName',col_names,...
         'ColumnFormat',col_fmt,...
@@ -879,7 +948,7 @@ if ~isempty(tb.Data)&&~isempty(tb.UserData.select)
         'CellEditCallBack',{@setup_edit_cback,tb,db_fig},...
         'CellSelectionCallback',[],...
         'RowName',[],...
-        'units','norm',...
+        'Units','Norm',...
         'Position',[0 0 1 1]);
     
 end
@@ -901,7 +970,7 @@ switch idx_edit(2)
             data_edit{4},data_edit{5},data_edit{6},data_old{4},data_old{5},data_old{6});
 end
 
-dbconn=connect_to_db(handles.([tb.Tag '_schema']).String);
+dbconn=connect_to_db(handles.([tb.Tag '_schema']).Value{1});
 out=dbconn.exec(sql_cmd);
 dbconn.close();
 end
@@ -912,15 +981,15 @@ function update_str(db_fig,tb_name)
 handles=getappdata(db_fig,'handles');
 data=handles.([tb_name '_table']).Data;
 if isempty(data)
-    str='--';
+    str={'--'};
 else
-    str=data(:,contains(handles.([tb_name '_table']).ColumnName,([tb_name '_name'])));
-end
-set(handles.(([tb_name '_pop'])),'String',str,'Value',min(numel(str),handles.(([tb_name '_pop'])).Value));
-
+    str=data(:,contains(handles.([tb_name '_table']).ColumnName,([tb_name '_name'])));  
 end
 
-function rm_entry_cback(src,evt,tb)
+set(handles.(([tb_name '_pop'])),'Items',str,'Value',str{1});
+end
+
+function rm_entry_cback(~,~,tb)
 if ~isempty(tb.Data)&&~isempty(tb.UserData.select)
     db_fig=ancestor(tb,'figure');
     handles=getappdata(db_fig,'handles');
@@ -949,7 +1018,7 @@ end
 
 end
 
-function add_entry_cback(src,evt,tb)
+function add_entry_cback(~,~,tb)
 db_fig=ancestor(tb,'figure');
 handles=getappdata(db_fig,'handles');
 

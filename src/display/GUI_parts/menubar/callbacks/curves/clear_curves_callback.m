@@ -1,4 +1,4 @@
-function clear_curves_callback(~,~,main_figure)
+function clear_curves_callback(~,~,~)
 layer=get_current_layer();
 
 if isempty(layer)

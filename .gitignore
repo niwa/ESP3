@@ -16,12 +16,9 @@ local.properties
 .settings/
 .loadpath
 *.asv
-*.exe
 *.msi
 *.grd
 *echoidx.mat
-
-
 
 # External tool builders
 .externalToolBuilders/
@@ -233,6 +230,5 @@ echo_results/
 example_data/ek60/bot_reg/
 example_data/ek60/echo_logbook.db
 config/path_config.xml
-deploy/
 echo_scripts/test_pablo_tan1505.xml
 *.xyz

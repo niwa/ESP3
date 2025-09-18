@@ -1,0 +1,23 @@
+function tt_summary = init_tt_summary(nb_depth_bins,nb_tracks)
+
+tt_summary.track_id = nan(nb_depth_bins,nb_tracks);
+tt_summary.nb_targets = nan(nb_depth_bins,nb_tracks);
+tt_summary.TS_mean = nan(nb_depth_bins,nb_tracks);
+tt_summary.TS_std = nan(nb_depth_bins,nb_tracks);
+tt_summary.E = nan(nb_depth_bins,nb_tracks);
+tt_summary.N = nan(nb_depth_bins,nb_tracks);
+tt_summary.depth = nan(nb_depth_bins,nb_tracks);
+tt_summary.V_E = nan(nb_depth_bins,nb_tracks);
+tt_summary.V_N = nan(nb_depth_bins,nb_tracks);
+tt_summary.V_H = nan(nb_depth_bins,nb_tracks);
+tt_summary.V_E_2 = nan(nb_depth_bins,nb_tracks);
+tt_summary.V_N_2 = nan(nb_depth_bins,nb_tracks);
+tt_summary.V_H_2 = nan(nb_depth_bins,nb_tracks);
+tt_summary.along_pos = nan(nb_depth_bins,nb_tracks);
+tt_summary.across_pos = nan(nb_depth_bins,nb_tracks);
+tt_summary.range = nan(nb_depth_bins,nb_tracks);
+tt_summary.V_along_2 = nan(nb_depth_bins,nb_tracks);
+tt_summary.V_across_2 = nan(nb_depth_bins,nb_tracks);
+tt_summary.V_r_2 = nan(nb_depth_bins,nb_tracks);
+tt_summary.TS_f = cell(nb_depth_bins,nb_tracks);
+tt_summary.F_vec = cell(nb_depth_bins,nb_tracks);

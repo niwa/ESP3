@@ -172,7 +172,7 @@ if isnan(ncol)
     
     ncol = (max(endpoints) - min(endpoints))./space;
 
-    ncol=nanmin(512,ncol);
+    ncol=min(512,ncol);
 end
 
 % Remove replicates and mimic sharp breaks
@@ -191,13 +191,18 @@ footer = txt(isfooter);
 bfncol = nan(3,3);
 
 for iline = 1:length(footer)
-    if strcmp(footer{iline}(1), 'B')
-        bfncol(1,:) = str2num(regexprep(footer{iline}, 'B', ''));
-    elseif strcmp(footer{iline}(1), 'F')
-        bfncol(2,:) = str2num(regexprep(footer{iline}, 'F', ''));
-    elseif strcmp(footer{iline}(1), 'N')
-        bfncol(3,:) = str2num(regexprep(footer{iline}, 'N', ''));
+    switch footer{iline}(1)
+        case 'B'
+            idl = 1;
+        case 'F'
+            idl = 2;
+        case 'N'
+            idl = 3;
+        otherwise
+            idl = 1;
     end
+    
+    bfncol(idl,:) = sscanf(footer{iline}(2:end),'%d');
 end
 
 if any(isnan(bfncol(1,:)))
@@ -282,8 +287,8 @@ bfncol(bfncol>1)=1;
 % c_temp_tot(:,1:2:end)=c_temp(1:3,:);
 % c_temp_tot(:,2:2:end)=c_temp(4:6,:);
 % c_map=unique(c_temp_tot','stable','rows');
-% d=nanmax(c_map(:));
-% d=nanmax(d,255);
+% d=max(c_map(:));
+% d=max(d,255);
 % cmap = c_map/d;
 %
 % for ia=1:numel(A{2})

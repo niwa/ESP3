@@ -1,7 +1,7 @@
 function [contour_type,idx_order]=order_contours(x,y,contour_type,prev_type)
 
 
-if length(x)==1
+if isscalar(x)
     contour_type=(prev_type==0);
     idx_order=1;
     return;
@@ -17,7 +17,7 @@ bbox=[cellfun(@min,y);cellfun(@min,x);cellfun(@max,y);cellfun(@max,x)]';
 
 area=(bbox(:,3)-bbox(:,1)).*(bbox(:,4)-bbox(:,2));
 
-[~,idx_max]=nanmax(area);
+[~,idx_max]=max(area);
 idx=1:length(x);
 
 contour_type(idx_max)=(prev_type==0);

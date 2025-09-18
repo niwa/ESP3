@@ -57,8 +57,15 @@ interactions.KeyPressFcn(1)=iptaddcallback(main_figure,'KeyPressFcn',{@keyboard_
 % Set wheel mouse scroll cback
 interactions.WindowScrollWheelFcn(1)=iptaddcallback(main_figure,'WindowScrollWheelFcn',{@scroll_fcn_callback,main_figure});
 
-% Set pointer motion cback
-%interactions.WindowButtonMotionFcn(1)=iptaddcallback(main_figure,'WindowButtonMotionFcn',{@update_info_panel,0});
+axes_panel_comp=getappdata(main_figure,'Axes_panel');
+if ~isempty(axes_panel_comp)
+    al = getpixelposition( axes_panel_comp.axes_panel);
+    pl = get(groot,'PointerLocation');
+    
+    if inpolygon(pl(1),pl(2),[al(1) al(1)+al(3) al(1)+al(3) al(1)],[al(2) al(2) al(2)+al(4) al(2)+al(4)])%only re-activating if inside the echogram
+        interactions.WindowButtonMotionFcn(1)=iptaddcallback(main_figure,'WindowButtonMotionFcn',{@update_info_panel,0});
+    end
+end
 %interactions.WindowButtonMotionFcn(3)=iptaddcallback(main_figure,'WindowButtonMotionFcn',{@update_boat_position,main_figure});
 
 setappdata(main_figure,'interactions_id',interactions);

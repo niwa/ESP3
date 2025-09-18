@@ -49,10 +49,6 @@ reglist_tab_comp=getappdata(main_figure,'Reglist_tab');
 
 [trans_obj,~]=layer.get_trans(curr_disp);
 
-%
-% shape_types=get(reglist_tab_comp.shape_type,'string');
-% shape_type_idx=get(reglist_tab_comp.shape_type,'value');
-%shape_type=shape_types{shape_type_idx};
 
 data_types=get(reglist_tab_comp.data_type,'string');
 data_type_idx=get(reglist_tab_comp.data_type,'value');
@@ -75,6 +71,7 @@ w_unit=w_units{w_unit_idx};
 
 h_units=get(reglist_tab_comp.cell_h_unit,'string');
 h_unit_idx=get(reglist_tab_comp.cell_h_unit,'value');
+
 if isempty(h_unit_idx)
     h_unit_idx=1;
     set(reglist_tab_comp.cell_h_unit,'value',1);
@@ -82,16 +79,16 @@ end
 h_unit=h_units{h_unit_idx};
 
 
-range=double(trans_obj.get_transceiver_range());
+range=double(trans_obj.get_samples_range());
 samples=(1:length(range))';
 pings=double(trans_obj.get_transceiver_pings()-trans_obj.get_transceiver_pings(1)+1);
 
-idx_r=find(samples>=nanmin(poly_r)&samples<=nanmax(poly_r));
-idx_pings=find(pings>=nanmin(poly_pings)&pings<=nanmax(poly_pings));
+idx_r=find(samples>=min(poly_r,[],'omitnan')&samples<=max(poly_r,[],'omitnan'));
+idx_ping=find(pings>=min(poly_pings,[],'omitnan')&pings<=max(poly_pings,[],'omitnan'));
 
 poly=polyshape(poly_pings,poly_r,'simplify',false);
 
-if isempty(idx_r)||isempty(idx_pings)
+if isempty(idx_r)||isempty(idx_ping)
     return;
 end
 
@@ -103,7 +100,7 @@ reg_temp=region_cl(...
     'Tag',tag,...
     'Name','User defined',...
     'Type',data_type,...
-    'Idx_pings',idx_pings,...
+    'Idx_ping',idx_ping,...
     'Idx_r',idx_r,...
     'Shape','Polygon',...
     'Reference',ref,...
@@ -115,8 +112,12 @@ reg_temp=region_cl(...
 
 old_regs=trans_obj.Regions;
 IDs=trans_obj.add_region(reg_temp);
+map_tab_comp = getappdata(main_figure,'Map_tab');
+if ~isempty(map_tab_comp) && isvalid(map_tab_comp.ax)
+    trans_obj.disp_reg_tag_on_map('gax',map_tab_comp.ax,'uid',IDs);
+end
 
-display_regions(main_figure,'both');
+display_regions('both');
 add_undo_region_action(main_figure,trans_obj,old_regs,trans_obj.Regions);
 
 if ~isempty(IDs)

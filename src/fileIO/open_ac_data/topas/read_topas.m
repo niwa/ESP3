@@ -11,7 +11,7 @@ if ~iscell(Filename_cell)
     Filename_cell={Filename_cell};
 end
 
-[def_path_m,~,~]=fileparts(Filename_cell{1});
+def_path_m = fullfile(tempdir,'data_echo');
 
 addRequired(p,'Filename_cell',@(x) ischar(x)||iscell(x));
 addParameter(p,'PathToMemmap',def_path_m,@ischar);
@@ -21,7 +21,7 @@ parse(p,Filename_cell,varargin{:});
 
 
 dir_data=p.Results.PathToMemmap;
-enc='ieee-be';
+enc='UTF-8';
 nb_files=length(Filename_cell);
 load_bar_comp=p.Results.load_bar_comp;
 
@@ -37,7 +37,7 @@ for i_cell=1:length(Filename_cell)
         disp(str_disp)
     end
     
-    fid=fopen(Filename,'r',enc);
+    fid=fopen(Filename,'r','b',enc);
     
     if fid==-1
         continue;
@@ -130,6 +130,7 @@ for i_cell=1:length(Filename_cell)
             
             if data.MatchFiltered(pidx)<2
                 data.trace{pidx} = fread(fid,traceSize,'float','b');
+                
                 [B,A] = butter(7,[data.ChirpStart(pidx)/data.sampFreq(pidx) data.ChirpStop(pidx)/data.sampFreq(pidx)]);
                 data.trace{pidx}=filter(B,A,data.trace{pidx});
                 data.traceMF{pidx} =match_filter_topas(data.trace{pidx},data.ChirpStart(pidx),data.ChirpStop(pidx),data.sampFreq(pidx),data.ChirpLength(pidx)/1e3);
@@ -155,8 +156,20 @@ for i_cell=1:length(Filename_cell)
     data.nb_channel=unique(data.channel_number);
     
     transceiver(data.nb_channel)=transceiver_cl();
+    
     att=attitude_nav_cl('Heading',zeros(size(data.pingTime)),'Pitch',data.tx_pitch,'Roll',data.tx_roll,'Heave',data.tx_heave,'Time',data.pingTime);
-    gps_obj=gps_data_cl('Lat',data.lat_north,'Long',data.lon_east,'Time',data.pingTime);
+    
+    lat_deg=sign(data.lat_north).*round(abs(data.lat_north));
+    lat_min=sign(data.lat_north).*(abs(data.lat_north)-abs(lat_deg))*100/60;
+    
+    lon_deg=sign(data.lon_east).*round(abs(data.lon_east));
+    lon_min=sign(data.lon_east).*(abs(data.lon_east)-abs(lon_deg))*100/60;
+    
+    lat_tot  = lat_deg+lat_min;
+    lon_tot = lon_deg+lon_min;
+    
+    gps_obj=gps_data_cl('Lat',lat_tot,'Long',lon_tot,'Time',data.pingTime);
+    
     for ic=1:max(data.nb_channel)
         
         
@@ -170,10 +183,10 @@ for i_cell=1:length(Filename_cell)
         
         nb_samples_vec=nb_samples_recorded+nb_samples_delays;
         
-        nb_samples=nanmax(nb_samples_vec);
+        nb_samples=max(nb_samples_vec);
         
         nb_pings=numel(idx_channel);
-        nb_samples=nanmax(nb_samples);
+        nb_samples=max(nb_samples);
         
         sample_number=(1:nb_samples)';
         c=data.soundSpeed(idx_channel(1));
@@ -182,7 +195,7 @@ for i_cell=1:length(Filename_cell)
         
         
         config_obj=config_cl();
-        config_obj.ChannelID=sprintf('TOPAS %.0fkHz',num2str(nanmean(data.CentreFreq(idx_channel))));
+        config_obj.ChannelID=sprintf('TOPAS %.0fkHz',mean(data.CentreFreq(idx_channel))/1e3);
         params_obj=params_cl(nb_pings);
         envdata=env_data_cl('SoundSpeed',c);
         config_obj.EthernetAddress='';
@@ -190,28 +203,26 @@ for i_cell=1:length(Filename_cell)
         config_obj.SerialNumber='';
         
         
-        config_obj.PulseLength=nanmean(data.ChirpLength(idx_channel));
-        config_obj.BeamType=0;
+        config_obj.PulseLength=mean(data.ChirpLength(idx_channel));
+        config_obj.BeamType='single-Beam';
         config_obj.BeamWidthAlongship=6;
         config_obj.BeamWidthAthwartship=6;
         config_obj.EquivalentBeamAngle=-21;
-        config_obj.Frequency=nanmean(data.CentreFreq(idx_channel));
-        config_obj.FrequencyMaximum=nanmax(data.ChirpStop(idx_channel));
-        config_obj.FrequencyMinimum=nanmin(data.ChirpStart(idx_channel));
+        config_obj.Frequency=mean(data.CentreFreq(idx_channel));
+        config_obj.FrequencyMaximum=max(data.ChirpStop(idx_channel));
+        config_obj.FrequencyMinimum=min(data.ChirpStart(idx_channel));
         config_obj.Gain=0;
         config_obj.SaCorrection=0;
         config_obj.TransducerName='TOPAS';
         config_obj.TransceiverName='TOPAS';
         
-        params_obj.Time=data.pingTime(idx_channel);
         params_obj.Frequency(:)=data.CentreFreq(idx_channel);
         params_obj.FrequencyEnd(:)=data.ChirpStop(idx_channel);
         params_obj.FrequencyStart(:)=data.ChirpStart(idx_channel);
-        params_obj.PulseLength(:)=nanmean(data.ChirpLength(idx_channel))/1e3;
+        params_obj.PulseLength(:)=mean(data.ChirpLength(idx_channel))/1e3;
         params_obj.SampleInterval(:)=1./data.sampFreq(idx_channel);
         params_obj.TransmitPower(:)=data.sourceLevel(idx_channel);
-        params_obj.Absorption(:)= seawater_absorption(params_obj.Frequency(1)/1e3, (envdata.Salinity), (envdata.Temperature), (envdata.Depth),'fandg')/1e3;
-        
+
         power_lin=zeros(nb_samples,nb_pings);
         
         for ip=1:nb_pings
@@ -227,31 +238,24 @@ for i_cell=1:length(Filename_cell)
         
         ac_data_temp=ac_data_cl('SubData',sub_ac_data_temp,...
             'Nb_samples',length(range),...
+            'Nb_beams',1,...
             'Nb_pings',nb_pings,...
             'MemapName',curr_name);
-        
-       
-        
-        lat=data.lat_north(idx_channel);
-        lon=data.lon_east(idx_channel);
-        
-        lat_deg=sign(lat).*round(abs(lat));
-        lat_min=sign(lat).*(abs(lat)-abs(lat_deg))*100/60;
-        
-        lon_deg=sign(lon).*round(abs(lon));
-        lon_min=sign(lon).*(abs(lon)-abs(lon_deg))*100/60;
-        
+              
         att_chan=attitude_nav_cl('Heading',zeros(size(data.pingTime(idx_channel))),'Pitch',data.tx_pitch(idx_channel),'Roll',data.tx_roll(idx_channel),'Heave',data.tx_heave(idx_channel),'Time',data.pingTime(idx_channel));
-        gps_chan=gps_data_cl('Lat',lat_deg+lat_min,'Long',lon_deg+lon_min,'Time',data.pingTime(idx_channel));
+        gps_chan=gps_data_cl('Lat',lat_tot(idx_channel),'Long',lon_tot(idx_channel),'Time',data.pingTime(idx_channel));
         transceiver(ic)=transceiver_cl('Data',ac_data_temp,...
             'AttitudeNavPing',att_chan,...
             'GPSDataPing',gps_chan,...
             'Range',range,...
             'Time',data.pingTime(idx_channel),...
-            'TransducerDepth',data.transducerDraft(idx_channel),...
+            'TransceiverDepth',data.transducerDraft(idx_channel),...
             'Mode','FM',...
             'Config',config_obj,...
             'Params',params_obj);
+        
+        transceiver(ic).Config.SounderType = 'Sub-bottom profiler';
+
         transceiver(ic).set_absorption(envdata);
     end
     layers(i_cell)=layer_cl('Filename',{Filename},'Filetype','TOPAS','Transceivers',transceiver,'EnvData',envdata,'AttitudeNav',att,'GPSData',gps_obj);

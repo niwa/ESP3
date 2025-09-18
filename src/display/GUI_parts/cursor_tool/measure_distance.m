@@ -44,7 +44,7 @@ end
 layer=get_current_layer();
 axes_panel_comp=getappdata(main_figure,'Axes_panel');
 curr_disp=get_esp3_prop('curr_disp');
-ah=axes_panel_comp.main_axes;
+ah=axes_panel_comp.echo_obj.main_ax;
 
 
 
@@ -52,14 +52,13 @@ clear_lines(ah)
 
 % obj_meas=findobj(ah,'Tag','measurement_text','-or','Tag','measurement');
 % delete(obj_meas);
-[cmap,col_ax,text_col,col_grid,col_bot,col_txt,line_col]=init_cmap(curr_disp.Cmap);
+cmap_struct = init_cmap(curr_disp.Cmap,curr_disp.ReverseCmap);
  
-
-[trans_obj,idx_freq]=layer.get_trans(curr_disp);
+[trans_obj,~]=layer.get_trans(curr_disp);
 
 xdata=trans_obj.get_transceiver_pings();
 ydata=trans_obj.get_transceiver_samples();
-range_t=trans_obj.get_transceiver_range();
+range_t=trans_obj.get_samples_range();
 gps_data=trans_obj.GPSDataPing;
 
 xinit=nan(1,1e2);
@@ -82,7 +81,7 @@ end
 switch src.SelectionType
     case {'normal'}
         hp=plot(ah,xinit,yinit,'color',line_col,'linewidth',1,'Tag','measurement','linestyle','--');
-        ht=text(ah,xinit,yinit,'','Tag','measurement_text','Color',text_col);
+        ht=text(ah,xinit,yinit,'','Tag','measurement_text','Color',cmap_struct.col_lab);
         add_point(cp(1,1),cp(1,2));
         click_num=2;
  
@@ -120,8 +119,8 @@ end
             return;
         end
 
-        [~,idx_ping]=nanmin(abs(xdata-xadd));
-        [~,idx_r]=nanmin(abs(ydata-yadd));
+        [~,idx_ping]=min(abs(xdata-xadd));
+        [~,idx_r]=min(abs(ydata-yadd));
         
         
         xinit(click_num)=xadd;
@@ -134,8 +133,9 @@ end
         
         if click_num>1            
             calc_dist(click_num)=sqrt((x_dist(click_num)-x_dist(click_num-1))^2+(y_dist(click_num)-y_dist(click_num-1))^2);
-            straight_dist(click_num)=sqrt((1000*lat_long_to_km(lat(click_num-1:click_num),lon(click_num-1:click_num)))^2+(y_dist(click_num)-y_dist(click_num-1))^2);
-            str_dist=sprintf('Integrated dist: %.2fm\n Straigth line dist: %.2fm\n',nansum(calc_dist),nansum(straight_dist));
+            [d,~] = lat_long_to_km(lat(click_num-1:click_num),lon(click_num-1:click_num));
+            straight_dist(click_num)=sqrt((1000*d)^2+(y_dist(click_num)-y_dist(click_num-1))^2);
+            str_dist=sprintf('Integrated dist: %.2fm\nStraigth line dist: %.2fm',sum(calc_dist,'omitnan'),sum(straight_dist,'omitnan'));
         else
             str_dist='';
         end

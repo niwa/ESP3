@@ -1,12 +1,15 @@
 function display_ping_impedance_cback(src,~,main_figure,idx_ping,new)
 hfigs=getappdata(main_figure,'ExternalFigures');
+
 if ~isempty(hfigs)
     hfigs(~isvalid(hfigs))=[];
 end
 idx_fig=[];
+
 if ~isempty(hfigs)
     idx_fig=find(strcmp({hfigs(:).Tag},'Impedance'));
 end
+
 if isempty(idx_fig)&&new==0
     return;
 end
@@ -17,7 +20,7 @@ curr_disp=get_esp3_prop('curr_disp');
 [trans_obj,idx_freq]=layer.get_trans(curr_disp);
 
 linestyles={'-' '--' ':' '-.'};
-ax_main=axes_panel_comp.main_axes;
+ax_main=axes_panel_comp.echo_obj.main_ax;
 
 if isempty(idx_ping)
     x_lim=double(get(ax_main,'xlim'));
@@ -27,10 +30,10 @@ if isempty(idx_ping)
     x=cp(1,1);
     %y=cp(1,2);
     
-    x=nanmax(x,x_lim(1));
-    x=nanmin(x,x_lim(2));
+    x=max(x,x_lim(1));
+    x=min(x,x_lim(2));
     xdata=trans_obj.get_transceiver_pings();
-    [~,idx_ping]=nanmin(abs(xdata-x));
+    [~,idx_ping]=min(abs(xdata-x));
 end
 [Z,f_vec]=trans_obj.compute_ping_impedance(idx_ping);
 
@@ -89,11 +92,11 @@ if any(~cellfun(@isempty,Z))
     
     xlabel(ax,x_label);
     if(~isempty(x_vals))
-        xlim(ax,[nanmin(x_vals) nanmax(x_vals)]);
+        xlim(ax,[min(x_vals) max(x_vals)]);
     end
     
 else
     if ~isempty(src)
-        warndlg_perso(main_figure,'',sprintf('No impedance measuremanent for channel %s',trans_obj.Config.ChannelID));
+        dlg_perso(main_figure,'',sprintf('No impedance measuremanent for channel %s',trans_obj.Config.ChannelID));
     end
 end

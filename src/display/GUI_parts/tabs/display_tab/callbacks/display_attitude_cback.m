@@ -46,8 +46,8 @@ layers_Str=list_layers(layer);
 [trans_obj,~]=layer.get_trans(curr_disp);
 new_figs=trans_obj.AttitudeNavPing.display_att(main_figure);
 
-for i=1:length(new_figs)
-    set(new_figs(i),'Name',sprintf('Attitude  %s',layers_Str{1}));
+for ifi=1:length(new_figs)
+    set(new_figs(ifi),'Name',sprintf('Attitude  %s',layers_Str{1}));
 end
 
 end

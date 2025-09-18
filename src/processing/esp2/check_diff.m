@@ -137,8 +137,8 @@ if any(idx_esp3)
                         ax2=subplot(1,2,2);
                         imagesc(ax2,pow2db_perso(amap2),'alphadata',~isnan(amap2)&amap2>0);
                         set(ax2,'xtick',1:y_esp_2,'ydir','reverse');
-                        caxis(ax1,[-80 -45]);
-                        caxis(ax2,[-80 -45]);
+                        clim(ax1,[-80 -45]);
+                        clim(ax2,[-80 -45]);
                         linkprop([ax1 ax2],'clim');
                         grid(ax1,'on');
                         grid(ax2,'on');
@@ -207,13 +207,13 @@ end
 
 function same=print_diff(data_new,data_ref,fn_main,fn_comp)
 same= true;
-if nansum(nansum(data_ref))~=0
+if sum(sum(data_ref))~=0
     idx_comp=abs(data_ref)>0;
     if numel(data_new)==numel(data_ref)
-        diff_strata_mean =nansum(data_new(idx_comp)-data_ref(idx_comp))./nansum(data_ref(idx_comp))*100;
+        diff_strata_mean =sum(data_new(idx_comp)-data_ref(idx_comp))./sum(data_ref(idx_comp))*100;
     else
         idx_comp_3=abs(data_new)>0;
-        diff_strata_mean =(nansum(data_new(idx_comp_3))-nansum(data_ref(idx_comp)))./nansum(data_ref(idx_comp))*100;
+        diff_strata_mean =(sum(data_new(idx_comp_3))-sum(data_ref(idx_comp)))./sum(data_ref(idx_comp))*100;
     end
     
     if abs(diff_strata_mean) < 0.001
@@ -231,10 +231,10 @@ if nansum(nansum(data_ref))~=0
         pause(0.5);
     end
 else
-    if nansum(data_new)==0
+    if sum(data_new)==0
         fprintf(1, '%s %s : New results are on average the same as the reference (both NULLs)\n',fn_main, fn_comp);
     else
-        fprintf(1, '%s %s : New results are on average %2.4f whereas the reference is NULL\n',fn_main, fn_comp, nansum(data_new));
+        fprintf(1, '%s %s : New results are on average %2.4f whereas the reference is NULL\n',fn_main, fn_comp, sum(data_new));
         same =false;
     end
 end

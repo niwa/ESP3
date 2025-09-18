@@ -1,5 +1,5 @@
 
-function set_active_reg(src,~,ID,main_figure)
+function set_active_reg(~,~,ID,main_figure)
 curr_disp=get_esp3_prop('curr_disp');
 
 switch main_figure.SelectionType

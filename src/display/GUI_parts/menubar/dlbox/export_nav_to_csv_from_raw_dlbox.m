@@ -142,7 +142,7 @@ end
 
 
 
-function get_raw_files_callback(src,~,main_figure)
+function get_raw_files_callback(src,~,~)
 
 % get fig comp
 gpsdec_fig = ancestor(src,'figure');
@@ -242,13 +242,15 @@ end
 % make window invisible for the duration of the processing
 set(gpsdec_fig,'visible','off');
 drawnow
-
+has_navigation = false;
 % open each file, read GPS and append to csv file
 for ii = 1:length(Filename)
     try
         % read file
-        new_layer = open_file_standalone(Filename{ii},{},'GPSOnly',1,'load_bar_comp',load_bar_comp);
-        
+        new_layer = open_file_standalone(Filename{ii},'','GPSOnly',1,'load_bar_comp',load_bar_comp);
+        if isempty(new_layer)
+            continue;
+        end
         % extract and decimate time vector
         time = new_layer.GPSData.Time;
         
@@ -282,68 +284,66 @@ for ii = 1:length(Filename)
         % total number of records
         if isempty(idx)
            warning('No gps data for  files %s\n',Filename{ii});
+           continue;
         end
-        
+        has_navigation = true;
         numRecords = numel(idx);
         
         % create output structure
        
         [~,filename,ext] = fileparts(new_layer.Filename{1});
-        
+
         switch ext_output
             case '.csv'
-                
-                output.file = repmat({[filename ext]},[numRecords 1]);
-                output.time = cellfun(@(x) datestr(x,'dd/mm/yyyy HH:MM:SS.FFF'),num2cell(time(idx)),'UniformOutput',0);
-                output.lat  = new_layer.GPSData.Lat(idx);
-                output.long = new_layer.GPSData.Long(idx);
-                
+                output.File = repmat({[filename ext]},[numRecords 1]);
+                output.Time = cellfun(@(x) datestr(x,'dd/mm/yyyy HH:MM:SS.FFF'),num2cell(time(idx)),'UniformOutput',0);
+                output.Lat  = new_layer.GPSData.Lat(idx);
+                output.Long = new_layer.GPSData.Long(idx);
+                output.Long(output.Long>180)  = output.Long(output.Long>180) - 360;
                 ff=fieldnames(output);
-                
+
                 for idi=1:numel(ff)
                     if isrow(output.(ff{idi}))
                         output.(ff{idi})=output.(ff{idi})';
                     end
                 end
-                
+
                 % write (append) structure to file
                 struct2csv(output,output_fullfile,0,'a');
                 clear output
             case '.shp'
-                if ~isempty(idx)
-                    field=genvarname(filename);
-                    Lines.(field)=new_layer.GPSData.gps_to_geostruct(idx);
-                    Lines.(field).Filename=[filename ext];
-                end
+
+                field=genvarname(filename);
+                Lines.(field)=new_layer.GPSData.gps_to_geostruct(idx);
+                Lines.(field).Filename=[filename ext];
         end
         
     catch err
-        
         warning('Could not save gps data for files %s\n',Filename{ii});
         print_errors_and_warnings(1,'error',err)
     end
 end
+if has_navigation
+    switch ext_output
+        case '.shp'
+            LineIDs = fieldnames(Lines);
+            ite = 1;
+            for LineIndex = 1:numel(LineIDs)
 
-switch ext_output
-    case '.shp'
-        LineIDs = fieldnames(Lines);
-        i = 1;
-        for LineIndex = 1:numel(LineIDs)
-            
-            LineID = LineIDs{LineIndex};
-            Line = Lines.(LineID);
-            
-            if i==1
-                LinesArray = repmat(Line, numel(LineIDs), 1 );
-            else
-                LinesArray(i) = Line;
+                LineID = LineIDs{LineIndex};
+                Line = Lines.(LineID);
+
+                if ite==1
+                    LinesArray = repmat(Line, numel(LineIDs), 1 );
+                else
+                    LinesArray(ite) = Line;
+                end
+                ite = ite + 1;
             end
-            i = i + 1;
-        end
-        
-        shapewrite(LinesArray,output_fullfile);
-end
 
+            shapewrite(LinesArray,output_fullfile);
+    end
+end
 hide_status_bar(main_figure);
 
 % destroy window

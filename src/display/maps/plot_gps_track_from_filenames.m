@@ -17,7 +17,7 @@ try
     end
     
     if isempty(new_layers)
-        warndlg_perso(main_figure,'','No position data for those files')
+        dlg_perso(main_figure,'','No position data for those files');
         return;
     end
     curr_disp=get_esp3_prop('curr_disp');
@@ -58,7 +58,7 @@ try
                     output.time = cellfun(@(x) datestr(x,'dd/mm/yyyy HH:MM:SS.FFF'),num2cell(time),'UniformOutput',0);
                     output.lat  = new_layers(ilay).GPSData.Lat;
                     output.long = new_layers(ilay).GPSData.Long;
-                    
+                    output.long(output.long >180) = output.long(output.long >180)-360;
                     ff=fieldnames(output);
                     
                     for idi=1:numel(ff)

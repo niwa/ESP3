@@ -69,7 +69,7 @@ if ~isdeployed()
             sst = char(p.Results.interaction_fcn);
         end
         fprintf('Replacing interaction: %s %d to %s\n',p.Results.interaction,p.Results.id,sst);
-    end  
+    end
 end
 
 if isempty(interactions_id)
@@ -88,7 +88,9 @@ interactions_id.(p.Results.interaction)(p.Results.id)=iptaddcallback(curr_fig,(p
 
 if isempty(p.Results.pointer)
     curr_disp=get_esp3_prop('curr_disp');
-    setptr(curr_fig,curr_disp.get_pointer());
+    if ~isempty(curr_disp)
+        setptr(curr_fig,curr_disp.get_pointer());
+    end
 elseif ~isempty(p.Results.pointer)
     setptr(curr_fig,p.Results.pointer);
 end

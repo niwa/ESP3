@@ -1,24 +1,24 @@
 function [pdf,x_mat,y_mat]=pdf_2d_perso(X,Y,N_x,N_y,win)
 
 if isscalar(N_x)
-    maxi_x=nanmax(X(:));
-    mini_x=nanmin(X(:));
+    maxi_x=max(X(:));
+    mini_x=min(X(:));
     dx=(maxi_x-mini_x)/N_x;
     x=linspace(mini_x,maxi_x,N_x);
 else
     x=N_x;
-    dx=abs(nanmean(diff(x)));
+    dx=abs(mean(diff(x)));
     N_x=numel(x);
 end
 
 if isscalar(N_y)
-    maxi_y=nanmax(Y(:));
-    mini_y=nanmin(Y(:));
+    maxi_y=max(Y(:));
+    mini_y=min(Y(:));
     dy=(maxi_y-mini_y)/N_y;
     y=linspace(mini_y,maxi_y,N_y);
 else
     y=N_y;
-    dy=abs(nanmean(diff(y)));
+    dy=abs(mean(diff(y)));
     N_y=numel(y);
 end
 
@@ -50,7 +50,7 @@ elseif strcmp(win,'gauss')
     end
 end
 
-pdf=double(pdf/nansum(pdf(:)*dx*dy));
+pdf=double(pdf/sum(pdf(:)*dx*dy));
 x_mat=repmat(x(:),1,N_y);
 y_mat=repmat(y(:)',N_x,1);
 end

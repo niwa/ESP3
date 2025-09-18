@@ -48,7 +48,6 @@ end
 layer=get_current_layer();
 axes_panel_comp=getappdata(main_figure,'Axes_panel');
 curr_disp=get_esp3_prop('curr_disp');
-[cmap,col_ax,col_lab,col_grid,col_bot,col_txt,col_tracks]=init_cmap(curr_disp.Cmap);
 
 
 context_menu=findobj(src,'Type','uicontextmenu','-and','Tag','btCtxtMenu');
@@ -65,17 +64,15 @@ for i=1:length(childs)
     
 end
 
-ah=axes_panel_comp.main_axes;
-echo=axes_panel_comp.main_echo;
+ah=axes_panel_comp.echo_obj.main_ax;
 
 di=-1/2;
 
 clear_lines(ah);
 
-[cmap,col_ax,col_lab,col_grid,col_bot,col_txt,line_col]=init_cmap(curr_disp.Cmap);
+cmap_struct = init_cmap(curr_disp.Cmap,curr_disp.ReverseCmap);
 
-
-[trans_obj,idx_freq]=layer.get_trans(curr_disp);
+[trans_obj,~]=layer.get_trans(curr_disp);
 
 xdata=trans_obj.get_transceiver_pings();
 ydata=trans_obj.get_transceiver_samples();
@@ -109,7 +106,7 @@ diff_r=diff(ylim)/diff(xlim);
 xt = radius * cos((0:0.1:2*pi)) + ping_init;
 yt = diff_r*radius * sin((0:0.1:2*pi)) + sample_init;
 
-circ=plot(ah,xt,yt,'color','k','linewidth',1,'linestyle','--','color',col_grid);
+circ=plot(ah,xt,yt,'color','k','linewidth',1,'linestyle','--','color',cmap_struct.col_grid);
 
 
 switch src.SelectionType
@@ -128,7 +125,7 @@ else
     position='below';
     setptr(main_figure,'ddrag');
 end
-hp=plot(ah,xdata,yinit-1/2,'color',line_col,'linewidth',1,'Tag','bottom_temp');
+hp=plot(ah,xdata,yinit-1/2,'color',cmap_struct.col_tracks,'linewidth',1,'Tag','bottom_temp');
 
     function wbmcb(~,~)
         cp=ah.CurrentPoint;
@@ -141,8 +138,8 @@ hp=plot(ah,xdata,yinit-1/2,'color',line_col,'linewidth',1,'Tag','bottom_temp');
         sample_new(sample_new>nb_samples)=nb_samples;
         sample_new(sample_new<0)=1;
         
-        p0=nanmax(ping_new-radius,1);
-        p1=nanmin(ping_new+radius,nb_pings);
+        p0=max(ping_new-radius,1);
+        p1=min(ping_new+radius,nb_pings);
         pings_spline=[p0 ping_new p1];
         if length(unique(pings_spline)) < length(pings_spline)
             return;
@@ -157,8 +154,8 @@ hp=plot(ah,xdata,yinit-1/2,'color',line_col,'linewidth',1,'Tag','bottom_temp');
         %delete(circ);
         
         if isvalid(circ)
-            set(circ,'XData',circ.XData-nanmean(circ.XData)+ping_new,...
-                'YData',circ.YData-nanmean(circ.YData)+sample_new);
+            set(circ,'XData',circ.XData-mean(circ.XData)+ping_new,...
+                'YData',circ.YData-mean(circ.YData)+sample_new);
         else
             circ=plot(ah,xt,yt,'color','k','linewidth',1,'linestyle','--');
         end
@@ -183,7 +180,7 @@ hp=plot(ah,xdata,yinit-1/2,'color',line_col,'linewidth',1,'Tag','bottom_temp');
         if isvalid(hp)
             set(hp,'XData',xdata,'YData',yinit+di);
         else
-            hp=plot(ah,xdata,yinit+di,'color',line_col,'linewidth',1,'Tag','bottom_temp');
+            hp=plot(ah,xdata,yinit+di,'color',cmap_struct.col_tracks,'linewidth',1,'Tag','bottom_temp');
         end
     end
 
