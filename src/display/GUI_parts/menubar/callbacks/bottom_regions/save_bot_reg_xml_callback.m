@@ -1,4 +1,4 @@
-function save_bot_reg_xml_callback(~,~,main_figure)
+function save_bot_reg_xml_callback(~,~,~)
 layer=get_current_layer();
 
 layer.write_reg_to_reg_xml();

@@ -36,6 +36,13 @@ function [lat,lon,bathy]=get_etopo1(latlim,LongLim)
 %                        _FillValue   = -2147483648
 %                        actual_range = [-10898   8271]
 etopo_file=fullfile(whereisEcho,'private','ETOPO1_Bed_g_gmt4.grd');
+lat = [];
+lon = [];
+bathy = [];
+
+if ~isfile(etopo_file) 
+    return;
+end
 
 lon_etopo=ncread(etopo_file,'x');
 lat_etopo=ncread(etopo_file,'y');
@@ -54,13 +61,13 @@ else
     idx_lon=union(find(lon_etopo>=(LongLim(1)-dr)&lon_etopo<=180),find(lon_etopo>=-180&lon_etopo<=(LongLim(2)+dr)));
 end
 
-if nansum(diff(idx_lat)>1)>0 
+if sum(diff(idx_lat)>1)>0 
     id_lat_step=[1 find(diff(idx_lat)>1)+1 length(idx_lat)+1];
 else
     id_lat_step=[1 length(idx_lat)+1];
 end
 
-if nansum(diff(idx_lon)>1)>0 
+if sum(diff(idx_lon)>1)>0 
     id_lon_step=[1 find(diff(idx_lon)>1)+1 length(idx_lon)+1];
 else
     id_lon_step=[1 length(idx_lon)+1];

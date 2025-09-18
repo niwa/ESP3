@@ -1,13 +1,16 @@
 function update_lines_tab(main_figure)
-layer=get_current_layer();
-lines_tab_comp=getappdata(main_figure,'Lines_tab');
+layer = get_current_layer();
+lines_tab_comp=getappdata(main_figure,'Lines_tab'); 
+if isempty(layer)
+    return;
+end
 list_lines = layer.list_lines();
 
 if ~isempty(list_lines)
     set(lines_tab_comp.tog_line,'string',list_lines);
     
     idx_line=get(lines_tab_comp.tog_line,'value');
-    idx_line=nanmax(nanmin(length(layer.Lines),idx_line),0);
+    idx_line=max(min(length(layer.Lines),idx_line),0);
     set(lines_tab_comp.tog_line,'value',idx_line);
     utc_diff=layer.Lines(idx_line).UTC_diff;
     %set(lines_tab_comp.tog_line,'value',idx_line);
@@ -22,12 +25,14 @@ if ~isempty(list_lines)
     
     set(lines_tab_comp.Dist_diff,'string',num2str(layer.Lines(idx_line).Dist_diff,'%.0f'))
     set(lines_tab_comp.Range_diff,'string',num2str(layer.Lines(idx_line).Dr,'%.1f'));
+    set(lines_tab_comp.line_tag,'string',layer.Lines(idx_line).Tag);
 else
     set(lines_tab_comp.tog_line,'string',{'--'},'value',1);
     
     set(lines_tab_comp.time_h_diff,'string','00:00:00')
     set(lines_tab_comp.Dist_diff,'string',0)
     set(lines_tab_comp.Range_diff,'string',0)
+    set(lines_tab_comp.line_tag,'string','')
 end
 
 %set(findobj(lines_tab_comp.lines_tab, '-property', 'Enable'), 'Enable', 'on');

@@ -13,13 +13,13 @@ end
 
 switch dest
     case 'main_figure'
-        pos_out=[0 0 1 0.67];
+        pos_out=[0 0 1 0.77];
         disp_tab_comp=getappdata(main_figure,'Display_tab');
         parent=disp_tab_comp.display_tab;
         mini_axes_comp=getappdata(main_figure,'Mini_axes');
-        if isvalid(mini_axes_comp.mini_ax)
-            if ~isa(mini_axes_comp.mini_ax.Parent,'matlab.ui.container.Tab')
-                delete(mini_axes_comp.mini_ax.Parent);
+        if ~isempty(mini_axes_comp)&&isvalid(mini_axes_comp.echo_obj.main_ax)
+            if ~isa(mini_axes_comp.echo_obj.main_ax.Parent,'matlab.ui.container.Tab')
+                delete(mini_axes_comp.echo_obj.main_ax.Parent);
             end
         end
     otherwise                
@@ -33,7 +33,7 @@ switch dest
             'CloseRequestFcn',@close_min_axis,...
             'Tag','mini_ax');
         iptPointerManager(parent);
-        delete(mini_axes_comp.mini_ax);
+        %delete(mini_axes_comp.echo_obj.main_ax);
         initialize_interactions_mini_ax(parent,main_figure);
 end
 
@@ -42,8 +42,9 @@ update_axis(main_figure,1,'main_or_mini','mini');
 set_alpha_map(main_figure,'main_or_mini','mini');
 update_cmap(main_figure);
 init_link_prop(main_figure);
-display_regions(main_figure,'mini');
-display_bottom(main_figure);
+display_regions('mini');
+display_bottom(main_figure,'mini');
+display_lines('mini');
 
 % profile off;
 % profile viewer;

@@ -1,8 +1,11 @@
 function load_lines_tab(main_figure,option_tab_panel)
 
-% curr_disp=get_esp3_prop('curr_disp');
-lines_tab_comp.lines_tab=uitab(option_tab_panel,'Title','Lines','tag','lines');
-
+if isappdata(main_figure,'Lines_tab')
+    lines_tab_comp=getappdata(main_figure,'Lines_tab');
+    delete(get(lines_tab_comp.lines_tab,'children'));
+else
+    lines_tab_comp.lines_tab=uitab(option_tab_panel,'Title','Lines','tag','lines');
+end
 
 list_lines={'--'};
 utc_str='00:00:00';
@@ -15,7 +18,10 @@ pos=create_pos_3(8,3,gui_fmt.x_sep,gui_fmt.y_sep,gui_fmt.txt_w,gui_fmt.box_w,gui
 
 uicontrol(lines_tab_comp.lines_tab,gui_fmt.txtStyle,'String','Lines','Position',pos{1,2}{1});
 lines_tab_comp.tog_line=uicontrol(lines_tab_comp.lines_tab,gui_fmt.popumenuStyle,...
-    'String',list_lines,'Value',length(list_lines),'Position',pos{1,2}{2}+[0 0 2*gui_fmt.txt_w 0],'callback',{@tog_line,main_figure});
+    'String',list_lines,'Value',length(list_lines),'Position',pos{1,2}{2}+[0 0 3/2*gui_fmt.txt_w 0],'callback',{@tog_line,main_figure});
+uicontrol(lines_tab_comp.lines_tab,gui_fmt.txtStyle,'String','Tag:','Position',pos{2,2}{1});
+lines_tab_comp.line_tag=uicontrol(lines_tab_comp.lines_tab,gui_fmt.edtStyle,...
+    'String','','Position',pos{2,2}{2}+[0 0 1*gui_fmt.txt_w 0],'callback',{@edit_tag_cback,main_figure});
 
 uicontrol(lines_tab_comp.lines_tab,gui_fmt.txtTitleStyle,'String','Offsets:','Position',pos{2,1}{1});
 uicontrol(lines_tab_comp.lines_tab,gui_fmt.txtStyle,'String','T(hh:mm:ss)','Position',pos{3,1}{1});
@@ -32,9 +38,10 @@ p_button(3)=gui_fmt.button_w*1.5;
 
 str_delete='<HTML><center><FONT color="Red"><b>Delete</b></Font> ';
 str_draw='<HTML><center><FONT color="Green"><b>Draw</b></Font> ';
-uicontrol(lines_tab_comp.lines_tab,gui_fmt.pushbtnStyle,'String',str_draw,'pos',p_button,'callback',{@draw_line_callback,main_figure});
+uicontrol(lines_tab_comp.lines_tab,gui_fmt.pushbtnStyle,'String',str_draw,'pos',p_button,'callback',@draw_line_callback);
 uicontrol(lines_tab_comp.lines_tab,gui_fmt.pushbtnStyle,'String',str_delete,'pos',p_button+[p_button(3) 0 0 0],'callback',{@delete_line_callback,main_figure});
-
+uicontrol(lines_tab_comp.lines_tab,gui_fmt.pushbtnStyle,'String','Edit','pos',p_button+[p_button(3)*2 0 0 0],'callback',@edit_line_callback);
+uicontrol(lines_tab_comp.lines_tab,gui_fmt.pushbtnStyle,'String','Color/Width','pos',p_button+[p_button(3)*3 0 0 0],'callback',{@change_line_features,main_figure});
 
 gui_fmt.button_w=gui_fmt.button_w*2;
 p_button=pos{4,3}{1};
@@ -47,30 +54,49 @@ p_button=pos{5,3}{1};
 p_button(3)=gui_fmt.button_w;
 uicontrol(lines_tab_comp.lines_tab,gui_fmt.pushbtnStyle,'String','Use as Offset','pos',p_button,'callback',{@offset_line_callback,main_figure});
 uicontrol(lines_tab_comp.lines_tab,gui_fmt.pushbtnStyle,'String','Remove Offset','pos',p_button+[p_button(3) 0 0 0],'callback',{@remove_offset_callback,main_figure});
-%uicontrol(lines_tab_comp.lines_tab,gui_fmt.chckboxStyle,'String','Disp. Offset','pos',p_button+[2*p_button(3) 0 0 0],'callback',{@toggle_offset_callback,main_figure},'value',curr_disp.DispSecFreqsWithOffset);
 
 
 %set(findobj(lines_tab_comp.lines_tab, '-property', 'Enable'), 'Enable', 'off');
 setappdata(main_figure,'Lines_tab',lines_tab_comp);
 
 end
-% function toggle_offset_callback(src,~,main_figure)
-% curr_disp=get_esp3_prop('curr_disp');
-% curr_disp.DispSecFreqsWithOffset=src.Value;
-% 
-% end
 
 
-function draw_line_callback(~,~,main_figure)
+
+function draw_line_callback(~,~)
 curr_disp=get_esp3_prop('curr_disp');
 curr_disp.CursorMode='Draw Line';
 
 end
 
+function edit_tag_cback(src,~,main_figure)
+layer=get_current_layer();
+if isempty(layer.Lines)
+    return;
+end
+lines_tab_comp=getappdata(main_figure,'Lines_tab');
+line = layer.Lines(get(lines_tab_comp.tog_line,'value'));
+prv_str = line.Tag;
+
+line.Tag=src.String;
+
+switch lower(line.Tag)
+    case 'offset'
+        offset_line_callback([],[],main_figure);
+    otherwise
+        if strcmpi(prv_str,'offset')
+            remove_offset_callback([],[],main_figure)
+        else
+            update_lines_tab(main_figure);
+            display_lines();
+        end
+end
+
+end
 
 function tog_line(~,~,main_figure)
 update_lines_tab(main_figure);
-display_lines(main_figure);
+display_lines();
 end
 
 function offset_line_callback(~,~,main_figure)
@@ -84,6 +110,7 @@ if isempty(layer.Lines)
     return;
 end
 idx_offset=layer.get_lines_per_Tag('Offset');
+
 if ~isempty(idx_offset)
     for io=1:numel(idx_offset)
         layer.Lines(idx_offset(io)).Tag='';
@@ -94,14 +121,15 @@ line_offset=layer.Lines(get(lines_tab_comp.tog_line,'value'));
 line_offset.Tag='Offset';
 layer.Lines=concatenate_lines(layer.Lines,'Tag');
 idx_offset=layer.get_lines_per_Tag('Offset');
+
 for idx=1:numel(layer.Transceivers)
     trans_obj=layer.Transceivers(idx);
-    
+
     trans_obj.set_transducer_depth_from_line(layer.Lines(idx_offset));
 end
 
 update_lines_tab(main_figure);
-display_lines(main_figure);
+display_lines();
 curr_disp.DispSecFreqs=curr_disp.DispSecFreqs;
 end
 
@@ -112,27 +140,24 @@ curr_disp=get_esp3_prop('curr_disp');
 
 for idx=1:numel(layer.Transceivers)
     trans_obj=layer.Transceivers(idx);
-    trans_obj.reset_transducer_depth();
+    trans_obj.reset_transceiver_depth();
     if ~isempty(layer.Lines)
-        
+
         idx_offset=layer.get_lines_per_Tag('Offset');
         if ~isempty(idx_offset)
             for io=1:numel(idx_offset)
                 layer.Lines(idx_offset(io)).Tag='';
             end
         end
-        
-        
+
+
     end
 end
 
 update_lines_tab(main_figure);
-display_lines(main_figure);
+display_lines();
 curr_disp.DispSecFreqs=curr_disp.DispSecFreqs;
 end
-
-
-
 
 
 function delete_line_callback(~,~,main_figure)
@@ -140,10 +165,10 @@ layer=get_current_layer();
 lines_tab_comp=getappdata(main_figure,'Lines_tab');
 nb_lines=numel(layer.Lines);
 if ~isempty(layer.Lines)
-    active_line=layer.Lines(nanmin(nb_lines,get(lines_tab_comp.tog_line,'value')));
+    active_line=layer.Lines(min(nb_lines,get(lines_tab_comp.tog_line,'value')));
     layer.rm_line_id(active_line.ID);
     list_line = layer.list_lines();
-    
+
     if ~isempty(list_line)
         set(lines_tab_comp.tog_line,'value',1)
         set(lines_tab_comp.tog_line,'string',list_line);
@@ -151,12 +176,18 @@ if ~isempty(layer.Lines)
         set(lines_tab_comp.tog_line,'value',1)
         set(lines_tab_comp.tog_line,'string',{'--'});
     end
-    
+
     update_lines_tab(main_figure);
-    display_lines(main_figure);
+    display_lines();
 else
     return
 end
+end
+
+function edit_line_callback(~,~)
+curr_disp=get_esp3_prop('curr_disp');
+curr_disp.CursorMode='Edit Line';
+
 end
 
 function change_dist_callback(src,~,main_figure)
@@ -170,9 +201,9 @@ if ~isempty(layer.Lines)
             layer.Lines(get(lines_tab_comp.tog_line,'value')).Dist_diff=str2double(get(src,'string'));
         end
     end
-    
+
     update_lines_tab(main_figure)
-    display_lines(main_figure);
+    display_lines();
 else
     return
 end
@@ -205,9 +236,9 @@ if ~isempty(layer.Lines)
             layer.Lines(get(lines_tab_comp.tog_line,'value')).change_time(UTC_diff);
         end
     end
-    
+
     update_lines_tab(main_figure)
-    display_lines(main_figure);
+    display_lines();
 else
     return
 end
@@ -224,9 +255,9 @@ if ~isempty(layer.Lines)
             layer.Lines(get(lines_tab_comp.tog_line,'value')).change_range(str2double(get(src,'string')))
         end
     end
-    
+
     update_lines_tab(main_figure)
-    display_lines(main_figure);
+    display_lines();
 else
     return
 end

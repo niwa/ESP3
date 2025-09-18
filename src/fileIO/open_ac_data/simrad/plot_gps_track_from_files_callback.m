@@ -28,9 +28,6 @@ if isempty(Filename)
 end
 
 
-
-
-
 %% open all files (GPS only)
 
 % status bar
@@ -40,10 +37,13 @@ load_bar_comp = getappdata(main_figure,'Loading_bar');
 % read all files
 new_layers = open_file_standalone(Filename,'','GPSOnly',1,'load_bar_comp',load_bar_comp);
 
+
 if isempty(new_layers)
     return;
 end
 curr_disp=get_esp3_prop('curr_disp');
+% fprintf('Adding ping data to logbook database\n');
+% new_layers.add_ping_data_to_db(1,0);
 
 %% display GPS
 

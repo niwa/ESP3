@@ -8,9 +8,9 @@ function obj=create_line_from_xls(filename)
         obj=[];
         return; 
     end
-    if isfield(data_struct,'Timestamp')
+    if ismember('Timestamp',fields)
         time=datenum(data_struct.Timestamp);
-    elseif isfield(data_struct,'Time')
+    elseif ismember('Time',fields)
         time=datenum(data_struct.Time);
     else        
        obj=[];

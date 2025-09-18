@@ -33,17 +33,17 @@ switch get(groot,'units')
     case 'pixels'
         ss = get(groot,'screensize');
     case 'normalized'
-   ss= [0 0 inf inf];     
+        ss= [0 0 inf inf];
 end
 
-s_str=nanmax(cellfun(@numel,deblank(str_list)));
+s_str=max(cellfun(@numel,deblank(str_list)));
 
-str_b_w=nanmin(nanmax(s_str*8,200),600);
+str_b_w=min(max(s_str*8,200),600);
 str_b_h=numel(str_list)*10+20;
 
-str_b_h=nanmin(nanmax(str_b_h,80),ceil(ss(4)/4*3));
+str_b_h=min(max(str_b_h,80),ceil(ss(4)/4*3));
 
-bt_w=nanmax([cellfun(@(x) numel(x*8),opt),50]);
+bt_w=max([cellfun(@(x) numel(x*8),opt),50]);
 
 box_w=str_b_w+20;
 box_h=str_b_h+45;
@@ -68,11 +68,11 @@ listbox=uicontrol('Parent',list_fig,...
 optH=gobjects(1,numel(opt));
 
 for uio=1:numel(opt)
-optH(uio)=uicontrol('Parent',list_fig,...
-    'Position',[(box_w-numel(opt)*bt_w-10)/2+(uio-1)*(bt_w+10) 10 bt_w 25],...
-    'String',opt{uio},...
-    'Callback',@decision_callback,...
-    'KeyPressFcn',@doControlKeyPress , 'Value',0);
+    optH(uio)=uicontrol('Parent',list_fig,...
+        'Position',[(box_w-numel(opt)*bt_w-10)/2+(uio-1)*(bt_w+10) 10 bt_w 25],...
+        'String',opt{uio},...
+        'Callback',@decision_callback,...
+        'KeyPressFcn',@doControlKeyPress , 'Value',0);
 end
 list_fig.Visible='on';
 setdefaultbutton(list_fig, optH(1));
@@ -82,7 +82,11 @@ drawnow;
 if ishghandle(list_fig)
     % Go into uiwait if the figure handle is still valid.
     % This is mostly the case during regular use.
-    c = matlab.ui.internal.dialog.DialogUtils.disableAllWindowsSafely();
+    if will_it_work([],'9.10',true)
+        c = matlab.ui.internal.dialog.DialogUtils.disableAllWindowsSafely(true);
+    else
+        c = matlab.ui.internal.dialog.DialogUtils.disableAllWindowsSafely();
+    end
     if isempty(p.Results.timeout)
         uiwait(list_fig);
     else
@@ -90,6 +94,11 @@ if ishghandle(list_fig)
     end
     delete(c);
 end
+
+if ~isvalid(list_fig)
+    return;
+end
+
 switch get(list_fig,'UserData')
     case 'OK'
         select=get(listbox,'Value');
@@ -101,15 +110,15 @@ drawnow; % Update the view to remove the closed figure (g1031998)
 
 end
 function decision_callback(obj, evd) %#ok
-  set(gcbf,'UserData',get(obj,'String'));
-  uiresume(gcbf);
+set(gcbf,'UserData',get(obj,'String'));
+uiresume(gcbf);
 end
 
 function doControlKeyPress(obj, evd)
 switch(evd.Key)
-    case {'return'}       
+    case {'return'}
         set(gcbf,'UserData',get(obj,'String'));
-        uiresume(gcbf);       
+        uiresume(gcbf);
     case 'escape'
         delete(gcbf)
 end

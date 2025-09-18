@@ -8,7 +8,7 @@ if exist(FileN,'file')==2
     %{'Voyage' 'SurveyName' 'Filename' 'Snapshot' 'Stratum' 'Transect' 'StartTime' 'Comment' 'EndTime'}
     if any(~isfield(surv_data_struct,{'File' 'Snapshot' 'Stratum' 'Transect'}))&&any(~isfield(surv_data_struct,{'Filename' 'Snapshot' 'Stratum' 'Transect'}))
         surv_data_struct=[];
-        warndlg_perso([],'','Cannot find required fields in the *.csv file...');
+        dlg_perso([],'','Cannot find required fields in the *.csv file...');
         return;
     end
     

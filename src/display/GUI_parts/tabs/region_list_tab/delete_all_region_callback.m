@@ -48,15 +48,18 @@ switch choice
         [trans_obj,~]=layer.get_trans(curr_disp);
         list_reg = trans_obj.regions_to_str();
         axes_panel_comp=getappdata(main_figure,'Axes_panel');
-        ah=axes_panel_comp.main_axes;
+        ah=axes_panel_comp.echo_obj.main_ax;
         clear_lines(ah);
         
         if ~isempty(list_reg)
             old_regs=trans_obj.Regions;
-            trans_obj.rm_regions();
-            curr_disp.Reg_changed_flag=1;
             
-            display_regions(main_figure,'both');            
+            curr_disp.Reg_changed_flag=1;
+            map_tab_comp = getappdata(main_figure,'Map_tab');
+            gax = map_tab_comp.ax;
+            cellfun(@(x) rem_reg_tag_lim(gax,x),{old_regs(:).Unique_ID});
+            trans_obj.rm_regions();
+            display_regions('both');            
             
             add_undo_region_action(main_figure,trans_obj,old_regs,trans_obj.Regions);
   

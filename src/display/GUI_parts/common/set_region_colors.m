@@ -40,7 +40,8 @@
 %% Function
 function [ac_data_col,ac_bad_data_col,in_data_col,in_bad_data_col,col_txt]=set_region_colors(cmap_name)
 
-[cmap,col_ax,col_lab,col_grid,col_bot,col_txt,col_tracks]=init_cmap(cmap_name);
+cmap_struct = init_cmap(cmap_name);
+col_txt = cmap_struct.col_txt;
 
 ac_data_col=[1 0 0];
 in_bad_data_col=[240,200,140]/255;

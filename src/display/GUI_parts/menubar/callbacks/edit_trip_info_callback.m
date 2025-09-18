@@ -20,12 +20,13 @@ path_lay=unique(path_lay);
 
 for up=1:numel(path_lay)
     path_f=path_lay{up};
-    
-    db_file=fullfile(path_f,'echo_logbook.db');
-    if ~(exist(db_file,'file')==2)
-        initialize_echo_logbook_dbfile(path_f,main_figure,0)
+
+    db_file = fullfile(path_f,'echo_logbook.db');
+    if ~isfile(db_file)
+        dbconn = initialize_echo_logbook_dbfile(path_f,0);
+        dbconn.close();
     end
-    
+
     %surv_data_struct=import_survey_data_db(db_file);
     
     hfigs=getappdata(main_figure,'ExternalFigures');
@@ -58,11 +59,10 @@ for up=1:numel(path_lay)
     layers(idx_lay_up).update_echo_logbook_dbfile('SurveyName',survey_data_out.SurveyName,'Voyage',survey_data_out.Voyage,'main_figure',main_figure);
 end
 
-
 update_tree_layer_tab(main_figure);
-load_info_panel(main_figure);
+load_info_panel(main_figure,[]);
 update_axis(main_figure,1,'main_or_mini','mini');
 
-load_logbook_tab_from_db(main_figure,1);
+update_logbook_panel_f(layer.Filename);
 
 end

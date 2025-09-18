@@ -1,6 +1,7 @@
-function survey_options_obj=parse_survey_options_xml(xml_file)
+function surv_options_obj = parse_survey_options_xml(xml_file)
 
-survey_options_obj = survey_options_cl();
+surv_options_obj = survey_options_cl();
+
 if ~isfile(xml_file)
     return;
 end
@@ -16,10 +17,11 @@ nb_child = length(xml_struct.Children);
 
 idx_child=1:nb_child;
 
-for i = idx_child
-    switch xml_struct.Children(i).Name
+for iui = idx_child
+    switch xml_struct.Children(iui).Name
         case 'options'
-            survey_options_obj = survey_options_cl('Options',get_options_node(xml_struct.Children(i)));
+            opt_struct = get_options_node(xml_struct.Children(iui));
+            surv_options_obj.update_options(opt_struct);
         case '#comment'
             continue;
         otherwise

@@ -1,4 +1,4 @@
-function export_regions_callback(~,~,main_figure)
+function export_regions_callback(~,~,~)
 
 % get region
 layer     = get_current_layer();

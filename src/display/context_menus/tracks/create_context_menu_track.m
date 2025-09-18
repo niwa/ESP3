@@ -1,7 +1,7 @@
 function create_context_menu_track(main_figure,hfig,line)
 context_menu=uicontextmenu(hfig);
 uimenu(context_menu,'Label','Load/Display','Callback',{@activate_line_callback,main_figure,hfig});
-uimenu(context_menu,'Label','Export Track to CSV','Callback',{@export_track_callback,hfig});
+uimenu(context_menu,'Label','Export Track to .csv','Callback',{@export_track_callback,hfig});
 for i=1:length(line)
     line(i).UIContextMenu=context_menu;
 end
@@ -38,7 +38,8 @@ else
     % Handle response
     switch choice
         case 'Yes'
-            open_file([],[],files,main_figure);
+            esp3_obj=getappdata(groot,'esp3_obj');
+            esp3_obj.open_file('file_id',files);
         case 'No'
             
         otherwise

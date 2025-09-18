@@ -27,14 +27,14 @@ xi=(cos(beta_ray(1))/c(1));
 
 while t_ray(end)<=T
     %t_ray(end)
-    [~,idx]=nanmin(abs(z_ray(end)-z));
+    [~,idx]=min(abs(z_ray(end)-z));
     
     i=length(r_ray);
     
     if beta_ray(i)<0
-        idx_plus=nanmax(idx-1,1);
+        idx_plus=max(idx-1,1);
     elseif beta_ray(i)>0
-        idx_plus=nanmin(idx+1,length(z));
+        idx_plus=min(idx+1,length(z));
     else
         idx_plus=idx;
     end
@@ -92,7 +92,7 @@ while t_ray(end)<=T
                     xi=(cos(beta_ray(i+1))/c(idx));
                     r_ray(i+1)=r_ray(i)+2/(xi*g(idx))*(sqrt(1-xi^2*c(idx)^2));
                     t_ray(i+1)=t_ray(i)+2/(g(idx))*log(1/(c(idx)*abs(xi))*(1+sqrt(1-xi^2*c(idx)^2)));
-                    z_ray(i+1)=z(nanmax(idx-1,1));
+                    z_ray(i+1)=z(max(idx-1,1));
                     
                     if beta_ray(i+1)>0
                         g=g_down;

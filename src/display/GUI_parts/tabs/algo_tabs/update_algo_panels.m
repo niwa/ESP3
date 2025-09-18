@@ -24,9 +24,9 @@ for ui = 1:numel(algo_panels)
             end
         else
             algo_obj=trans_obj.Algo(idx_algo);
-            algo_panels(ui).update_algo_panel(algo_obj);
-            algo_panels(ui).reset_default_params_h();
+            algo_panels(ui).update_algo_panel(algo_obj); 
         end
+        algo_panels(ui).reset_default_params_h();
     end
 end
 

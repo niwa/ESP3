@@ -77,7 +77,7 @@ uicontrol(...
 setappdata(main_figure,'multi_freq_tab',multi_freq_tab);
 end
 
-function compute_freq_diff_cback(src,evtdata,main_figure)
+function compute_freq_diff_cback(~,~,main_figure)
 
 layer=get_current_layer();
 curr_disp=get_esp3_prop('curr_disp');

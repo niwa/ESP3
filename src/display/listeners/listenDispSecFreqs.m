@@ -15,11 +15,13 @@ switch curr_disp.DispSecFreqs
             otherwise
                 load_secondary_freq_win(main_figure,0);
         end
+        
         init_sec_link_props(main_figure);
         update_axis(main_figure,1,'main_or_mini',layer.ChannelID);
         update_cmap(main_figure);
         set_alpha_map(main_figure,'main_or_mini',layer.ChannelID);
-        display_regions(main_figure,union({'main' 'mini'},layer.ChannelID));
+        display_regions(layer.ChannelID);
+        display_lines(layer.ChannelID);
         display_bottom(main_figure);
         
         init_link_prop(main_figure);
@@ -35,9 +37,12 @@ switch curr_disp.DispSecFreqs
             secondary_freq_init=init_secondary_axes_struct();
           
             setappdata(main_figure,'Secondary_freq',secondary_freq_init);
+        else
+           secondary_freq_init=init_secondary_axes_struct();
+           setappdata(main_figure,'Secondary_freq',secondary_freq_init); 
         end
 end
-
+create_context_menu_sec_echo();
 display_tab_comp=getappdata(main_figure,'Display_tab');
 
 if ~isempty(display_tab_comp)

@@ -51,7 +51,7 @@ trans=layer.get_trans(curr_disp);
 xdata_tot=trans.get_transceiver_pings();
 ydata_tot=trans.get_transceiver_samples();
 
-ah=axes_panel_comp.main_axes;
+ah=axes_panel_comp.echo_obj.main_ax;
 
 cp = ah.CurrentPoint;
 xx=ah.XLim;
@@ -78,15 +78,15 @@ switch src.SelectionType
         x_lim(2)=x_lim_ori(2)+dx/2;
         y_lim(2)=y_lim(2)+dy/2;
         
-        x_lim(x_lim>nanmax(xdata_tot))=nanmax(xdata_tot);
-        x_lim(x_lim<nanmin(xdata_tot))=nanmin(xdata_tot);
+        x_lim(x_lim>max(xdata_tot))=max(xdata_tot);
+        x_lim(x_lim<min(xdata_tot))=min(xdata_tot);
         
         
-        y_lim(y_lim>nanmax(ydata_tot))=nanmax(ydata_tot);
-        y_lim(y_lim<nanmin(ydata_tot))=nanmin(ydata_tot);
+        y_lim(y_lim>max(ydata_tot))=max(ydata_tot);
+        y_lim(y_lim<min(ydata_tot))=min(ydata_tot);
     case {'alt','open'}
-        x_lim=[nanmin(xdata_tot) nanmax(xdata_tot)];
-        y_lim=[nanmin(ydata_tot) nanmax(ydata_tot)];
+        x_lim=[min(xdata_tot) max(xdata_tot)];
+        y_lim=[min(ydata_tot) max(ydata_tot)];
     otherwise
         return;
         

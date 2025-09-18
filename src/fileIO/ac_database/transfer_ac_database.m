@@ -121,40 +121,31 @@ fkey_list = {...
 %db_dest = 'pgdb.niwa.local:acoustic_test:esp3';
 fprintf('Connecting to source database %s... ',db_src);
 db_src_conn = connect_to_db(db_src);
-fprintf('OK.\n');
+
+if ~isempty(db_src_conn)
+    fprintf('OK.\n');
+else
+    fprintf('Could not connect to source database %s... Abording transfer.',db_dest);
+    return;
+end
 fprintf('Connecting to destination database %s... ',db_dest);
 db_dest_conn = connect_to_db(db_dest);
-fprintf('OK.\n');
 
-%% clearing destination database (when loading MINIDB to LOAD)
+if ~isempty(db_dest_conn)
+    fprintf('OK.\n');
+else
+    fprintf('Could not connect to destination database %s... Abording transfer.',db_dest);
+    return;
+end
+
+% %% clearing destination database (when loading MINIDB to LOAD)
 if p.Results.clear_dest>0
-    fprintf('Clearing destination database %s... ',db_dest);
-    sql_query_truncate = sprintf('TRUNCATE %s',strjoin(table_list,','));
-    out = db_dest_conn.exec(sql_query_truncate);
-    fprintf('DONE.\n');
+     fprintf('Clearing destination database %s... ',db_dest);
+     sql_query_truncate = sprintf('TRUNCATE %s',strjoin(table_list,','));
+     db_dest_conn.exec(sql_query_truncate);
+     fprintf('DONE.\n');
 end
 
-%% initialize backup and removal of source database (when loading LOAD to ESP3)
-if p.Results.backup_and_remove_src > 0
-    
-    try
-        sql_query = 'SELECT MAX(load_pkey) from t_load';
-        tmp = db_src_conn.fetch(sql_query); %not sure what this for?
-    catch
-        create_t_load(db_src_conn)
-    end
-    
-    % creating info about LOAD-to-ESP3 loading event
-    struct_load.load_user     = {getenv('USERNAME')};
-    struct_load.load_time     = {datestr(now,'yyyy-mm-dd HH:MM:SS')};
-    struct_load.load_comments = {sprintf('Created from %s',db_src)};
-    
-    % insert loading event in t_load
-    fprintf('Inserting information about load event in load.t_load... ');
-    load_id = insert_data_controlled(db_src_conn,'t_load',struct_load,struct_load,'load_pkey');
-    fprintf('DONE.\n');
-    
-end
 
 
 %% reading source data per table, and calculating max pkey value
@@ -192,18 +183,19 @@ for it = 1:numel(table_list)
     else
         data_to_load.(table_list{it}) = [];
     end
+    
     if ~isempty(data_to_load.(table_list{it}))
         switch table_list{it}
             case 't_transducer'
                 if any(cellfun(@isempty,data_to_load.t_transducer.transducer_serial))
                     data_to_load=[];
-                    warndlg_perso([],'Missing Serial Number','Misssing Transducer Serial number. Please complete.');
+                    dlg_perso([],'Missing Serial Number','Missing Transducer Serial number. Please complete.');
                     return;
                 end
             case 't_transceiver'
                 if any(cellfun(@isempty,data_to_load.t_transceiver.transceiver_serial))
                     data_to_load=[];
-                    warndlg_perso([],'Missing Serial Number','Misssing Transceiver Serial number. Please complete.');
+                    dlg_perso([],'Missing Serial Number','Missing Transceiver Serial number. Please complete.');
                     return;
                 end
         end
@@ -221,6 +213,14 @@ if ~isempty(data_to_load.t_navigation)
 end
 
 fprintf('DONE.\n');
+
+isref = false(1,numel(table_list));
+for it = 1:numel(table_list)
+   for ifkey = 1:numel(fkey_list{it})
+        t_ref = fkey_list{it}{ifkey}{2};
+        isref(strcmpi(table_list,t_ref))=true;
+   end
+end
 
 
 %% Transfer to new database and updates of pkeys in appropriate tables
@@ -286,7 +286,7 @@ for it = 1:numel(table_list)
     %% removing the contents we don't need to insert
     unique_fields = ukey_list{it};
     fields = fieldnames(data_to_load.(table_list{it}));
-    idx_rem = ~ismember(fields,unique_fields);
+    idx_rem = ~ismember(lower(fields),lower(unique_fields));
     if any(idx_rem)
         fields_to_remove = fields(idx_rem);
         struct_in_minus_key = rmfield(data_to_load.(table_list{it}),fields_to_remove);
@@ -294,15 +294,56 @@ for it = 1:numel(table_list)
         struct_in_minus_key = data_to_load.(table_list{it});
     end
     
+        
+    for uin = 1:numel(unique_fields)
+        if isfield(struct_in_minus_key,unique_fields{uin})&&iscell(struct_in_minus_key.(unique_fields{uin}))
+            id_empty = cellfun(@isempty,struct_in_minus_key.(unique_fields{uin}));
+            struct_in_minus_key.(unique_fields{uin})(id_empty) = {'--'};
+            data_to_load.(table_list{it}).(unique_fields{uin})(id_empty) = {'--'};
+        end
+    end
+        
+    if isfield(struct_in_minus_key,pkey_list{it})
+        struct_in_minus_key = rmfield(struct_in_minus_key,pkey_list{it});
+    end
+    
+%     tmp_table = struct2table(struct_in_minus_key);
+%     [unique_entries_table_id,~] = findgroups(tmp_table);
+    
     %% inserting new contents
     fprintf('       Inserting new table records in destination database/schema...\n');
-    new_pkey_val.(table_list{it}) = insert_data_controlled(db_dest_conn,table_list{it},data_to_load.(table_list{it}),struct_in_minus_key,pkey_list{it});
+    new_pkey_val.(table_list{it}) = insert_data_controlled(db_dest_conn,table_list{it},data_to_load.(table_list{it}),struct_in_minus_key,pkey_list{it},isref(it));
     fprintf('\n');
+
+end
+
+if p.Results.backup_and_remove_src>0
+    %% initialize backup and removal of source database (when loading LOAD to ESP3)
+    try
+        sql_query = 'SELECT MAX(load_pkey) from t_load';
+        db_src_conn.fetch(sql_query);
+    catch
+        create_t_load(db_src_conn)
+    end
     
-    %% backup table contents in LOAD schema
-    if p.Results.backup_and_remove_src>0
+    % creating info about LOAD-to-ESP3 loading event
+    struct_load.load_user     = {getenv('USERNAME')};
+    struct_load.load_time     = {datestr(now,'yyyy-mm-dd HH:MM:SS')};
+    struct_load.load_comments = {sprintf('Created from %s',db_src)};
+    
+    % insert loading event in t_load
+    fprintf('Inserting information about load event in load.t_load... ');
+    load_id = insert_data_controlled(db_src_conn,'t_load',struct_load,struct_load,'load_pkey');
+    fprintf('DONE.\n');
+    
+    for it = 1:numel(table_list)
+        %% backup table contents in LOAD schema
+        
+        if isempty(data_to_load.(table_list{it}))
+            continue;
+        end
         try
-            fprintf('       Backing-up this table in source database/schema...\n');
+            fprintf('       Backing-up %s table in source database/schema...\n',table_list{it});
             sql_query_create = sprintf('CREATE TABLE %s_%06d (LIKE %s INCLUDING ALL)',table_list{it},load_id,table_list{it});
             sql_query_insert = sprintf('INSERT INTO %s_%06d SELECT * FROM %s',table_list{it},load_id,table_list{it});
             db_src_conn.exec(sql_query_create);
@@ -313,9 +354,6 @@ for it = 1:numel(table_list)
         end
     end
     
-end
-
-if p.Results.backup_and_remove_src>0
     try
         fprintf('Deleting contents of source database/schema...\n');
         sql_query_truncate = sprintf('TRUNCATE %s',strjoin(table_list,','));
@@ -325,6 +363,7 @@ if p.Results.backup_and_remove_src>0
         warning('backup_and_remove_src:Error while executing sql query');
     end
 end
+
 
 %% disp
 fprintf('Transfer done. For info, here are the missions and deployments now in the source database/schema:.\n')

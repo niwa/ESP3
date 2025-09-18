@@ -62,7 +62,7 @@ if lar_vec >= lar_filt
     
     % apply filter to signal
     for i = 1:lar_vec
-        filtered_vec(i) = nanmean(vec_temp(i:i+lar_filt-1).*win);
+        filtered_vec(i) = mean(vec_temp(i:i+lar_filt-1).*win);
     end
     
 else

@@ -1,0 +1,57 @@
+function apply_transceiver_cw_cal(trans_obj,new_cal)
+
+old_cal=trans_obj.get_transceiver_cw_cal();
+
+if isnan(new_cal.G0)
+    new_cal.G0=old_cal.G0;
+end
+if isnan(new_cal.SACORRECT)
+    new_cal.SACORRECT=old_cal.SACORRECT;
+end
+
+if isnan(new_cal.EQA)
+    new_cal.EQA=old_cal.EQA;
+end
+
+if all(round(old_cal.G0*100)==round(new_cal.G0*100)) &&...
+        all(round(old_cal.SACORRECT*100)==round(new_cal.SACORRECT*100)) &&...
+        all(round(old_cal.EQA*100)==round(new_cal.EQA*100))
+    return;
+end
+
+new_cal.G0(isnan(new_cal.G0))=old_cal.G0(isnan(new_cal.G0));
+
+trans_obj.set_transceiver_cw_cal(new_cal);
+
+fprintf('Applying Calibration\n');
+trans_obj.disp_calibration_env_params([]);
+f_c = squeeze(trans_obj.get_center_frequency(1))';
+f_nom = trans_obj.Config.Frequency;
+
+old_cal.G0=old_cal.G0+10*log10(f_c./f_nom);
+old_cal.EQ=old_cal.EQA+20*log10(f_nom./f_c);
+
+new_cal.G0=new_cal.G0+10*log10(f_c(1)./f_nom);
+new_cal.EQ=new_cal.EQA+20*log10(f_nom./f_c);
+
+switch trans_obj.Mode
+    case 'CW'
+        diff_db_sv=2*(old_cal.SACORRECT-new_cal.SACORRECT)+2*(old_cal.G0-new_cal.G0)+2*(old_cal.EQA-new_cal.EQA);
+        trans_obj.Data.add_to_sub_data('sv',diff_db_sv);
+        trans_obj.Data.add_to_sub_data('svdenoised',diff_db_sv);
+        diff_db_sp=2*(old_cal.G0-new_cal.G0);
+        trans_obj.Data.add_to_sub_data('sp',diff_db_sp);
+        trans_obj.Data.add_to_sub_data('spdenoised',diff_db_sp);
+    case 'FM'
+        diff_db_sv=+2*(old_cal.G0-new_cal.G0)+2*(old_cal.EQA-new_cal.EQA);
+        trans_obj.Data.add_to_sub_data('sv',diff_db_sv);
+        trans_obj.Data.add_to_sub_data('svunmatched',diff_db_sv);
+        trans_obj.Data.add_to_sub_data('svdenoised',diff_db_sv);
+        diff_db_sp=2*(old_cal.G0-new_cal.G0);
+        trans_obj.Data.add_to_sub_data('sp',diff_db_sp);
+        trans_obj.Data.add_to_sub_data('spunmatched',diff_db_sp);
+        trans_obj.Data.add_to_sub_data('spdenoised',diff_db_sp);
+end
+
+end
+

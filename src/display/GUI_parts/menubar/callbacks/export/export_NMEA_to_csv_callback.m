@@ -41,30 +41,37 @@ for ilay = 1:length(layers_to_export)
         input_fullfile = filenames{ifil};
         [path_f,fileN,~] = fileparts(input_fullfile);
         
+        if ~ismember(layer.Filetype,{'EK60' 'EK80'})
+            dlg_perso(main_figure,'Cannnot export NMEA',sprintf('Could not export NMEA for filetype %s (yet).',layer.Filetype));
+           continue;
+        end
+        
         try
             % get corresponding index file
-            fileIdx = fullfile(path_f,'echoanalysisfiles',[fileN '_echoidx.mat']);
+            echo_folder = get_esp3_file_folder(path_f,true);
+            fileIdx = fullfile(echo_folder,[fileN '_echoidx.mat']);
             if exist(fileIdx,'file') == 0
                 % file has not been indexed yet, do it now
-                idx_raw_obj = idx_from_raw_v2(input_fullfile,p.Results.load_bar_comp);
+                idx_raw_obj = raw_idx_cl(input_fullfile,p.Results.load_bar_comp);
                 save(fileIdx,'idx_raw_obj');
             else
                 % file has already been indexed. Check and do it again (?)
-                load(fileIdx);
+                obj_load = load(fileIdx);
+                idx_raw_obj = obj_load.idx_raw_obj;
                 % get finish time in file
                 [~,et] = start_end_time_from_file(input_fullfile);
                 % get datagrams in file
-                dgs = find( (strcmp(idx_raw_obj.type_dg,'RAW0')|strcmp(idx_raw_obj.type_dg,'RAW3')) & idx_raw_obj.chan_dg==nanmin(idx_raw_obj.chan_dg) );
-                if et-idx_raw_obj.time_dg(dgs(end)) > 2*nanmax(diff(idx_raw_obj.time_dg(dgs)))
+                dgs = find( (strcmp(idx_raw_obj.type_dg,'RAW0')|strcmp(idx_raw_obj.type_dg,'RAW3')) & idx_raw_obj.chan_dg==min(idx_raw_obj.chan_dg) );
+                if et-idx_raw_obj.time_dg(dgs(end)) > 2*max(diff(idx_raw_obj.time_dg(dgs)))
                     fprintf('Re-Indexing file: %s\n',input_fullfile);
                     delete(fileIdx);
-                    idx_raw_obj = idx_from_raw_v2(input_fullfile,p.Results.load_bar_comp);
+                    idx_raw_obj = raw_idx_cl(input_fullfile,p.Results.load_bar_comp);
                     save(fileIdx,'idx_raw_obj');
                 end
             end
             
             % get NMEA messages
-            [~,~,NMEA,~] = data_from_raw_idx_cl_v7(path_f,idx_raw_obj,'GPSOnly',1,'load_bar_comp',load_bar_comp);
+            [~,~,NMEA,~] = data_from_raw_idx_cl(path_f,idx_raw_obj,'GPSOnly',1,'load_bar_comp',load_bar_comp);
             
             % reformatting
             NMEA.time = cellfun(@(x) datestr(x,'dd/mm/yyyy HH:MM:SS'),(num2cell(NMEA.time')),'UniformOutput',0);
@@ -91,7 +98,7 @@ for ilay = 1:length(layers_to_export)
             
         catch err
             print_errors_and_warnings([],'error',err);
-            warndlg_perso(main_figure,'',sprintf('Could not export NMEA for file %s',input_fullfile));
+            dlg_perso(main_figure,'',sprintf('Could not export NMEA for file %s',input_fullfile));
         end
         
     end

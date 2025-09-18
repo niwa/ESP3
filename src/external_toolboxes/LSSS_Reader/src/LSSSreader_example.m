@@ -62,7 +62,7 @@ for file=1:size(files.F,1)
     % Plot erased regions
     if ~isempty(erased)
         k = find(f == [erased.channel.channelID]); % erased data for channel f.
-        if ~isempty(k == 1)
+        if ~~any(k == 1, "all")
             for i=1:length(erased.channel(k).x) % loop over each ping with erased samples
                 ping = erased.channel(k).x(i);
                 ranges = erased.channel(k).y{i};

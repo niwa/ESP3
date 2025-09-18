@@ -120,15 +120,7 @@ end
 struct_in.navigation_time=cellfun(@(x) datestr(x,'yyyy-mm-dd HH:MM:SS'),num2cell(struct_in.navigation_time),'un',0);
 
 try
-%     if isa(ac_db_filename,'database.jdbc.connection')
-%         dbconn=ac_db_filename;
-%     else  
-%         [dbconn,~]=connect_to_db(ac_db_filename);
-%     end
-%     dbconn.insert('t_navigation',fieldnames(struct_in),struct_in);
-%     if ~isa(ac_db_filename,'database.jdbc.connection')
-%         dbconn.close();
-%     end
+
      datainsert_perso(ac_db_filename,'t_navigation',struct_in);
 
 catch err

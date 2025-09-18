@@ -4,7 +4,7 @@ layer=get_current_layer();
 
 curr_disp=get_esp3_prop('curr_disp');
 
-survey_options_obj=layer.get_survey_options();
+surv_options_obj = layer.get_survey_options();
 
 [trans_obj,~]=layer.get_trans(curr_disp);
 
@@ -13,7 +13,7 @@ db_res=1;
 if alg_found
     varin=trans_obj.Algo(idx_alg).input_params_to_struct();
     xl=[varin.TS_threshold varin.TS_threshold_max];
-    nb_bin=abs(diff(xl)/db_res);
+    nb_bin=2*abs(diff(xl)/db_res);
 else
     nb_bin=25;
     xl=curr_disp.getCaxField('singletarget');
@@ -29,8 +29,8 @@ if isempty(ax)
     grid(ax,'on');
 end
 
-for i=1:length(disp_var)
-    obj=findobj(ax,'Tag',disp_var{i});
+for iv=1:length(disp_var)
+    obj=findobj(ax,'Tag',disp_var{iv});
     delete(obj);
 end
 
@@ -41,18 +41,19 @@ if isempty(trans_obj)
 end
 ST = trans_obj.ST;
 
-alpha=[1 0.5];
+alpha=[0.5 0.5 0.5];
+nb_bins = [nb_bin nb_bin nb_bin/2];
 legend_str=cell(1,length(disp_var));
 if isempty(ST)
     return;
 else
-    for i=1:length(disp_var)
+    for iv=1:length(disp_var)
         TS=[];
-        switch disp_var{i}
+        switch disp_var{iv}
             case 'st'
                 TS = ST.TS_comp;
                 col='r';
-                legend_str{i}='Single Targets';
+                legend_str{iv}='Single Targets';
             case 'tracks'
                 tracks = trans_obj.Tracks;
                 
@@ -65,18 +66,37 @@ else
                 end
                 
                 col='b';
-                legend_str{i}='Tracked Targets';
+                legend_str{iv}='Tracked Targets';
                 for k=1:length(tracks.target_id)
                     idx_targets=tracks.target_id{k};
                     TS=[TS ST.TS_comp(idx_targets)];
                 end
+                
+            case 'track_ts_mean'
+                tracks = trans_obj.Tracks;
+                
+                if isempty(tracks)
+                    continue;
+                end
+                
+                if isempty(tracks.target_id)
+                    continue;
+                end
+                
+                col = 'g';
+                legend_str{iv}='Mean TS from Trackss';
+                
+                for k=1:length(tracks.target_id)
+                    idx_targets=tracks.target_id{k};
+                    TS=[TS pow2db_perso(mean(db2pow(ST.TS_comp(idx_targets))))];
+                end
         end
         try
             if ~isempty(TS)
-                [pdf_temp,x_temp]=pdf_perso(TS,'bin',nb_bin);
-                bar(ax,x_temp,pdf_temp,'Tag',disp_var{i},'FaceColor',col,'FaceAlpha',alpha(i));
+                [pdf_temp,x_temp]=pdf_perso(TS,'bin',nb_bins(iv));
+                bar(ax,x_temp,pdf_temp,'Tag',disp_var{iv},'FaceColor',col,'FaceAlpha',alpha(iv));
             else
-                legend_str{i}=[];
+                legend_str{iv}=[];
             end
             if diff(xl)>0
                 xlim(ax,xl);
@@ -95,8 +115,9 @@ if ~isempty(ax_pdf)&&~isempty(pc_pdf)
     tt_table = trans_obj.ST;
     
     if isempty(trans_obj.ST)||all(isnan(tt_table.Track_ID))
-        set(pc_pdf,'XData',zeros(2,2),'YData',zeros(2,2),'CData',zeros(2,2),'ZData',zeros(2,2),'AlphaData',zeros(2,2));
-        return;
+        set(pc_pdf,'XData',zeros(2,2),'YData',zeros(2,2),'CData',zeros(2,2),'ZData',zeros(2,2),'AlphaData',zeros(2,2),'Facealpha','flat',...
+                'FaceColor','flat');
+        return
     end
     
     [idx_alg,alg_found]=find_algo_idx(trans_obj,'SingleTarget');
@@ -117,16 +138,32 @@ if ~isempty(ax_pdf)&&~isempty(pc_pdf)
             ydir='reverse';
         case 'bottom'
             mean_range_per_track=splitapply(@(x) mean(x),tt_table.Target_range_to_bottom,uu);
+            idnan = isnan(mean_range_per_track);
+            mean_range_per_track(idnan) = [];
+            mean_TS_per_track(idnan) = [];
             ydir='normal';
     end
-    [cmap,col_ax,~,col_grid,~,~,~]=init_cmap(curr_disp.Cmap);
-    set(ax_pdf,'GridColor',col_grid,'Color',col_ax);
+    if isempty(mean_TS_per_track)
+        disp('No tracks');
+        return;
+    end
+    
+    cmap_struct = init_cmap(curr_disp.Cmap,curr_disp.ReverseCmap);
+    cmap = cmap_struct.cmap;
+    set(ax_pdf,'GridColor',cmap_struct.col_grid,'Color',cmap_struct.col_ax);
     %figure();
-    %histogram2(mean_TS_per_track,mean_range_per_track,[numel((xl(1):db_res:xl(2))) numel((0:survey_options_obj.Horizontal_slice_size:nanmax(mean_range_per_track)))],'FaceColor','flat','DisplayStyle','tile');
-    [pdf,x_mat,y_mat]=pdf_2d_perso(mean_TS_per_track,mean_range_per_track,(xl(1):db_res:xl(2))',(0:survey_options_obj.Horizontal_slice_size:nanmax(mean_range_per_track)),'gauss');
-    cax=[prctile(pdf(pdf>0),50) prctile(pdf(pdf>0),99)];
+    yy = (0:surv_options_obj.Horizontal_slice_size.Value/2:max(mean_range_per_track));
+
+    if numel(yy)<10
+        yy = linspace(0,max(mean_range_per_track),10);
+    end
+
+
+    %histogram2(mean_TS_per_track,mean_range_per_track,[numel((xl(1):db_res:xl(2))) numel((0:surv_options_obj.Horizontal_slice_size:max(mean_range_per_track)))],'FaceColor','flat','DisplayStyle','tile');
+    [pdf,x_mat,y_mat]=pdf_2d_perso(mean_TS_per_track,mean_range_per_track,(xl(1):db_res:xl(2))',yy,'gauss');
+    cax=[prctile(pdf(pdf>0),5) prctile(pdf(pdf>0),95)];
     try
-        set(pc_pdf,'XData',x_mat,'YData',y_mat,'CData',pdf,'ZData',zeros(size(pdf)),'AlphaData',pdf>=cax(1),'EdgeColor',col_grid);
+        set(pc_pdf,'XData',x_mat,'YData',y_mat,'CData',pdf,'ZData',zeros(size(pdf)),'AlphaData',pdf>=cax(1),'EdgeColor',cmap_struct.col_grid);
     catch err
         print_errors_and_warnings(main_figure,'warning','Could not update track histogram');
         print_errors_and_warnings(main_figure,'warning',err);
@@ -134,9 +171,9 @@ if ~isempty(ax_pdf)&&~isempty(pc_pdf)
     
     ax_pdf.YDir=ydir;
     
-    xl = [nanmin(x_mat(:)) nanmax(x_mat(:))];
+    xl = [min(x_mat(:)) max(x_mat(:))];
     
-    yl = [nanmin(y_mat(:)) nanmax(y_mat(:))];
+    yl = [min(y_mat(:)) max(y_mat(:))];
     
     if diff(xl)>0
         ax_pdf.XLim=xl;
@@ -144,7 +181,10 @@ if ~isempty(ax_pdf)&&~isempty(pc_pdf)
     if diff(yl)>0
         ax_pdf.YLim=yl;
     end
-    caxis(ax_pdf,cax);
+    if diff(cax)>0
+        clim(ax_pdf,cax);
+    end
+    
     colormap(ax_pdf,cmap);
     
 end

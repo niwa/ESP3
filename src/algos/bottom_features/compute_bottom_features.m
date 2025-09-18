@@ -1,7 +1,5 @@
 function output_struct = compute_bottom_features(trans_obj,varargin)
 
-global DEBUG;
-%DEBUG = true;
 
 p = inputParser;
 addRequired(p,'trans_obj',@(x) isa(x,'transceiver_cl'));
@@ -20,39 +18,39 @@ parse(p,trans_obj,varargin{:});
 %% prep
 
 % data used
-if p.Results.denoised
+if p.Results.denoised > 0
     field = 'svdenoised';
+    alt_fields = {'sv','img_intensity'};
 else
     field = 'sv';
+    alt_fields = {'img_intensity'};
 end
-if ~ismember(field,trans_obj.Data.Fieldname)
-    field = 'sv';
-end
-
+%block_len = get_block_len(50,'cpu',p.Results.block_len);
+  
 % pings indices
 if isempty(p.Results.reg_obj)
-    idx_pings = 1:length(trans_obj.get_transceiver_pings());
-    reg_obj = region_cl('Name','Temp','Idx_r',[1 10],'Idx_pings',idx_pings);
+    idx_ping = 1:length(trans_obj.get_transceiver_pings());
+    reg_obj = region_cl('Name','Temp','Idx_r',[1 10],'Idx_ping',idx_ping);
 else
     reg_obj = p.Results.reg_obj;
 end
-idx_pings = reg_obj.Idx_pings;
+idx_ping = reg_obj.Idx_ping;
 
 % initialize results
 output_struct.done = false;
-output_struct.E1 = -999.*ones(size(idx_pings));
-output_struct.E2 = -999.*ones(size(idx_pings));
+output_struct.E1 = -999.*ones(size(idx_ping));
+output_struct.E2 = -999.*ones(size(idx_ping));
 
-if isempty(idx_pings)
+if isempty(idx_ping)
     output_struct.done = true;
     return;
 end
-idx_pings = trans_obj.get_transceiver_pings(idx_pings);
+idx_ping = trans_obj.get_transceiver_pings(idx_ping);
 
 % get bottom range, and pings with valid bottom (and not a badping)
-bot_idx = trans_obj.get_bottom_idx(idx_pings);
-bot_r   = trans_obj.get_bottom_range(idx_pings);
-idx_bad = trans_obj.get_badtrans_idx(idx_pings);
+bot_idx = trans_obj.get_bottom_idx(idx_ping);
+bot_r   = trans_obj.get_bottom_range(idx_ping);
+idx_bad = trans_obj.get_badtrans_idx(idx_ping);
 bot_r(idx_bad) = NaN;
 idx_val = find(~isnan(bot_r));
 
@@ -62,10 +60,10 @@ if isempty(idx_val)
 end
 
 % get range for each sample
-range_tot = trans_obj.get_transceiver_range();
+range_tot = trans_obj.get_samples_range();
 
 % calculate pulse range
-[p_sec, p_nsamp] = trans_obj.get_pulse_length(idx_pings);
+[p_sec, p_nsamp] = trans_obj.get_pulse_length(idx_ping);
 p_r = range_tot(p_nsamp)';
 
 p_r(p_r==0) = range_tot(p_nsamp(p_r==0)+1)';
@@ -74,12 +72,12 @@ p_r(p_r==0) = range_tot(p_nsamp(p_r==0)+1)';
 % some initialization required in one method
 switch p.Results.bot_feat_comp_method
     case 'Yoann'
-        bottom_slope_across = nan(size(idx_pings));
-        bottom_slope_along = nan(size(idx_pings));
-        delta_along = nan(size(idx_pings));
-        delta_across = nan(size(idx_pings));
-        phi_slope_along = nan(size(idx_pings));
-        phi_slope_across = nan(size(idx_pings));
+        bottom_slope_across = nan(size(idx_ping));
+        bottom_slope_along = nan(size(idx_ping));
+        delta_along = nan(size(idx_ping));
+        delta_across = nan(size(idx_ping));
+        phi_slope_along = nan(size(idx_ping));
+        phi_slope_across = nan(size(idx_ping));
 end
 
 
@@ -90,7 +88,7 @@ if ~isempty(p.Results.load_bar_comp)
 end
 
 % results display
-if DEBUG
+if  isdebugging
     
     % signal and echoes display
     f = new_echo_figure([],'tag','E1E2');
@@ -110,9 +108,10 @@ if DEBUG
     
 end
 
-
+id = 0;
 %% processing per valid ping
 for ii = idx_val
+    id = id +1;
     c=trans_obj.get_soundspeed(p_nsamp(ii));
     % different methods to find the start and end of the portions of the
     % signal to integrate
@@ -125,23 +124,29 @@ for ii = idx_val
             
             % calculate geometrically the distance of echo along the axis (in m)
             theta = trans_obj.Config.BeamWidthAthwartship; % beamwidth
-            beta  = nanmax(p.Results.estimated_slope,2*theta); % incident angle
+            beta  = max(p.Results.estimated_slope,2*theta,'omitnan'); % incident angle
             echolength_theory = echo_length(p_r(ii),theta,beta,bot_r(ii));
             
             % find index of that theoretical echo end
             if ~isinf(echolength_theory)
-                [~,idx_echo_end] = nanmin(abs( range_tot-(bot_r(ii)+echolength_theory) ));
+                [~,idx_echo_end] = min(abs(range_tot-(bot_r(ii)+echolength_theory) ));
             else
                 idx_echo_end = numel(range_tot);
             end
             idx_echo = (idx_echo_start:idx_echo_end)';
             
             % get the echo signal and phase
-            sv_first_echo = (trans_obj.Data.get_subdatamat(idx_echo,idx_pings(ii),'field',field));
-            [al_phi,ac_phi] = trans_obj.get_phase('idx_ping',idx_pings(ii),'idx_r',idx_echo);
+
+            [sv_first_echo,field] = trans_obj.get_data_to_process('field',field,'alt_fields',alt_fields,'idx_r',idx_echo,'idx_ping',idx_ping(ii));
+
+            if isempty(sv_first_echo)
+                continue;
+            end
+
+            [al_phi,ac_phi] = trans_obj.get_phase('idx_ping',idx_ping(ii),'idx_r',idx_echo);
 
             % calculate phase angles 
-            idx_tmp = find(sv_first_echo > nanmax(sv_first_echo)-20);
+            idx_tmp = find(sv_first_echo > max(sv_first_echo)-20);
             if isempty(idx_tmp)
                 continue;
             end
@@ -156,7 +161,7 @@ for ii = idx_val
                 phi_est_across=nan(size(sv_first_echo(idx_tmp)));
             end
             
-            if DEBUG
+            if  isdebugging
                 figure(angle_fig);
                 clf;
                 
@@ -198,8 +203,9 @@ for ii = idx_val
                 angle_slope_along  = (phi_slope_along(ii)./trans_obj.Config.AngleSensitivityAthwartship-trans_obj.Config.AngleOffsetAlongship);
                 angle_slope_across = (phi_slope_across(ii)./trans_obj.Config.AngleSensitivityAthwartship-trans_obj.Config.AngleOffsetAthwartship);
             end
-            dr = nanmean(diff(range_tot(idx_echo))); % inter-sample range in m
-            r  = nanmean(range_tot(idx_tmp));
+            
+            dr = mean(diff(range_tot(idx_echo))); % inter-sample range in m
+            r  = mean(range_tot(idx_tmp));
             if numel(idx_tmp) > 4*p_nsamp(ii)
                 if delta_along(ii)<45
                     bottom_slope_along(ii) = atand(1/((1+dr/r/2)*cosd(angle_slope_along)- 1)*((1+dr/r/2)*sind(angle_slope_along)));
@@ -208,18 +214,18 @@ for ii = idx_val
                     bottom_slope_across(ii) = atand(1/((1+dr/r/2)*cosd(angle_slope_across)- 1)*((1+dr/r/2)*sind(angle_slope_across)));
                 end
             end
-            est_slope = sqrt(nansum([bottom_slope_along(ii)^2 bottom_slope_across(ii)^2]));
+            est_slope = sqrt(sum([bottom_slope_along(ii)^2 bottom_slope_across(ii)^2],'omitnan'));
             
             % recalculate theoretical echo footprint with that improved
             % bottom slope estimation. Limit low values to aperture
-            est_slope = nanmax(est_slope,2*theta);
+            est_slope = max(est_slope,2*theta);
             echolength_theory = echo_length(p_r(ii),theta,est_slope,bot_r(ii));
             
             % find index of that theoretical echo end
             idx_echo_end_ori = idx_echo_end;
             %idx_echo_ori = idx_echo;
             if ~isinf(echolength_theory)
-                [~,idx_echo_end] = nanmin(abs( range_tot-(bot_r(ii)+echolength_theory) ));
+                [~,idx_echo_end] = min(abs( range_tot-(bot_r(ii)+echolength_theory) ));
             else
                 idx_echo_end = numel(range_tot);
             end
@@ -227,7 +233,8 @@ for ii = idx_val
             
             if idx_echo_end > idx_echo_end_ori
                 % echo is longer than previous estimate, get data again
-                sv_first_echo = (trans_obj.Data.get_subdatamat(idx_echo,idx_pings(ii),'field',field));
+                [sv_first_echo,field] = trans_obj.get_data_to_process('field',field,'alt_fields',alt_fields,'idx_r',idx_echo,'idx_ping',idx_ping(ii));
+ 
             else
                 % echo is shorter, just sample the first data
                 sv_first_echo = sv_first_echo(1:idx_echo_end-idx_echo_start+1);
@@ -237,7 +244,7 @@ for ii = idx_val
             
             % define the tail as an interval of the cumulative power
             sv_first_echo = db2pow_perso(sv_first_echo);
-            ncs = cumsum(sv_first_echo,'omitnan')./nansum(sv_first_echo); % normalized cumulative distribution
+            ncs = cumsum(sv_first_echo,'omitnan')./sum(sv_first_echo,'omitnan'); % normalized cumulative distribution
             idx_E1 = (ncs>=p.Results.thr_cum/100) & (ncs<=p.Results.thr_cum_max/100);
             if ~any(idx_E1)
                 % if echo is too short, this double interval may be too small to
@@ -289,15 +296,15 @@ for ii = idx_val
             length_E2_m = 20; % in m
             
             % turn to index
-            [~,E1_start_idx] = nanmin(abs( range_tot-(bot_r(ii)+d_i(1)) ));
-            [~,E1_end_idx]   = nanmin(abs( range_tot-(bot_r(ii)+d_i(2)) ));
+            [~,E1_start_idx] = min(abs( range_tot-(bot_r(ii)+d_i(1)) ));
+            [~,E1_end_idx]   = min(abs( range_tot-(bot_r(ii)+d_i(2)) ));
             idx_echo_start = bot_idx(ii);
             idx_echo_end = E1_end_idx;
             
             % "The second echo was integrated at two times the water depth
             % (d1) and ending at two times water depth plus 20 m (d2)."
-            [~,E2_start_idx] = nanmin(abs(range_tot-(2.*bot_r(ii))));
-            [~,E2_end_idx]   = nanmin(abs(range_tot-(2.*bot_r(ii)+length_E2_m)));
+            [~,E2_start_idx] = min(abs(range_tot-(2.*bot_r(ii))));
+            [~,E2_end_idx]   = min(abs(range_tot-(2.*bot_r(ii)+length_E2_m)));
 
             % no attempt for depth normalization here
             depth_normalizing_factor = 1;
@@ -318,7 +325,8 @@ for ii = idx_val
             % find that index after the bottom line.
             
             % first, get ping data from the bottom line onwards
-            sv_ping_after_bot = (trans_obj.Data.get_subdatamat(bot_idx(ii):numel(range_tot),idx_pings(ii),'field',field));
+            [sv_ping_after_bot,field] = trans_obj.get_data_to_process('field',field,'alt_fields',alt_fields,'idx_r',bot_idx(ii):numel(range_tot),'idx_ping',idx_ping(ii));
+
             if isempty(sv_ping_after_bot)
                 continue;
             end
@@ -384,14 +392,14 @@ for ii = idx_val
     end
     
     % E1 integration
-    sv_E1 = (trans_obj.Data.get_subdatamat(E1_start_idx:E1_end_idx,idx_pings(ii),'field',field));
+    sv_E1 = (trans_obj.Data.get_subdatamat('idx_r',E1_start_idx:E1_end_idx,'idx_ping',idx_ping(ii),'field',field));
     sv_E1(sv_E1==-999) = NaN;
-    E1 = depth_normalizing_factor.*log10(4*pi*(1852^2)*sum(db2pow_perso(sv_E1)));
+    E1 = depth_normalizing_factor.*log10(4*pi*(1852^2)*sum(db2pow_perso(sv_E1),'omitnan'));
     
     % E2 integration
-    sv_E2 = (trans_obj.Data.get_subdatamat(E2_start_idx:E2_end_idx,idx_pings(ii),'field',field));
+    sv_E2 = (trans_obj.Data.get_subdatamat('idx_r',E2_start_idx:E2_end_idx,'idx_ping',idx_ping(ii),'field',field));
     sv_E2(sv_E2==-999) = NaN;
-    E2 = depth_normalizing_factor.*log10(4*pi*(1852^2)*sum(db2pow_perso(sv_E2)));
+    E2 = depth_normalizing_factor.*log10(4*pi*(1852^2)*sum(db2pow_perso(sv_E2),'omitnan'));
     
     % saving
     output_struct.E1(1,ii) = E1;
@@ -399,12 +407,12 @@ for ii = idx_val
     
     % update progress bar
     if ~isempty(p.Results.load_bar_comp)
-        set(p.Results.load_bar_comp.progress_bar, 'Value',ii);
+        set(p.Results.load_bar_comp.progress_bar, 'Value',id);
     end
     
-    if DEBUG
+    if  isdebugging
         % ping data
-        sv_entire_ping = (trans_obj.Data.get_subdatamat([],idx_pings(ii),'field',field));
+        sv_entire_ping = trans_obj.Data.get_subdatamat('idx_ping',idx_ping(ii),'field',field);
         num_samples = length(sv_entire_ping);
         
         % plot entire ping
@@ -430,7 +438,7 @@ for ii = idx_val
         
         % finalize
         xlim(ax,[max([1 idx_echo_start-100]) min([E2_end_idx+100 num_samples])])
-        ax.Title.String = sprintf('Ping number %d/%d. E1=%.4f. E2=%.4f',idx_pings(ii),idx_pings(idx_val(end)),E1,E2);
+        ax.Title.String = sprintf('Ping number %d/%d. E1=%.4f. E2=%.4f',idx_ping(ii),idx_ping(idx_val(end)),E1,E2);
         drawnow
         
     end
@@ -438,15 +446,15 @@ for ii = idx_val
 end
 
 output_struct.done =  true;
-trans_obj.Bottom.E1(idx_pings)=output_struct.E1;
-trans_obj.Bottom.E2(idx_pings)=output_struct.E2;
+trans_obj.Bottom.Bottom_params.E1(idx_ping)=output_struct.E1;
+trans_obj.Bottom.Bottom_params.E2(idx_ping)=output_struct.E2;
 
 
 % %
 % figure()
-% plot(idx_pings,bottom_slope_across)
+% plot(idx_ping,bottom_slope_across)
 % hold on;
-% plot(idx_pings,bottom_slope_along)
+% plot(idx_ping,bottom_slope_along)
 % legend({'Across' 'Along'})
 
 

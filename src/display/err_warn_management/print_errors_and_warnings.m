@@ -1,33 +1,23 @@
 function print_errors_and_warnings(fids,type,err)
 
-switch type
-    case 'warning'
-        
-        if ~ischar(err)
-            arrayfun(@(x) fprintf(x,'%s: WARNING: %s\n',datestr(now,'HH:MM:SS'),err.message),unique([1 fids]),'un',0);
-            warning(err.message);
-        else
-            arrayfun(@(x) fprintf(x,'%s: WARNING: %s\n',datestr(now,'HH:MM:SS'),err),unique([1 fids]),'un',0);
-                warning(err);
-            
-        end
+if ischar(err)
+	errstr = strrep(err,'\','/');
+else
+    errstr  = err.message;
+end
+
+ arrayfun(@(x) fprintf(x,'%s: %s: %s\n',datestr(now,'HH:MM:SS'),upper(type),errstr),unique([1 fids]),'un',0); 
+
+switch lower(type)
     case 'error'
         if ~ischar(err)
-            warning(err.message);
-            
-            [~,f_temp,e_temp]=fileparts(err.stack(1).file);
-            err_str=sprintf('file %s, line %d',[f_temp e_temp],err.stack(1).line);
-            
-            arrayfun(@(x) fprintf(x,'%s: ERROR: %s\n',datestr(now,'HH:MM:SS'),err_str),unique([1 fids]),'un',0);
-            arrayfun(@(x) fprintf(x,'%s\n',err.message),[1 fids],'un',0);
-        else
-            warning(err);
+            for is = 1:min(numel(err.stack),5)
+                [~,f_temp,e_temp]=fileparts(err.stack(is).file);
+                err_str=sprintf('file %s, line %d',[f_temp e_temp],err.stack(is).line);
+                arrayfun(@(x) fprintf(x,'        %s\n',datestr(now,'HH:MM:SS'),err_str),unique([1 fids]),'un',0);
+            end
         end
-    case 'log'
-        arrayfun(@(x) fprintf(x,'%s: LOG: %s\n',datestr(now,'HH:MM:SS'),err),unique([1 fids]),'un',0);
-    otherwise
-        if ~isempty(fids)
-            arrayfun(@(x) fprintf(x,'%s: %s\n',datestr(now,'HH:MM:SS'),err),unique([1 fids]),'un',0);
-        end
+    case {'warn' 'warning'}
+        warning(errstr,errstr);
 end
-end
+

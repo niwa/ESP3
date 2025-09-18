@@ -40,22 +40,25 @@ function update_display(main_figure,new,force_update)
 if ~isdeployed
     disp_perso(main_figure,'Update Display');
 end
-
-if ~isappdata(main_figure,'Axes_panel')
+up_ax_panel = false;
+ax_panel_comp = getappdata(main_figure,'Axes_panel');
+if isempty(ax_panel_comp)||~isvalid(ax_panel_comp.axes_panel)||~isvalid(ax_panel_comp.echo_obj.main_ax)
     
-    echo_tab_panel=getappdata(main_figure,'echo_tab_panel');
+    if ~isempty(ax_panel_comp)&&isvalid(ax_panel_comp.axes_panel)
+        delete(ax_panel_comp.axes_panel);
+    end
+    
+     echo_tab_panel=getappdata(main_figure,'echo_tab_panel');
     axes_panel=uitab(echo_tab_panel,'BackgroundColor',[1 1 1],'tag','axes_panel');
-    
-%     cur_ver = ver('Matlab');
-%     axes_panel=new_echo_figure(main_figure,'tag','axes_panel','Units','Normalized','Position',[0.1 0.1 0.8 0.8],'UiFigureBool',str2double(cur_ver.Version)>9.7);
-%     axes_panel.Alphamap = main_figure.Alphamap;  
-%     initialize_interactions_v2(axes_panel);
-%     
+   
     load_axis_panel(main_figure,axes_panel);
+    update_algo_panels(main_figure,{});
+ 
     display_tab_comp=getappdata(main_figure,'Display_tab');
     load_mini_axes(main_figure,display_tab_comp.display_tab,[0 0 1 0.77]);
     enabled_obj=findobj(main_figure,'Enable','off');
     set(enabled_obj,'Enable','on');
+    up_ax_panel = true;
 end
 
 
@@ -71,7 +74,7 @@ end
 disp_perso(main_figure,'Updating Display');
 
 if new==1
-    update_algo_panels(main_figure,{});    
+    reset_range_algo_panels(main_figure);    
     update_denoise_tab(main_figure);   
     update_processing_tab(main_figure);
     update_map_tab(main_figure);
@@ -86,6 +89,7 @@ if new==1
     clear_regions(main_figure,{},{});
     update_multi_freq_tab(main_figure);
     clean_echo_figures(main_figure,'Tag','attitude');
+    clean_echo_figures(main_figure,'Tag','speed');
 end
 
 update_axis(main_figure,new,'main_or_mini','main','force_update',force_update);
@@ -106,45 +110,50 @@ catch
     update_axis(main_figure,new,'main_or_mini','mini','force_update',force_update);
 end
 curr_disp=get_esp3_prop('curr_disp');
+
 if new==1
     init_sec_link_props(main_figure);
 end
-upped=update_axis(main_figure,new,'main_or_mini',curr_disp.SecChannelIDs,'force_update',force_update);
 
-set_alpha_map(main_figure,'main_or_mini',union({'main','mini'},curr_disp.SecChannelIDs(upped>0),'stable'));
+cids_upped=update_axis(main_figure,new,'main_or_mini',curr_disp.SecChannelIDs,'force_update',force_update);
+create_context_menu_sec_echo();
+set_alpha_map(main_figure,'main_or_mini',union({'main','mini'},cids_upped,'stable'));
+
 if ~isempty(sel_tab)
     opt_panel.SelectedTab=sel_tab;
 end
-set_axes_position(main_figure);
+
 update_cmap(main_figure);
 init_link_prop(main_figure);
 
 if new==1
     secondary_freq=getappdata(main_figure,'Secondary_freq');
     if ~isempty(secondary_freq)
-        if ~isempty(secondary_freq.axes)
-            if strcmpi(secondary_freq.axes(1).UserData.geometry_y,'depth')
-                ylim=get(secondary_freq.axes(1),'Ylim');
-                set(secondary_freq.axes,'ytick',floor((ylim(1):curr_disp.Grid_y:ylim(2))/curr_disp.Grid_y)*curr_disp.Grid_y);
-                set(secondary_freq.side_ax,'ytick',floor((ylim(1):curr_disp.Grid_y:ylim(2))/curr_disp.Grid_y)*curr_disp.Grid_y);
+        if ~isempty(secondary_freq.echo_obj)
+            if ismember(secondary_freq.echo_obj(1).echo_usrdata.geometry_y,{'depth' 'range'})
+                ylim=get(secondary_freq.echo_obj(1).main_ax,'Ylim');
+                set(secondary_freq.echo_obj.get_main_ax(1),'ytick',floor((ylim(1):curr_disp.Grid_y:ylim(2))/curr_disp.Grid_y)*curr_disp.Grid_y);
             end
         end
     end
+    init_wc_fan_plot();
 end
 
 display_bottom(main_figure);
 display_tracks(main_figure);
 display_file_lines(main_figure);
-display_lines(main_figure);
-display_regions(main_figure);
+display_lines();
+display_regions();
 display_survdata_lines(main_figure);
-
-order_axes(main_figure);
 
 update_info_panel([],[],1);
 
 curr_disp=get_esp3_prop('curr_disp');
 disp_perso(main_figure,'');
+
+if up_ax_panel&&isa(axes_panel,'matlab.ui.container.Tab')
+    set(echo_tab_panel,'SelectedTab',axes_panel);
+end
 
 curr_disp.UIupdate=0;
 

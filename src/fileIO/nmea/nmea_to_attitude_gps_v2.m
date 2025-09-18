@@ -18,12 +18,12 @@ try
     for i=1:numel(nmea_gps)
         if ~isempty(nmea_gps{i}.time)
             if numel(nmea_gps{i}.time)==3
-                seconds_gps(i)=nansum(double(nmea_gps{i}.time).*[60*60 60 1]);
+                seconds_gps(i)=sum(double(nmea_gps{i}.time).*[60*60 60 1],"omitnan");
             end
         end
     end
     
-    time_diff=nanmean(seconds_gps-seconds_computer);
+    time_diff=mean(seconds_gps-seconds_computer,'omitnan');
     
 catch
     disp('Could not compare GPS to computer time');
@@ -75,7 +75,11 @@ for iiii=1:length(idx_NMEA)
                     
                 end
             case 'attitude'
-                if  ~isempty(nmea{iiii}.heading) && ~isempty(nmea{iiii}.pitch) && ~isempty(nmea{iiii}.roll) && ~isempty(nmea{iiii}.heave) && ~isempty(nmea{iiii}.yaw)
+                if  ~isempty(nmea{iiii}.heading) &&...
+                        ~isempty(nmea{iiii}.pitch) &&...
+                        ~isempty(nmea{iiii}.roll) &&...
+                        ~isempty(nmea{iiii}.heave) &&...
+                        ~isempty(nmea{iiii}.yaw)
                     curr_att=curr_att+1;
                     attitude.time(curr_att) = NMEA_time(iiii);
                     attitude.heading(curr_att) = nmea{iiii}.heading;
@@ -83,7 +87,7 @@ for iiii=1:length(idx_NMEA)
                     attitude.roll(curr_att) = nmea{iiii}.roll;
                     attitude.yaw(curr_att) = nmea{iiii}.yaw;
                     attitude.heave(curr_att) = nmea{iiii}.heave;
-                    attitude.type{curr_att}=nmea{iiii}.type;
+                    attitude.type{curr_att}= nmea{iiii}.type;
                 end
             case 'heading'
                 if ~isempty(nmea{iiii}.heading)
@@ -100,8 +104,8 @@ end
 
 if curr_gps>0&&isfield(gps,'lat')
     types=unique(gps.type);
-    nb_type=cellfun(@(x) nansum(strcmp(x,gps.type)),types);
-    [~,id_max]=nanmax(nb_type);
+    nb_type=cellfun(@(x) sum(strcmp(x,gps.type)),types);
+    [~,id_max]=max(nb_type);
     id_keep=strcmp(types(id_max),gps.type);
     gps_data=gps_data_cl('Lat',gps.lat(id_keep),'Long',gps.lon(id_keep),'Time',gps.time(id_keep),'NMEA',gps.type{id_max});
 else
@@ -110,8 +114,8 @@ end
 
 if curr_heading>0
     types=unique(heading.type);
-    nb_type=cellfun(@(x) nansum(strcmp(x,heading.type)),types);
-    [~,id_max]=nanmax(nb_type);
+    nb_type=cellfun(@(x) sum(strcmp(x,heading.type)),types);
+    [~,id_max]=max(nb_type);
     id_keep=strcmp(types(id_max),heading.type);
     attitude_heading=attitude_nav_cl('Heading',heading.heading(id_keep),'Time',heading.time(id_keep),'NMEA_heading',heading.type{id_max});
 elseif numel(gps_data.Lat)>2
@@ -124,14 +128,14 @@ if curr_att>0
     types=unique(attitude.type);
     id_max=find(strcmpi(types,'PASHR'));
     if isempty(id_max)
-        nb_type=cellfun(@(x) nansum(strcmp(x,attitude.type)),types);
-        [~,id_max]=nanmax(nb_type);
+        nb_type=cellfun(@(x) sum(strcmp(x,attitude.type)),types);
+        [~,id_max]=max(nb_type);
     end
     id_keep=strcmp(types(id_max),attitude.type);
     attitude_full=attitude_nav_cl('Yaw',attitude.yaw(id_keep),'Heading',...
         attitude.heading(id_keep),'Pitch',attitude.pitch(id_keep),'Roll',...
         attitude.roll(id_keep),'Heave',attitude.heave(id_keep),'Time',attitude.time(id_keep),'NMEA_motion',types{id_max},'NMEA_heading','t');
-    if all(isnan(attitude_full.Heading))
+    if all(isnan(attitude_full.Heading))||all(attitude_full.Heading == 0)
         if ~isempty(attitude_heading)
             attitude_full.Heading=resample_data_v2(attitude_heading.Heading,attitude_heading.Time,attitude_full.Time,'Type','Angle');
             attitude_full.NMEA_heading=attitude_heading.NMEA_heading;

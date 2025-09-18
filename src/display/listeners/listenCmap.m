@@ -1,4 +1,4 @@
-function listenCmap(src,evt,main_figure)
+function listenCmap(~,evt,main_figure)
 
 disp_perso(main_figure,sprintf('Changing colormap to %s',evt.AffectedObject.Cmap));
 update_cmap(main_figure);

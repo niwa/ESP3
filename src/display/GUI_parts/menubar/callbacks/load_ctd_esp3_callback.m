@@ -6,6 +6,10 @@ if isempty(layer)
 end
 
 [path_file,~,~]=fileparts(layer.Filename{1});
+if ~isfolder(path_file)
+    app_path=get_esp3_prop('app_path');
+    path_file=app_path.data_root.Path_to_folder;
+end
 [ctd_filename,ctd_path]= uigetfile( {fullfile(path_file,'*.espctd*')}, 'Pick a CTD file (ESP3 format)','MultiSelect','off');
 if ~(ctd_filename~=0)
     return;

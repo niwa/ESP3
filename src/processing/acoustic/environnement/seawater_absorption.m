@@ -42,12 +42,11 @@ if nargin < 5
 end
 
 if isempty(T) || isempty(D) || isempty(S)
-    disp('The length of the T, D, and S parameters must be greater than 0')
     alpha = [];
-    return
+    return;
 end
 
-if (f < 10 || f > 120) && (nargin < 5 || strcmp(method,'doonan'))
+if any(f < 10 | f > 120,'all') && (nargin < 5 || strcmp(method,'doonan'))
     disp('The formula is only valid for frequencies between 10 and 120kHz.')
     disp('Using Francois & Garrison formula')
     method='fandg';
@@ -82,13 +81,12 @@ switch lower(method)
         A3 = 4.937e-4 - 2.59e-5*T + 9.11e-7*T.*T - 1.5e-8*T.*T.*T;
         P3 = 1.0 - 3.83e-5*D + 4.9e-10*D.*D;
         
-        alpha = A2.*P2.*f2*f*f./(f2.*f2 + f*f) ./ c + A3.*P3.*f*f;
+        alpha = A2.*P2.*f2.*f.*f./(f2.*f2 + f*f) ./ c + A3.*P3.*f.*f;
     case {'fandg' lower('Francois & Garrison (1982)')}
         %Francois & Garrison need pH
         %Assume 8 for seawater and 7 for freshwater
         pH = 8;
         if mean(S) < 10
-            warning('Assuming pH of 7 for freshwater');
             pH = 7;
         end
         c = 1412 + 3.21*T + 1.19*S + 0.0167*D;

@@ -1,6 +1,7 @@
 function [data_c,mean_corrected_value] = correctES60(data,offset,silent)
 
 period = 2721;
+
 if isempty(offset)||ischar(offset)
     offset=nan;
 end
@@ -32,10 +33,10 @@ end
 
 mat_tri=bsxfun(@minus,rd_zone,es60_error(bsxfun(@plus,pings,periods)));
 fit.std=nanstd(mat_tri,0,2);
-fit.mean=nanmean(mat_tri,2);
+fit.mean=mean(mat_tri,2);
 
 % Ideally, the minimum standard deviation will give the appropriate zero error ping number
-[val_std, zero_error_ping] = nanmin(fit.std);
+[val_std, zero_error_ping] = min(fit.std);
 if val_std>0.1
     if silent==0
         disp('It does not look like there is a triangle wave error here...');
@@ -86,21 +87,21 @@ if num_pings < period/2
                 end
             end
         end
-        mean_corrected_value= nanmean(rd_zone - es60_error((1:num_pings)+zero_error_ping));
+        mean_corrected_value= mean(rd_zone - es60_error((1:num_pings)+zero_error_ping));
         if silent==0
             disp(['The mean corrected value is ' num2str(mean_corrected_value) ' dB'])
         end
     else % Is this code good enough? Does there need to be more checking of the result here?
         % We get here if there are less than 40 zero error ping numbers with a low std. If this is the
         % case, we simply take the zero error ping number with the lowest std.
-        mean_corrected_value = nanmean(rd_zone - es60_error((1:num_pings)+zero_error_ping));
+        mean_corrected_value = mean(rd_zone - es60_error((1:num_pings)+zero_error_ping));
         if silent==0
             disp(['The mean corrected value is ' num2str(mean_corrected_value) ' dB'])
         end
     end
 else
     % There were enough pings to cover a change in slope in the error, so we're done.
-    mean_corrected_value = nanmean(rd_zone - es60_error((1:num_pings)+zero_error_ping));
+    mean_corrected_value = mean(rd_zone - es60_error((1:num_pings)+zero_error_ping));
     if silent==0
         disp(['The mean corrected value is ' num2str(mean_corrected_value) ' dB'])
     end
@@ -119,6 +120,7 @@ end
 data_c=data-repmat(es60_error(pings+zero_error_ping),size(data,1),1);
 if isa(data_c,'gpuArray')
     data_c=gather(data_c);
+    mean_corrected_value = gather(mean_corrected_value);
 end
 
 end

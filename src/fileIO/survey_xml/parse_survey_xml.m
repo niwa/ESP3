@@ -52,7 +52,8 @@ nb_cal = 0;
 surv_def=survey_input_cl();
 
 Infos=surv_def.Infos;
-Options=surv_def.Options;
+
+surv_options_obj=surv_def.Options;
 Algos = {};
 Regions_WC = {};
 Cal = [];
@@ -64,38 +65,38 @@ if nargin>1
 else
    idx_child=1:nb_child;
 end
-    
-for i = idx_child
-    switch xml_struct.Children(i).Name
+
+for ici = idx_child
+    switch xml_struct.Children(ici).Name
         case 'survey'
-            Infos = get_node_att(xml_struct.Children(i));
+            Infos = get_node_att(xml_struct.Children(ici));
         case 'cal'
             nb_cal = nb_cal+1;
-            cal_temp = get_cal_node(xml_struct.Children(i),Options.Frequency,nan,'');
+            cal_temp = get_cal_node(xml_struct.Children(ici),surv_options_obj.Frequency.Value,nan,'');
             Cal = [Cal cal_temp];
         case 'options'
-            Options = survey_options_cl('Options',get_options_node(xml_struct.Children(i)));
+            surv_options_obj = survey_options_cl('Options',get_options_node(xml_struct.Children(ici)));
         case 'algos'
-            Algos = get_algos(xml_struct.Children(i));
+            Algos = get_algos(xml_struct.Children(ici));
         case 'regions_WC'
             nb_reg = nb_reg+1;
-            Regions_WC{nb_reg} = get_node_att(xml_struct.Children(i));
+            Regions_WC{nb_reg} = get_node_att(xml_struct.Children(ici));
             if ~isfield(Regions_WC{nb_reg},'Type')
                 Regions_WC{nb_reg}.Type='Data';
             end
         case 'snapshot'
             nb_snap = nb_snap+1;
-            Snapshots{nb_snap} = get_snapshot(xml_struct.Children(i),Options);
+            Snapshots{nb_snap} = get_snapshot(xml_struct.Children(ici),surv_options_obj);
+            Snapshots{nb_snap}.Options = copy_survey_option(Snapshots{nb_snap}.Options);
         case '#comment'
             continue;
         otherwise
             warning('Unidentified Child in XML');
     end
 end
-
+Infos.Script = xml_file;
 % generate the survey_input object from results
-survey_input = survey_input_cl('Infos',Infos,'Options',Options,'Algos',Algos,'Regions_WC',Regions_WC,'Snapshots',Snapshots,'Cal',Cal);
-
+survey_input = survey_input_cl('Infos',Infos,'Options',surv_options_obj,'Algos',Algos,'Regions_WC',Regions_WC,'Snapshots',Snapshots,'Cal',Cal);
 end
 
 
@@ -136,23 +137,17 @@ if ~isempty(cal)
 end
 end
 
-function att_val = get_att(node,name)
+
+function att_val = get_att_str(node,name)
 att_val = [];
 for iu = 1:length(node.Attributes)
     if strcmpi(node.Attributes(iu).Name,name)
-        att_val = node.Attributes(iu).Value;
+        att_val = node.Attributes(iu).Value_str;
     end
 end
 end
 
-function childs = get_childs(node,name)
-childs = [];
-for iu = 1:length(node.Children)
-    if strcmpi(node.Children(iu).Name,name)
-        childs = [childs node.Children(iu)];
-    end
-end
-end
+
 
 function transects = get_transects(node)
 trans_nodes = get_childs(node,'transect');
@@ -204,7 +199,7 @@ end
 
 function snapshot_struct = get_snapshot(node,options)
 snapshot_struct.Number = get_att(node,'number');
-snapshot_struct.Folder = get_att(node,'folder');
+snapshot_struct.Folder = get_att_str(node,'folder');
 type_ori = get_att(node,'type');
 
 if ischar(type_ori)
@@ -218,28 +213,30 @@ snapshot_struct.Options = update_options(options,get_options_node(get_childs(nod
 snapshot_struct.Stratum = cell(1,length(stratum));
 cals = get_childs(node,'cal');
 Cal = [];
+
 for i = 1:length(cals)
     cal_temp = get_cal_node(cals(i),options.Frequency,nan,'');
     Cal = [Cal cal_temp];
 end
 snapshot_struct.Cal = Cal;
-
 for i = 1:length(stratum)
-    strat_curr = get_strat_node(stratum(i),snapshot_struct.Options);
+    snapshot_opt = copy_survey_option(snapshot_struct.Options);
+    strat_curr = get_strat_node(stratum(i),snapshot_opt);
     snapshot_struct.Stratum{i} = strat_curr;
 end
 
+try
+    snapshot_struct.Algos = get_algos(get_childs(node,'algos'));
+catch
+end
 end
 
 function strat_curr = get_strat_node(stratum,options)
-strat_curr.Name = get_att(stratum,'name');
+strat_curr.Name = get_att_str(stratum,'name');
 strat_curr.Transects = get_transects(stratum);
-strat_curr.Design = get_att(stratum,'design');
+strat_curr.Design = get_att_str(stratum,'design');
 strat_curr.Radius = get_att(stratum,'radius');
 
-if isnumeric(strat_curr.Name)
-    strat_curr.Name = num2str(strat_curr.Name,'%.0f');
-end
 
 cals = get_childs(stratum,'cal');
 Cal = [];

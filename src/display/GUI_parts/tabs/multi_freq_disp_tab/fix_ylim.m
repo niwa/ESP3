@@ -1,4 +1,4 @@
-function fix_ylim(src,~,main_figure,tab_tag)
+function fix_ylim(~,~,main_figure,tab_tag)
 multi_freq_disp_tab_comp=getappdata(main_figure,tab_tag);
 
 if multi_freq_disp_tab_comp.ax_lim_cbox.Value>0

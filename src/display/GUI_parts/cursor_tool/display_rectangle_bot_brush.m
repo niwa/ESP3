@@ -44,8 +44,8 @@ layer=get_current_layer();
 axes_panel_comp=getappdata(main_figure,'Axes_panel');
 curr_disp=get_esp3_prop('curr_disp');
 
-[trans_obj,idx_freq]=layer.get_trans(curr_disp);
-context_menu=axes_panel_comp.bad_transmits.UIContextMenu;
+[trans_obj,~]=layer.get_trans(curr_disp);
+context_menu=axes_panel_comp.echo_obj.echo_bt_surf.UIContextMenu;
 childs=findobj(context_menu,'Type','uimenu');
 
 for i=1:length(childs)
@@ -55,13 +55,13 @@ for i=1:length(childs)
     end
     
 end
-Range= trans_obj.get_transceiver_range();
-id=nanmean(diff(Range));
+Range= trans_obj.get_samples_range();
+id=mean(diff(Range));
 t=trans_obj.get_transceiver_time();
 dt=(t(2)-t(1))*(24*60*60);
 ratio=ceil(dt/id);
 
-ah=axes_panel_comp.main_axes;
+ah=axes_panel_comp.echo_obj.main_ax;
 
 clear_lines(ah);
 

@@ -28,7 +28,7 @@ X = X(idx_non_nan);
 weight_idx = weight_idx(idx_non_nan);
 w_tot = sum(weight_idx);
 
-if length(bin) == 1
+if isscalar(bin)
 
     N = max(bin,2);
     
@@ -58,7 +58,7 @@ if length(bin) == 1
     
 else
     
-    N = nanmax(length(bin),2);
+    N = max(length(bin),2);
     pdf = zeros(1,N);
     grad_bin = gradient(bin);
     x = bin;

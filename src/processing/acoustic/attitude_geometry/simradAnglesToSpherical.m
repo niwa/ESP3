@@ -7,7 +7,8 @@ theta = atan2(t1, t2) * 180/pi; % rotation about transducer axis
 
 % Convert the angles so that we get negative phi's to allow for plotting of
 % complete beam pattern slice arcs
-i = find(theta < 0);
-phi(i) = -phi(i);
-theta(i) = 180+theta(i);
+id = find(theta < 0);
+phi(id) = -phi(id);
+theta(id) = 180+theta(id);
 end
+

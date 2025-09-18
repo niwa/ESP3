@@ -38,7 +38,6 @@
 %% Function
 function edit_bottom(src,~,main_figure)
 
-
 if check_axes_tab(main_figure)==0
     return;
 end
@@ -49,22 +48,25 @@ curr_disp=get_esp3_prop('curr_disp');
 
 mouse_state=1;
 
-ah=axes_panel_comp.main_axes;
+ah=axes_panel_comp.echo_obj.main_ax;
 
 clear_lines(ah);
 
-[cmap,col_ax,col_lab,col_grid,col_bot,col_txt,line_col]=init_cmap(curr_disp.Cmap);
+cmap_struct = init_cmap(curr_disp.Cmap,curr_disp.ReverseCmap);
  
-
 [trans_obj,~]=layer.get_trans(curr_disp);
+
+if trans_obj.ismb
+    return;
+end
 
 xdata=trans_obj.get_transceiver_pings();
 ydata=trans_obj.get_transceiver_samples();
 
 x_lim=get(ah,'xlim');
 y_lim=get(ah,'ylim');
-% x0=nanmean(x_lim);
-% y0=nanmean(y_lim);
+% x0=mean(x_lim);
+% y0=mean(y_lim);
 % dx=diff(x_lim);
 % dy=diff(y_lim);
 
@@ -72,16 +74,15 @@ y_lim=get(ah,'ylim');
 nb_pings=length(trans_obj.Time);
 old_bot=trans_obj.Bottom;
 
-
 if isempty(old_bot.Sample_idx)
     old_bot.Sample_idx=nan(1,nb_pings);
 end
 
-bot=old_bot;
+bot = old_bot;
 
 xinit=nan(1,nb_pings);
 yinit=nan(1,nb_pings);
-idx_pings=[];
+idx_ping=[];
 cp = ah.CurrentPoint;
 xinit(1) =cp(1,1);
 yinit(1)=cp(1,2);
@@ -96,7 +97,7 @@ end
 
 switch src.SelectionType
     case {'normal','alt','extend'}
-        hp=plot(ah,xinit,yinit,'color',line_col,'linewidth',1,'Tag','bottom_temp');
+        hp=plot(ah,xinit,yinit,'color',cmap_struct.col_tracks,'linewidth',1,'Tag','bottom_temp');
         
         switch src.SelectionType
             case 'normal'
@@ -109,8 +110,8 @@ switch src.SelectionType
                 %replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',1,'interaction_fcn',@wbucb_alt);
         end
     otherwise
-        [~, idx_bot]=nanmin(abs(xinit(1)-xdata));
-        [~,idx_r]=nanmin(abs(yinit(1)-ydata));
+        [~, idx_bot]=min(abs(xinit(1)-xdata),[],'omitnan');
+        [~,idx_r]=min(abs(yinit(1)-ydata),[],'omitnan');
         bot.Sample_idx(idx_bot)=idx_r;
         
         end_bottom_edit(1);
@@ -122,14 +123,14 @@ end
         
         switch mouse_state
             case 1
-                u=nansum(~isnan(xinit))+1;
+                u=sum(~isnan(xinit),"omitnan")+1;
         end
         xinit(u)=cp(1,1);
         yinit(u)=cp(1,2);
         if isvalid(hp)
             set(hp,'XData',xinit,'YData',yinit);
         else
-            hp=plot(ah,xinit,yinit,'color',line_col,'linewidth',1,'Tag','bottom_temp');
+            hp=plot(ah,xinit,yinit,'color',cmap_struct.col_tracks,'linewidth',1,'Tag','bottom_temp');
         end
         
         
@@ -149,7 +150,7 @@ end
                 return;
         end
         
-        u=nansum(~isnan(xinit))+1;
+        u=sum(~isnan(xinit),'omitnan')+1;
     end
 
     function [x_f, y_f]=check_xy()
@@ -179,22 +180,22 @@ end
 
         if length(x_f)>1
             for i=1:length(x_f)-1
-                [~, idx_bot]=nanmin(abs(x_f(i)-xdata));
-                [~, idx_bot_1]=nanmin(abs(x_f(i+1)-xdata));
+                [~, idx_bot]=min(abs(x_f(i)-xdata),[],'omitnan');
+                [~, idx_bot_1]=min(abs(x_f(i+1)-xdata),[],'omitnan');
                 
-                [~,idx_r]=nanmin(abs(y_f(i)-ydata));
-                [~,idx_r1]=nanmin(abs(y_f(i+1)-ydata));
+                [~,idx_r]=min(abs(y_f(i)-ydata),[],'omitnan');
+                [~,idx_r1]=min(abs(y_f(i+1)-ydata),[],'omitnan');
                 
                 idx_bot=(idx_bot:idx_bot_1);
                 
                 bot.Sample_idx(idx_bot)=round(linspace(idx_r,idx_r1,length(idx_bot)));
-                idx_pings=union(idx_pings,idx_bot);
+                idx_ping=union(idx_ping,idx_bot);
             end
-        elseif length(x_f)==1
-            [~, idx_bot]=nanmin(abs(x_f-xdata));
-            [~,idx_r]=nanmin(abs(y_f-ydata));
+        elseif isscalar(x_f)
+            [~, idx_bot]=min(abs(x_f-xdata),[],'omitnan');
+            [~,idx_r]=min(abs(y_f-ydata),[],'omitnan');
             bot.Sample_idx(idx_bot)=idx_r;
-            idx_pings=union(idx_pings,idx_bot);
+            idx_ping=union(idx_ping,idx_bot);
         end
         
     end
@@ -210,7 +211,7 @@ end
         
         if val>0 
             add_undo_bottom_action(main_figure,trans_obj,old_bot,bot)
-            %trans_obj.apply_algo('BottomFeatures','reg_obj',region_cl('Idx_pings',idx_pings,'Idx_r',[1 10]));
+            %trans_obj.apply_algo('BottomFeatures','reg_obj',region_cl('Idx_ping',idx_ping,'Idx_r',[1 10]));
         end
         
         display_bottom(main_figure,{'main' 'mini' curr_disp.ChannelID});

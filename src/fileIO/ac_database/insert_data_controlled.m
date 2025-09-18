@@ -1,4 +1,4 @@
-function pkey=insert_data_controlled(ac_db_filename,tablename,struct_in,struct_in_minus_key,pkey_name)
+function pkey=insert_data_controlled(ac_db_filename,tablename,struct_in,struct_in_minus_key,pkey_name,varargin)
 
 if isfield(struct_in_minus_key,pkey_name)
     struct_in_minus_key = rmfield(struct_in_minus_key,pkey_name);
@@ -7,6 +7,8 @@ end
 bs = 1e3;
 
 fields = fieldnames(struct_in);
+
+pkey = nan(numel(struct_in.(fields{1})),1);
 
 for irow = 1:bs:numel(struct_in.(fields{1}))
     
@@ -23,8 +25,8 @@ for irow = 1:bs:numel(struct_in.(fields{1}))
     try
         %tic
         datainsert_perso(ac_db_filename,tablename,struct_in,'idx_insert',idx_ite);
-        %toc
-        
+%         toc
+%         
 %         tic
 %         if ischar(ac_db_filename)
 %             dbconn = connect_to_db(ac_db_filename);
@@ -32,7 +34,7 @@ for irow = 1:bs:numel(struct_in.(fields{1}))
 %             dbconn = ac_db_filename;
 %         end
 %         T=struct2table(struct_in);
-%         dbconn.sqlwrite(tablename,T);
+%         dbconn.sqlwrite(tablename,T,'Catalog',dbconn.Catalog,'Schema',);
 %         
 %         if ischar(ac_db_filename)
 %              dbconn.close();
@@ -40,19 +42,23 @@ for irow = 1:bs:numel(struct_in.(fields{1}))
 %         toc
     catch
         
-        p_key = nan(numel(idx_ite),1);
-        
-        for i = 1:numel(idx_ite)
-            
-            [~,tmp] = get_cols_from_table(ac_db_filename,tablename,'input_struct',struct_in_minus_key,'output_cols',{pkey_name},'row_idx',idx_ite(i));
+ 
+        for iti = 1:numel(idx_ite)     
+            [~,tmp] = get_cols_from_table(ac_db_filename,tablename,'input_struct',struct_in_minus_key,'output_cols',{pkey_name},'row_idx',idx_ite(iti));
             
             if ~isempty(tmp)
-                p_key(i) = tmp{1,1};
+                pkey(idx_ite(iti)) = tmp{1,1};
+            else
+                datainsert_perso(ac_db_filename,tablename,struct_in,'idx_insert',idx_ite(iti));
+                [~,tmp] = get_cols_from_table(ac_db_filename,tablename,'input_struct',struct_in_minus_key,'output_cols',{pkey_name},'row_idx',idx_ite(iti));
+                
+                if ~isempty(tmp)
+                    pkey(idx_ite(iti)) = tmp{1,1};
+                end
             end
-            
         end
         
-        idx_insert = idx_ite(isnan(p_key));
+        idx_insert = idx_ite(isnan(pkey(idx_ite)));
         
         if ~isempty(idx_insert)
             datainsert_perso(ac_db_filename,tablename,struct_in,'idx_insert',idx_insert);
@@ -64,27 +70,27 @@ for irow = 1:bs:numel(struct_in.(fields{1}))
     
 end
 
-pkey = [];
-
-for irow = 1:bs:numel(struct_in.(fields{1}))
-    idx_ite = irow:min(irow+bs-1,numel(struct_in.(fields{1})));
-    [~,tmp] = get_cols_from_table(ac_db_filename,tablename,'input_struct',struct_in_minus_key,'output_cols',{pkey_name},'row_idx',idx_ite);
-    if~isempty(tmp)
-        pkey = [pkey;tmp];
+if isempty(varargin)||varargin{1}
+    for idx_ite = 1:numel(struct_in.(fields{1}))
+        if isnan(pkey(idx_ite))
+            [~,tmp] = get_cols_from_table(ac_db_filename,tablename,'input_struct',struct_in_minus_key,'output_cols',{pkey_name},'row_idx',idx_ite);
+            if ~isempty(tmp)
+                pkey(idx_ite) = tmp{1,1};
+            end
+        end
+    end
+    
+    if iscell(pkey)
+        pkey = cell2mat(pkey);
+    end
+    
+    if istable(pkey)
+        pkey = table2struct(pkey,'ToScalar',true);
+    end
+    
+    if isstruct(pkey)
+        pkey = pkey.(pkey_name);
     end
 end
-
-if iscell(pkey)
-    pkey = cell2mat(pkey);
-end
-
-if istable(pkey)
-    pkey = table2struct(pkey,'ToScalar',true);
-end
-
-if isstruct(pkey)
-    pkey = pkey.(pkey_name);
-end
-
 
 end

@@ -48,7 +48,7 @@ end
 
 axes_panel_comp=getappdata(main_figure,'Axes_panel');
 curr_disp=get_esp3_prop('curr_disp');
-ah=axes_panel_comp.main_axes;
+ah=axes_panel_comp.echo_obj.main_ax;
 mode='rectangular';
 switch src.SelectionType
     case 'alt'
@@ -71,7 +71,7 @@ clear_lines(ah);
 u=findobj(ah,'Tag','BrushedLine','-or','Tag','BrushedArea');
 delete(u);
 
- [cmap,col_ax,col,col_grid,col_bot,col_txt,~]=init_cmap(curr_disp.Cmap);
+ cmap_struct = init_cmap(curr_disp.Cmap,curr_disp.ReverseCmap);
 
 [trans_obj,idx_freq]=layer.get_trans(curr_disp);
 
@@ -104,8 +104,8 @@ x_box=xinit;
 y_box=yinit;
 
 
-hp=line(x_box,y_box,'color',col,'linewidth',1,'parent',ah,'LineStyle','--','Tag','BrushedLine');
-hp_p=plot(nan,nan,'Marker','o','color',col,'linewidth',0.5,'parent',ah,'LineStyle','none','Tag','BrushedLine');
+hp=line(x_box,y_box,'color',cmap_struct.col_lab,'linewidth',1,'parent',ah,'LineStyle','--','Tag','BrushedLine');
+hp_p=plot(nan,nan,'Marker','o','color',cmap_struct.col_lab,'linewidth',0.5,'parent',ah,'LineStyle','none','Tag','BrushedLine');
 
 
 replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2,'interaction_fcn',@wbmcb,'pointer',curr_disp.get_pointer());
@@ -128,17 +128,17 @@ replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',2,'intera
                 
         end
         
-        x_min=nanmin(X);
-        x_min=nanmax(xdata(1),x_min);
+        x_min=min(X);
+        x_min=max(xdata(1),x_min);
         
-        x_max=nanmax(X);
-        x_max=nanmin(xdata(end),x_max);
+        x_max=max(X);
+        x_max=min(xdata(end),x_max);
         
-        y_min=nanmin(Y);
-        y_min=nanmax(y_min,ydata(1));
+        y_min=min(Y);
+        y_min=max(y_min,ydata(1));
         
-        y_max=nanmax(Y);
-        y_max=nanmin(y_max,ydata(end));
+        y_max=max(Y);
+        y_max=min(y_max,ydata(end));
         
         x_box=([x_min x_max  x_max x_min x_min]);
         y_box=([y_max y_max y_min y_min y_max]);
@@ -152,7 +152,7 @@ replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',2,'intera
         
     end
 
-    function wbucb(src,~)
+    function wbucb(~,~)
     replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2,'pointer',curr_disp.get_pointer());
     replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',2,'pointer',curr_disp.get_pointer());
 
@@ -171,7 +171,7 @@ replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',2,'intera
         if length(x_box)<4||length(y_box)<4
             return;
         end
-        hp_a=patch(ah,'XData',x_box(1:4),'YData',y_box(1:4),'FaceColor','none','tag','BrushedArea','FaceAlpha',0.5,'EdgeColor',col);
+        hp_a=patch(ah,'XData',x_box(1:4),'YData',y_box(1:4),'FaceColor','none','tag','BrushedArea','FaceAlpha',0.5,'EdgeColor',cmap_struct.col_lab);
         
         brush_off_soundings_callback([],[],hp_a,main_figure,rem_soundings,set_bad);
         delete(hp_a);

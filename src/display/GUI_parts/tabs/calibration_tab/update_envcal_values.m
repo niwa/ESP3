@@ -40,16 +40,9 @@ else
 end
 set(env_tab_comp.soundspeed,'string',num2str(c,'%.2f'));
 
-
 if get(env_tab_comp.att_over,'value')==0||isempty(trans_obj)
-    att_list=get(env_tab_comp.att_model,'String');
-    att_model=att_list{get(env_tab_comp.att_model,'value')};
     
-    if curr_disp.Freq>120000&&strcmp(att_model,'Doonan et al (2003)')
-        att_model='Francois & Garrison (1982)';
-        set(env_tab_comp.att_model,'value',1);
-    end
-    
+    att_model=envdata.AttModel;    
     switch att_model
         case 'Doonan et al (2003)'
             alpha = seawater_absorption(curr_disp.Freq/1e3, new_sal, new_temp, new_d,'doonan');
@@ -63,7 +56,7 @@ else
     end
  
 end
-set(env_tab_comp.att,'string',num2str(nanmean(alpha),'%.2f'));
+set(env_tab_comp.att,'string',num2str(mean(alpha),'%.2f'));
 
 str_disp=layer.get_env_str(curr_disp);
 

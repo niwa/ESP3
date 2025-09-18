@@ -6,7 +6,7 @@ layer=get_current_layer();
 
 axes_panel_comp=getappdata(main_figure,'Axes_panel');
 patch_obj=src;
-ah=axes_panel_comp.main_axes;
+ah=axes_panel_comp.echo_obj.main_ax;
 
 if isempty(patch_obj.Vertices)||~ismember(curr_disp.CursorMode,{'Normal'})
     return;
@@ -24,8 +24,8 @@ if strcmp(current_fig.SelectionType,'normal')
     xdata=trans_obj.get_transceiver_pings();
     ydata=trans_obj.get_transceiver_samples();
     
-    dx_patch=nanmax(patch_obj.Vertices(:,1))-nanmin(patch_obj.Vertices(:,1));
-    dy_patch=nanmax(patch_obj.Vertices(:,2))-nanmin(patch_obj.Vertices(:,2));
+    dx_patch=max(patch_obj.Vertices(:,1))-min(patch_obj.Vertices(:,1));
+    dy_patch=max(patch_obj.Vertices(:,2))-min(patch_obj.Vertices(:,2));
     
     replace_interaction(current_fig,'interaction','WindowButtonMotionFcn','id',2,'interaction_fcn',@wbmcb,'Pointer','fleur');
     replace_interaction(current_fig,'interaction','WindowButtonUpFcn','id',2,'interaction_fcn',@wbucb,'Pointer','fleur');

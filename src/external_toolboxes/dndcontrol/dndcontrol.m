@@ -58,7 +58,7 @@ classdef (CaseInsensitiveProperties) dndcontrol < handle
         %INITJAVA Initializes the required Java class.
         
             %Add java folder to javaclasspath if necessary
-            if ~dndcontrol.isInitialized();
+            if ~dndcontrol.isInitialized()
                 classpath = fileparts(mfilename('fullpath'));                
                 javaclasspath(classpath);                
             end 
@@ -222,7 +222,7 @@ classdef (CaseInsensitiveProperties) dndcontrol < handle
                     case 'string'
                         jTextArea.append(sprintf('Dropped text:\n%s\n',evt.Data));
                 end
-                jTextArea.append(sprintf('\n'));
+                jTextArea.append(newline);
             end
         end
     end    

@@ -56,7 +56,7 @@ end
 
 d = perp_dist([x(1) y(1)],[x(end) y(end)],[x y]);
 
-[dmax,index]=nanmax(d);
+[dmax,index]=max(d);
 
 % If max distance is greater than epsilon, recursively simplify
 if ( dmax > epsilon )&& nb_max>nb_ite

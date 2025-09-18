@@ -26,9 +26,15 @@ rawFileName=ifile_info.rawFileName;
 
 %% Checkout rFile
 outDir = tempname;
+
 %run command - make output directory for cvs
 if ~mkdir(outDir)
     error('Unable to create temporary cvs directory');
+end
+
+outDir_final = fullfile(iFilePath,'bot_reg_crest');
+if ~isfolder(outDir_final)
+    mkdir(outDir_final);
 end
 
 idx_str=strfind(iFilePath,voyage);
@@ -46,19 +52,24 @@ end
 
 %run command - export bottom from cvs
 cd(outDir);
-[~,output] = system(command,'-echo');
+[~,~] = system(command,'-echo');
 cd(work_path);
 
-if contains(output,{'checkout aborted' 'cannot find module' 'Unknown command'})
-    rmdir(outDir,'s');
+rFilePath = fullfile(outDir,remain_str);
+
+rfile = fullfile(outDir_final,rFileName);
+
+if isfile(fullfile(rFilePath,rFileName))
+    copyfile(fullfile(rFilePath,rFileName),rfile);
+end
+
+if ~isfile(rfile)
     regions=[];
     return;
 end
 
-rFilePath = fullfile(outDir,remain_str);
-
 %% Read rFile and save region information in Regions
-regions = readEsp2regions(fullfile(rFilePath,rFileName));
+regions = readEsp2regions(rfile);
 
 rmdir(outDir,'s');
 

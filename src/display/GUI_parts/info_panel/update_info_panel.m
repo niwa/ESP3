@@ -1,9 +1,6 @@
 function update_info_panel(~,~,force_update)
 %profile on;
-global DEBUG
-if isempty(DEBUG)
-    DEBUG =0;
-end
+
 esp3_obj=getappdata(groot,'esp3_obj');
 
 %dpause=1e-2;
@@ -20,7 +17,7 @@ if isempty(main_figure)||~ishandle(main_figure)
     return;
 end
 
-if ~isdeployed()&&DEBUG
+if ~isdeployed()&& isdebugging
     disp('Update info panel');
     disp(datestr(now,'HH:MM:SS.FFF'));
 end
@@ -29,48 +26,58 @@ try
     layer=get_current_layer();
     
     echo_tab_panel=getappdata(main_figure,'echo_tab_panel');
-    
+    info_panel_comp=getappdata(main_figure,'Info_panel');
     axes_panel_comp=getappdata(main_figure,'Axes_panel');
-    bool =isempty(axes_panel_comp)||(~isa(axes_panel_comp.axes_panel,'matlab.ui.Figure') && ~strcmpi(echo_tab_panel.SelectedTab.Tag,'axes_panel'));
+    
+    bool =(isempty(axes_panel_comp)||(~isa(axes_panel_comp.axes_panel,'matlab.ui.Figure') && ~strcmpi(echo_tab_panel.SelectedTab.Tag,'axes_panel')))&&~force_update;
     if  bool ||isempty(layer)||~isvalid(layer)
         %pause(dpause);
         return;
     end
     
-    
-    info_panel_comp=getappdata(main_figure,'Info_panel');
-    curr_disp=get_esp3_prop('curr_disp');
-    
+    curr_disp=get_esp3_prop('curr_disp'); 
+
+   [~,Type,Units]=init_cax(curr_disp.Fieldname);
+
     cur_str=sprintf('Cursor mode: %s',curr_disp.CursorMode);
     set(info_panel_comp.cursor_mode,'String',cur_str);
     
     [trans_obj,~]=layer.get_trans(curr_disp);
     
+
     if isempty(trans_obj)
         %pause(dpause);
         return;
     end
     
-    Range_trans=trans_obj.get_transceiver_range();
+     echo_obj = axes_panel_comp.echo_obj;
+    
+    [x,y,idx_ping,idx_r] = echo_obj.get_main_ax_cp(trans_obj);
+    
+    if isempty(idx_r)&&force_update
+        idx_r = 1;
+    end
+    
+    if isempty(idx_ping)&&force_update
+        idx_ping = 1;
+    end
+    return_bool = isempty(idx_r)||isempty(idx_ping);
+    
+    Range_trans=trans_obj.get_samples_range();
+    
     Bottom=trans_obj.Bottom;
     Time_trans=trans_obj.Time;
+    
     Number=trans_obj.get_transceiver_pings();
-    Samples=trans_obj.get_transceiver_samples();
+    Samples=trans_obj.get_transceiver_samples();    
     
+    ax_main=echo_obj.main_ax;
     
-    Depth_corr=trans_obj.get_transducer_depth();
-    
-    Lat=trans_obj.GPSDataPing.Lat;
-    Long=trans_obj.GPSDataPing.Long;
-    
-    
-    ax_main=axes_panel_comp.main_axes;
-    cp = ax_main.CurrentPoint;
-    
-    if force_update&&any(cp(1:2)<0)
-        cp=[1 1];
-    elseif any(cp(1:2)<0)
-        %pause(dpause);
+
+    if force_update&&return_bool
+        idx_ping=1;
+        idx_r=1;
+    elseif return_bool
         return;
     end
     
@@ -78,80 +85,37 @@ try
     x_lim=double(get(ax_main,'xlim'));
     y_lim=double(get(ax_main,'ylim'));
     
-    set(axes_panel_comp.haxes,'xlim',x_lim);
-    set(axes_panel_comp.vaxes,'ylim',y_lim);
+    set(echo_obj.hori_ax,'xlim',x_lim);
+    set(echo_obj.vert_ax,'ylim',y_lim); 
     
+    cdata=single(get(echo_obj.echo_surf,'CData'));
     
-    cdata=single(get(axes_panel_comp.main_echo,'CData'));
-    
-    xdata=double(get(axes_panel_comp.main_echo,'XData'));
-    ydata=double(get(axes_panel_comp.main_echo,'YData'));
-    
-    idx_x_keep=xdata>=x_lim(1)&xdata<=x_lim(2);
-    idx_y_keep=ydata>=y_lim(1)&ydata<=y_lim(2);
-    
-    cdata=cdata(idx_y_keep,idx_x_keep);
-    
-    [nb_samples_red,nb_pings_red]=size(cdata);
-    
-    
-    
+    xdata=double(get(echo_obj.echo_surf,'XData'));
+    ydata=double(get(echo_obj.echo_surf,'YData'));
+       
+    [~,~]=size(cdata);
+        
     nb_pings=length(Time_trans);
     nb_samples=length(Range_trans);
     
-    
-    xdata_red=linspace(x_lim(1),x_lim(2),nb_pings_red);
-    
-    dxi=+1/2;
-    
-    xdata_red=xdata_red+dxi;
-    ydata_red=linspace(y_lim(1),y_lim(2),nb_samples_red);
-    idx_pings=ceil(xdata(idx_x_keep));
-    idx_rs=ceil(ydata(idx_y_keep));
-    
-    %idx_pings=ceil(xdata);
-    %idx_rs=ceil(ydata);
-    
-    
-    x=round(cp(1,1));
-    y=round(cp(1,2));
-    
-    if (x>x_lim(2)||x<x_lim(1)|| y>y_lim(2)||y<y_lim(1))&&force_update==0
-        %pause(dpause);
+        
+    if (x>x_lim(2)||x<x_lim(1)|| y>y_lim(2)||y<y_lim(1))&&force_update==0||numel(xdata)<2||numel(ydata)<2
         return;
     end
     
     cax=curr_disp.Cax;
     
-    x=nanmax(x,x_lim(1));
-    x=nanmin(x,x_lim(2));
+    idx_ping=min(nb_pings,idx_ping);
+    idx_ping=max(1,idx_ping);
     
-    y=ceil(nanmax(y,y_lim(1)));
-    y=ceil(nanmin(y,y_lim(2)));
+    idx_r=min(nb_samples,idx_r);
+    idx_r=max(1,idx_r);
     
     if ~isempty(cdata)
-        %         [~,idx_ping]=nanmin(abs(xdata-x));
-        %         idx_ping=idx_ping+idx_ping_ori-1;
-        idx_ping=ceil(x);
-        idx_ping=nanmin(nb_pings,idx_ping);
-        idx_ping=nanmax(1,idx_ping);
-        %         [~,idx_r]=nanmin(abs(ydata-y));
-        
-        idx_r=y;
-        idx_r=nanmin(nb_samples,idx_r);
-        if nb_pings_red<nb_pings
-            [~,idx_ping_red]=nanmin(abs(xdata_red-x));
-        else
-            idx_ping_red=idx_ping;
-        end
-        
-        if nb_samples_red<nb_samples
-            [~,idx_r_red]=nanmin(abs(ydata_red-y));
-        else
-            idx_r_red=idx_r;
-        end
-        
-        
+ 
+        [~,idx_ping_red]=min(abs(xdata-x));                
+        [~,idx_r_red]=min(abs(ydata-y));
+
         if idx_ping<=length(Bottom.Sample_idx)
             if ~isnan(Bottom.Sample_idx(idx_ping))
                 bot_val=Bottom.Sample_idx(idx_ping);
@@ -161,46 +125,60 @@ try
         else
             bot_val=nan;
         end
+        
         bot_x_val=cax(:)'+[-3 3];
         bot_y_val=cax(:)'+[-3 3];
         
-        if idx_r==0||idx_ping==0
+        if return_bool
             %pause(dpause);
             return;
+        end
+        
+        switch echo_obj.echo_usrdata.geometry_y
+            case 'samples'
+                dx = 1/2;
+            otherwise
+                dx = 0;
         end
         
         switch curr_disp.CursorMode
             case {'Edit Bottom' 'Bad Pings'}
                 switch curr_disp.Fieldname
                     case {'sv','sp','sp_comp','spdenoised','svdenoised','spunmatched','svunmatched','powerunmatched','powerdenoised','power'}
-                        sub_bot=Bottom.Sample_idx(idx_pings);
-                        sub_tag=Bottom.Tag(idx_pings);
-                        sub_bot(sub_tag==0)=inf;
-                        sub_bot=sub_bot-idx_rs(1)+1;
-                        bot_sample_red=downsample(round(sub_bot*nb_samples_red/(idx_rs(end)-idx_rs(1)+1)),round(length(idx_pings)/nb_pings_red));
                         
-                        idx_r_tot=(1:nb_samples_red)';
-                        idx_r_bot=idx_r_tot(idx_r_tot>=nanmin(bot_sample_red-3)&idx_r_tot<=nanmax(bot_sample_red));
+                        sub_bot=echo_obj.bottom_line_plot.YData;
+                        x_horz_val=echo_obj.echo_surf.XData(1,:);  
                         
+                        sub_tag=sum(echo_obj.echo_bt_surf.AlphaData,1)>=1;
+
+                        sub_bot = resample_data_v2(sub_bot,x_horz_val,xdata);
+                        sub_tag = resample_data_v2(single(sub_tag),x_horz_val,xdata,'Opt','previous');
+                          
+                        cdata_above_bottom = nan(size(cdata),'single');
                         
-                        idx_keep=idx_r_bot<bot_sample_red&...
-                            idx_r_bot>=(bot_sample_red-3);
+                        switch echo_obj.echo_usrdata.geometry_y
+                            case 'samples'
+                                idx_bot = ydata<=sub_bot&ydata>=sub_bot-10*mean(diff(ydata));
+                            otherwise
+                                idx_bot = ydata<=sub_bot&ydata>=sub_bot-2;                       
+                        end 
                         
-                        idx_keep(:,bot_sample_red>=nb_samples)=0;
-                        cdata_bot=cdata(idx_r_bot,:);
-                        cdata_bot(~idx_keep)=nan;
-                        horz_val=nanmax(cdata_bot,[],1);
+                        cdata_above_bottom(idx_bot) = cdata(idx_bot);
                         
+                        horz_val=max(cdata_above_bottom,[],1);
+              
                         if isempty(horz_val)
-                            horz_val=nan(1,numel(bot_sample_red));
+                            horz_val=nan(1,numel(sub_bot));
                         end
-                        idx_low=~((horz_val>=prctile(cdata_bot(idx_keep),90))&(horz_val>=(curr_disp.Cax(2)-6)))|bot_sample_red==nb_samples_red;
+                        idx_low=~((horz_val>=prctile(cdata_above_bottom,90,'all'))&(horz_val>=(curr_disp.Cax(2)-6)));
                         
                         bot_x_val=[cax(1)-3  cax(2)+3];
                         
-                        bot_y_val=[cax(1)-3 nanmax(cax(2),nanmax(horz_val))+10];
+                        bot_y_val=[cax(1)-3 max(cax(2),max(horz_val))+10];
                         
-                        horz_val(horz_val<cax(1))=cax(1);
+                        horz_val(horz_val<cax(1))=cax(1);          
+                        idx_low(sub_tag==1) = true;
+                        
                     otherwise
                         horz_val=cdata(idx_r_red,:);
                         horz_val(horz_val>cax(2))=cax(2);
@@ -240,46 +218,49 @@ try
                 end
             end
         end
-        
-        
-        if Depth_corr(idx_ping)~=0
-            xy_string=sprintf('Range: %.2fm Range Corr: %.2fm\n  Sample: %.0f Ping #:%.0f of  %.0f',Range_trans(idx_r),Range_trans(idx_r)+Depth_corr(idx_ping),Samples(idx_r),Number(idx_ping),Number(end));
+        idx_beam = trans_obj.get_idx_beams(curr_disp.BeamAngularLimit);
+
+        d = trans_obj.get_samples_depth(idx_r,idx_ping,round(mean(idx_beam)));
+
+        if d~=Range_trans(idx_r)
+            xy_string=sprintf('Range: %.2fm Depth: %.2fm\n  Sample: %.0f Ping #:%.0f of  %.0f',Range_trans(idx_r),d,Samples(idx_r),Number(idx_ping),Number(end));
         else
             xy_string=sprintf('Range: %.2fm\n  Sample: %.0f Ping #%.0f of  %.0f',Range_trans(idx_r),Samples(idx_r),Number(idx_ping),Number(end));
         end
-        
-        if ~isempty(Lat)&&nansum(Lat+Long)>0
-            [lat_str,lon_str]=print_pos_str(Lat(idx_ping),Long(idx_ping));
+            Lat=trans_obj.GPSDataPing.Lat(idx_ping);
+            Long=trans_obj.GPSDataPing.Long(idx_ping);
+            
+        if ~isempty(Lat) && sum(Lat+Long,'omitnan')>0
+            [lat_str,lon_str]=print_pos_str(Lat,Long);
             pos_string=sprintf('%s\n%s',lat_str,lon_str);
             pos_weigtht='normal';
-            if ~isdeployed()&&DEBUG
+
+            if isdebugging()
                 disp('Update info panel: lat/lon');
                 disp(datestr(now,'HH:MM:SS.FFF'));
             end
         else
             pos_string=sprintf('No Navigation Data');
             pos_weigtht='Bold';
-            
         end
-        time_str=datestr(Time_trans(idx_ping),'yyyy-mm-dd HH:MM:SS');
+        time_str=datestr(Time_trans(idx_ping),'yyyy-mm-dd HH:MM:SS.FFF');
+
+        val_str=sprintf('%s: %.2f %s',Type,cdata(idx_r_red,idx_ping_red),Units);
         
-        switch lower(deblank(curr_disp.Fieldname))
-            case{'alongangle','acrossangle'}
-                val_str=sprintf('Angle: %.2f%c',cdata(idx_r_red,idx_ping_red),char(hex2dec('00BA')));
-            case{'alongphi','acrossphi'}
-                val_str=sprintf('Phase: %.2f%c',cdata(idx_r_red,idx_ping_red),char(hex2dec('00BA')));
-            case {'fishdensity'}
-                val_str=sprintf('%s: %.2g fish/m^3',curr_disp.Type,cdata(idx_r_red,idx_ping_red));
-            otherwise
-                val_str=sprintf('%s: %.2f dB',curr_disp.Type,cdata(idx_r_red,idx_ping_red));
-        end
         
         iFile=trans_obj.Data.FileId(idx_ping);
-        [~,file_curr,~]=fileparts(layer.Filename{iFile});
-        
-        summary_str=sprintf('%s. Mode: %s Freq: %.0f kHz Power: %.0fW Pulse: %.3fms',file_curr,trans_obj.Mode,curr_disp.Freq/1000,...
-            trans_obj.get_params_value('TransmitPower',idx_ping),...
-            trans_obj.get_params_value('PulseLength',idx_ping)*1e3);
+        [~,file_curr,ext]=fileparts(layer.Filename{iFile});
+        switch trans_obj.Mode
+            case 'CW'
+                freq_str = sprintf('%.0f kHz',mean(trans_obj.get_params_value('Frequency',idx_ping,idx_beam)/1e3));
+            case 'FM'
+                freq_str = sprintf('%.0f-%.0f kHz',mean(trans_obj.get_params_value('FrequencyStart',idx_ping,idx_beam)/1e3),mean(trans_obj.get_params_value('FrequencyEnd',idx_ping,idx_beam)/1e3));
+        end
+        summary_str=sprintf('%s%s \nMode: %s Freq: %s\nPower: %.0f W Pulse: %.3f ms Av. Ping rate: %.1f Hz',file_curr,ext,...
+            trans_obj.Mode,freq_str,...
+            mean(trans_obj.get_params_value('TransmitPower',idx_ping,idx_beam)),...
+            mean(trans_obj.get_params_value('PulseLength',idx_ping,idx_beam)*1e3),...
+            1./mode(diff(trans_obj.Time*24*60*60)));
         
         
         set(info_panel_comp.i_str,'String',i_str);
@@ -289,16 +270,16 @@ try
         set(info_panel_comp.time_disp,'string',time_str);
         set(info_panel_comp.value,'string',val_str);
         
-        axh=axes_panel_comp.haxes;
-        axh_plot_high=axes_panel_comp.h_axes_plot_high;
-        axh_plot_low=axes_panel_comp.h_axes_plot_low;
+        axh=echo_obj.hori_ax;
+        axh_plot_high=echo_obj.h_plot_high;
+        axh_plot_low=echo_obj.h_plot_low;
         
-        axv=axes_panel_comp.vaxes;
-        axv_plot=axes_panel_comp.v_axes_plot;
-        axv_bot=axes_panel_comp.v_bot_val;
-        axv_curr=axes_panel_comp.v_curr_val;
+        axv=echo_obj.vert_ax;
+        axv_plot=echo_obj.v_plot;
+        axv_bot=echo_obj.v_bot_val;
+        axv_curr=echo_obj.v_curr_val;
         
-        set(axv_plot,'XData',vert_val,'YData',ydata_red);
+        set(axv_plot,'XData',vert_val,'YData',ydata);
         
         if bot_x_val(2)>bot_x_val(1)
             set(axv,'xlim',bot_x_val);
@@ -310,12 +291,14 @@ try
         
         depth=trans_obj.get_bottom_range(idx_ping);
         if ~isnan(depth)
-            str=sprintf('%.2fm',depth);
+            str=sprintf('%.2fm',depth(:,:,round(mean(idx_beam))));
         else
             str='';
         end
         
-        set(axv_curr,'value',idx_r);
+        set(axv_curr,'value',idx_r,'Label',sprintf('%.2fm',Range_trans(idx_r)));
+
+        
         if ~isnan(bot_val)
             set(axv_bot,'value',bot_val,'Label',str);
         end
@@ -323,14 +306,29 @@ try
         horz_val_high=horz_val;
         horz_val_high(idx_low>0)=nan;
         
-        set(axh_plot_low,'XData',xdata_red,'YData',horz_val);
-        set(axh_plot_high,'XData',xdata_red,'YData',horz_val_high);
+        set(axh_plot_low,'XData',xdata+dx,'YData',horz_val);
+        set(axh_plot_high,'XData',xdata+dx,'YData',horz_val_high);
         
-        set(axes_panel_comp.h_curr_val,'Value',xdata_red(idx_ping_red));
+        set(axes_panel_comp.echo_obj.h_curr_val,'Value',xdata(idx_ping_red)+dx);
         
         display_ping_impedance_cback([],[],main_figure,idx_ping,0);
         
+        %listen_ping_cback(idx_ping);
+        
         update_boat_position(main_figure,idx_ping,0);
+        update_wc_fig(layer,idx_ping);
+        update_xline_speed_att_fig(main_figure,x);
+
+        echo_3D_obj = get_esp3_prop('echo_3D_obj');
+
+        if ~isempty(echo_3D_obj)
+            cax=curr_disp.getCaxField('sv');
+            echo_3D_obj.add_wc_fan(trans_obj,'idx_ping',idx_ping,'idx_beam',[],'cax',cax);
+        end
+        
+%         if ~isempty(esp3_obj.w_h) && isvalid(esp3_obj.w_h.waitbar_fig)
+%             esp3_obj.w_h.update_waitbar([]);
+%         end
         
     end
     

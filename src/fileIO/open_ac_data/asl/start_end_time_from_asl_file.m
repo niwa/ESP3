@@ -19,7 +19,9 @@ while found_start==0&&~feof(fid)
     pos = ftell(fid);
     
     int_read=fread(fid,BLCK_SIZE,'uint16');
+
     idx_dg=find(int_read==hex2dec('FD02'));
+
     if ~isempty(idx_dg)
         found_start=1;
         
@@ -29,9 +31,8 @@ while found_start==0&&~feof(fid)
             fread(fid,6,'uint16');
             time=fread(fid,7,'uint16');
             
-            
             tmp=datenum(time(1:6)')+time(end)/100/60/60/24;
-            if numel(tmp)==1&&tmp<=now
+            if isscalar(tmp)&&tmp<=now
                 start_time=tmp;
                 found_start=1;
                 break;
@@ -47,7 +48,7 @@ end
 
 fseek(fid,0,'eof');
 pos = ftell(fid);
-BLCK_SIZE = nanmin(pos/2,1e6);
+BLCK_SIZE = min(pos/2,1e6);
 fseek(fid,-2*BLCK_SIZE,'cof');
 found_end=0;
 
@@ -68,7 +69,7 @@ while found_end==0&&pos>0
             time=fread(fid,7,'uint16');
             
             tmp=datenum(time(1:6)')+time(end)/100/60/60/24;
-            if numel(tmp)==1&&tmp>start_time&&tmp<=now
+            if isscalar(tmp)&&tmp>start_time&&tmp<=now
                 end_time=tmp;
                 found_end=1;
                 break;

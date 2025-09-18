@@ -21,8 +21,8 @@ bathy=bathy(1:dlat:end,1:dlon:end);
 
 if length(lon_c)>=2&&length(lat_c)>=2
     
-    L=floor(nanmin(bathy(:))/dl)*dl:dl:0;
-    %L=floor(nanmin(bathy(:))/dl)*dl:dl:ceil(nanmax(bathy(:))/dl)*dl;
+    L=floor(min(bathy(:))/dl)*dl:dl:0;
+    %L=floor(min(bathy(:))/dl)*dl:dl:ceil(max(bathy(:))/dl)*dl;
     C=contourc(lon_c,lat_c,double(bathy),double(L));
     [c_out,l_out]=contour_to_cells(C,L);
     

@@ -6,9 +6,9 @@ layer=get_current_layer();
 if isempty(layer)
     return;
 end
-update_algos(main_figure,'algo_name',{name});
+update_algos('algo_name',{name});
 
-[trans_obj,idx_freq]=layer.get_trans(curr_disp);
+[trans_obj,~]=layer.get_trans(curr_disp);
 
 algos=trans_obj.Algo;
 [idx_algo,found]=find_algo_idx(trans_obj,name);

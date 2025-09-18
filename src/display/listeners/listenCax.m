@@ -5,12 +5,11 @@ update_display_tab(main_figure);
 curr_disp=get_esp3_prop('curr_disp');
 layer=get_current_layer();
 set_alpha_map(main_figure,'main_or_mini',union({'main','mini'},layer.ChannelID),'update_bt',0);
-
+update_wc_fig(layer,1);
 track_tab_comp=getappdata(main_figure,'ST_Tracks');
 
 cax=curr_disp.getCaxField('singletarget');
-
-caxis(track_tab_comp.ax_pos,cax);
+track_tab_comp.ax_pos.CLim = cax;
 
 % link_ylim_to_echo_clim([],[],main_figure,'sv_f');
 % link_ylim_to_echo_clim([],[],main_figure,'ts_f');

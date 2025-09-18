@@ -50,7 +50,7 @@ for i=1:numel(layers)
         
         layer.set_survey_data(surv);
         layer.update_echo_logbook_dbfile('main_figure',main_figure);        
-        load_logbook_tab_from_db(main_figure,'reload',1,'new_logbook',0,'layer',layer);
+        update_logbook_panel_f(layer.Filename);
 end
 
 if mod>0

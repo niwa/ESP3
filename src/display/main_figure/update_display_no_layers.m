@@ -5,12 +5,20 @@ obj_enable=findobj(main_figure,'Enable','on','-not',{'Type','uimenu','-or','Type
 set(obj_enable,'Enable','off');
 
 axes_panel_comp=getappdata(main_figure,'Axes_panel');
-delete(axes_panel_comp.axes_panel);
-rmappdata(main_figure,'Axes_panel');
+if ~isempty(axes_panel_comp)&&isvalid(axes_panel_comp.axes_panel)
+    delete(axes_panel_comp.axes_panel.Parent);
+    rmappdata(main_figure,'Axes_panel');
+end
+
+if isappdata(main_figure,'Info_panel')
+    rmappdata(main_figure,'Info_panel');
+end
 
 mini_axes_comp=getappdata(main_figure,'Mini_axes');
-delete(mini_axes_comp.mini_ax);
-rmappdata(main_figure,'Mini_axes');
+if ~isempty(mini_axes_comp)&&isvalid(mini_axes_comp.echo_obj)
+    delete(mini_axes_comp.echo_obj.main_ax);
+    rmappdata(main_figure,'Mini_axes');
+end
 
 if isappdata(main_figure,'Secondary_freq')
     sec_freq=getappdata(main_figure,'Secondary_freq');
@@ -22,5 +30,5 @@ update_multi_freq_disp_tab(main_figure,'sv_f',1);
 update_multi_freq_disp_tab(main_figure,'ts_f',1);
 update_reglist_tab(main_figure,0);
 update_tree_layer_tab(main_figure);
-
+clean_echo_figures(main_figure);
 end

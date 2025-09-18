@@ -23,6 +23,8 @@ switch listdata.AffectedObject.CursorMode
         toggle_func(cursor_mode_tool_comp.create_reg,[],main_figure);
     case 'Draw Line'
         toggle_func('draw_line',[],main_figure);
+    case 'Edit Line'
+        toggle_func('edit_line',[],main_figure);
      case 'Pan'
         toggle_func(cursor_mode_tool_comp.pan,[],main_figure);
     case 'Normal'
@@ -31,7 +33,7 @@ end
 
 if isappdata(main_figure,'Axes_panel')
     axes_panel_comp=getappdata(main_figure,'Axes_panel');
-    ah=axes_panel_comp.main_axes;
+    ah=axes_panel_comp.echo_obj.main_ax;
     clear_lines_temp(ah);
     select_area=getappdata(main_figure,'SelectArea');
     delete(select_area.patch_h);
@@ -42,7 +44,6 @@ if isappdata(main_figure,'Axes_panel')
 end
 
 
-%order_axes(main_figure);
 %profile off;
 %profile viewer;
 end

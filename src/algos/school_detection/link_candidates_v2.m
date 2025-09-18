@@ -1,6 +1,10 @@
 function linked_candidates=link_candidates_v2(candidates,dist_pings,range,horz_link_max,vert_link_max,l_min_tot,h_min_tot,load_bar_comp)
+vec_candidates=double(unique(candidates(candidates>0)))';
 
-if nansum(candidates(:))==0
+vec_candidates(vec_candidates==0)=[];
+nb_candidates=length(vec_candidates);
+
+if sum(candidates(:),'omitnan')==0 ||nb_candidates ==1
     linked_candidates=candidates;
     return;
 end
@@ -11,11 +15,6 @@ dist_pings = dist_pings(:)';
 range_mat=bsxfun(@times,range,ones(1,nb_pings));
 dist_pings_mat=bsxfun(@times,dist_pings(:)',ones(nb_samples,1));
 
-
-vec_candidates=double(unique(candidates(candidates>0)))';
-
-vec_candidates(vec_candidates==0)=[];
-nb_candidates=length(vec_candidates);
 
 mask=candidates>0;
 
@@ -44,7 +43,7 @@ while u<length(vec_candidates(1:end-1))
     
     curr_candidates=(candidates==i);
     
-    if sum(curr_candidates(:))==0
+    if sum(curr_candidates(:),'omitnan')==0
         continue;
     end
     

@@ -3,8 +3,8 @@ function writeVrmlPoint_chs(aX, aY, aZ,TS, varargin)
 
 p = inputParser;
 
-thr_min_def= nanmin(TS(:));
-thr_max_def= nanmax(TS(:));
+thr_min_def= min(TS(:));
+thr_max_def= max(TS(:));
 %filename, seuilE, seuilMx, seuilMn
 
 addRequired(p,'aX',@isnumeric);
@@ -22,13 +22,12 @@ filename=p.Results.filename;
 thr_min=p.Results.thr_min;
 thr_max=p.Results.thr_max;
 
-[cmap,col_ax,col_lab,col_grid,col_bot,col_txt,~]=init_cmap(p.Results.cmap_name);
+cmap_struct = init_cmap(p.Results.cmap_name);
 
-global fout
 nbP = size(aX,1);
 
-aX=aX-nanmin(aX(:));
-aY=aY-nanmin(aY(:));
+aX=aX-min(aX(:));
+aY=aY-min(aY(:));
 
 
 fout = fopen(filename,'w');
@@ -43,7 +42,7 @@ sendStr(1,'headlight TRUE');
 sendStr(1,'type "EXAMINE"');
 sendStr(0,'}\n\n');
 
-%% Lumière
+%% LumiÃ¨re
 
 sendStr(0,'DirectionalLight {');
 sendStr(1,'intensity 1');
@@ -59,7 +58,7 @@ sendStr(1,'skyColor 0 0 0');
 sendStr(0,'}\n\n'); % fond noire
 
 % sendStr(0,'Viewpoint {');
-% sendStr(1,sprintf('position %f %f %f', nanmin(aX(:)), nanmin(aY(:)) ,0));
+% sendStr(1,sprintf('position %f %f %f', min(aX(:)), min(aY(:)) ,0));
 % sendStr(1,sprintf('orientation 0.5 0.5 0 %f', 0)); % rotation autour de X de Pi/2
 % sendStr(1,sprintf('fieldOfView %f',1.57));
 % sendStr(1,'description "Above"');
@@ -69,7 +68,7 @@ sendStr(0,'}\n\n'); % fond noire
 
 sendStr(0,sprintf('Transform { '));
 sendStr(1,sprintf('translation %.1f %.1f %.1f', 0, 0, mean(aZ(:))));
-sendStr(1,sprintf('scale %d %d %d', 1, 1, 1));    % Echelle de représentation
+sendStr(1,sprintf('scale %d %d %d', 1, 1, 1));    % Echelle de reprÃ©sentation
 sendStr(1,'children [');
 
 sendStr(0,'#-------- Samples  -----------#\n\n');
@@ -77,7 +76,7 @@ sendStr(2,'Shape {\n');
 sendStr(3,'geometry PointSet {\n');
 sendStr(4,'coord Coordinate{\n');
 sendStr(5,'point [\n');
-   
+
 for ij=1:nbP
     ind = find(TS(ij,:)>thr_min & ~isnan(TS(ij,:)));
     xyz = [aX(ij,ind); aY(ij,ind) ; aZ(ij,ind)];
@@ -89,20 +88,20 @@ sendStr(2,'}\n');%Coordinate
 sendStr(4,'color Color {\n');
 sendStr(5,'color [\n');
 
-nbc = size(cmap,1);
+nbc = size(cmap_struct.cmap,1);
 
 %map = [map; 0 0 0]; % on ajoute la couleur noire pour les valeurs NaN;
 
 for ij=1:nbP
-    ind = (TS(ij,:)>thr_min & ~isnan(TS(ij,:)));    
+    ind = (TS(ij,:)>thr_min & ~isnan(TS(ij,:)));
     jnd = round((TS(ij,ind)-thr_min)/(thr_max-thr_min)*(nbc-1))+1;
-    
+
     tmp = (jnd<=0);
     jnd(tmp) = 1;
     tmp = (jnd>nbc);
     jnd(tmp) = nbc;
-    
-    inc = cmap(jnd,:)';
+
+    inc = cmap_struct.cmap(jnd,:)';
     sendStr(6,sprintf('%f %f %f,\n',inc));
 end
 
@@ -115,12 +114,12 @@ sendStr(0,'} # Transform\n');% Transform
 fclose(fout);
 
 
+    function sendStr(indent,str)
+        tabs = '                    ';
+        if indent>0
+            fprintf(fout,tabs(1:indent));
+        end
+        fprintf(fout,str);
+    end
 
-
-function sendStr(indent,str)
-global fout;
-tabs = '                    ';
-if indent>0
-    fprintf(fout,tabs(1:indent));
 end
-fprintf(fout,str);

@@ -22,6 +22,7 @@ idx_rem=ismember(tag_shp,tag_shp(idx_rem));
 delete(h_in(idx_rem));
 h_in(idx_rem)=[];
 
+info_data_shp=cellfun(@(x) shapeinfo(x),new_shp_f,'un',0);
 geo_data_shp=cellfun(@(x) shaperead(x),new_shp_f,'un',0);
 
 
@@ -30,17 +31,17 @@ for uishp=1:numel(geo_data_shp)
         continue;
     end
     
-    if contains(new_shp_f{uishp},'strat')
+    if contains(new_shp_f{uishp},'strat','IgnoreCase',true)
         color = [0.6 0 0];
         sty='-';
         mark='none';
         type= 'stratum';
-    elseif contains(new_shp_f{uishp},'trans')
+    elseif contains(new_shp_f{uishp},'trans','IgnoreCase',true)
         color = [0 0 0.6];
         sty='--';
         mark='none';
         type='transects';
-    elseif contains(new_shp_f{uishp},'cont')
+    elseif contains(new_shp_f{uishp},'cont','IgnoreCase',true)
         color = [0.4 0.4 0.4];
         sty='-';
         mark='none';
@@ -54,12 +55,21 @@ for uishp=1:numel(geo_data_shp)
     
     for i_feat=1:numel(geo_data_shp{uishp})
         try
+
+            x=geo_data_shp{uishp}(i_feat).X;
+            y=geo_data_shp{uishp}(i_feat).Y;
+            try
+                [lat_disp,lon_disp] = projinv(info_data_shp{uishp}.CoordinateReferenceSystem,x,y);
+                [bbox_lat,bbox_lon]=projinv(info_data_shp{uishp}.CoordinateReferenceSystem,...
+                    geo_data_shp{uishp}(i_feat).BoundingBox(:,1),geo_data_shp{uishp}(i_feat).BoundingBox(:,2));
+                bbox = [bbox_lon bbox_lat];
+            catch
+                lat_disp = y;
+                lon_disp = x;
+                bbox=geo_data_shp{uishp}(i_feat).BoundingBox;
+            end
             
-            lat_disp=geo_data_shp{uishp}(i_feat).Y;
-            lon_disp=geo_data_shp{uishp}(i_feat).X;
-            bbox=geo_data_shp{uishp}(i_feat).BoundingBox;
-            
-            
+            lon_disp(lon_disp<0)=lon_disp(lon_disp<0)+360;
             
             if numel(lat_disp)>1000
                 [lat_disp,lon_disp] = reducem(lat_disp',lon_disp');
@@ -72,16 +82,20 @@ for uishp=1:numel(geo_data_shp)
             tmp_plot.LatitudeDataMode='manual';
             h_in=[h_in tmp_plot];
             
+            temp_txt=[];
+            
             switch type
                 
                 case 'stratum'
-                    if isfield(geo_data_shp{uishp}(i_feat),'Stratum')
-                        if isnumeric(geo_data_shp{uishp}(i_feat).Stratum)
-                            str=num2str(geo_data_shp{uishp}(i_feat).Stratum);
+                    ff = fieldnames(geo_data_shp{uishp}(i_feat));
+                    id = find(matches(ff,{'stratum','stratum_co'},"IgnoreCase",true),1);
+                    if ~isempty(id)
+                        if isnumeric(geo_data_shp{uishp}(i_feat).(ff{id}))
+                            str=num2str(geo_data_shp{uishp}(i_feat).(ff{id}));
                         else
-                            str=geo_data_shp{uishp}(i_feat).Stratum;
+                            str=geo_data_shp{uishp}(i_feat).(ff{id});
                         end
-                        temp_txt=text(ax,nanmean(bbox(:,2)),nanmean(bbox(:,1)),str,...
+                        temp_txt=text(ax,mean(bbox(:,2)),mean(bbox(:,1)),str,...
                             'Fontsize',10,'Fontweight','bold','Interpreter','None','VerticalAlignment','bottom','Clipping','on','Color',color,'tag',new_shp_f{uishp});
                     end
                 case 'transects'
@@ -91,11 +105,10 @@ for uishp=1:numel(geo_data_shp)
                         else
                             str=geo_data_shp{uishp}(i_feat).Transect;
                         end
-                        temp_txt=text(ax,nanmean(bbox(:,2)),nanmean(bbox(:,1)),str,...
+                        temp_txt=text(ax,mean(bbox(:,2)),mean(bbox(:,1)),str,...
                             'Fontsize',6,'Fontweight','normal','Interpreter','None','VerticalAlignment','bottom','Clipping','on','Color',color,'tag',new_shp_f{uishp});
                     end
-                otherwise
-                    temp_txt=[];
+                    
             end
             
             h_in=[h_in temp_txt];

@@ -9,7 +9,8 @@ try
     end
     for i=1:length(k_1_val)
         for j=1:length(k_2_val)
-            dbconn.insert(t_m2m,{k_1,k_2},{k_1_val(i),k_2_val(j)});
+            dbconn.sqlwrite(t_m2m,table(k_1_val(i),k_2_val(j),'VariableNames',{k_1,k_2}));
+            %dbconn.insert(t_m2m,{k_1,k_2},{k_1_val(i),k_2_val(j)});
         end
     end
     

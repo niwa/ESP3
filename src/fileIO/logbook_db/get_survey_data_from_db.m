@@ -1,7 +1,6 @@
 function survey_data=get_survey_data_from_db(filenames)
 survey_data={};
 if isempty(filenames)
-    
     return;
 end
 
@@ -9,58 +8,67 @@ if~iscell(filenames)
     filenames ={filenames};
 end
 
+[path_cell,~,~] = cellfun(@fileparts,filenames(~isfolder(filenames)),'UniformOutput',false);
+path_cell = [path_cell,filenames(isfolder(filenames))];
+[path_cell_unique,~,idx_u] = unique(path_cell);
+
 survey_data=cell(1,numel(filenames));
+idf = 0;
+for uip = 1:numel(path_cell_unique)
+    db_file=fullfile(path_cell_unique{uip},'echo_logbook.db');
 
-for ip=1:length(filenames)
-    try
-        if isfolder(filenames{ip})
-            path_f=filenames{ip};
-        else
-            [path_f,file,ext]=fileparts(filenames{ip});
-        end
-        
-        db_file=fullfile(path_f,'echo_logbook.db');
-        
-        if ~(exist(db_file,'file')==2)
-            continue;
-        end
-        
-        idata=1;
-        dbconn=sqlite(db_file,'connect');
-        createlogbookTable(dbconn);
-        
-        survey_data_db=dbconn.fetch('select Voyage,SurveyName from survey ');
-        
-        if isempty(survey_data_db)
-            survey_data_db={'' ''};
-        end
-        
-        if ~isfolder(filenames{ip})
-            curr_file_data=dbconn.fetch(sprintf('select Snapshot,Type,Stratum,Transect,StartTime,EndTime,Comment from logbook where Filename like "%s%s"',file,ext));
-            nb_data=size(curr_file_data,1);
-            
-            for id=1:nb_data
-                survey_data{ip}{idata}=survey_data_cl('Voyage',survey_data_db{1},...,...
-                    'SurveyName',survey_data_db{2},...
-                    'Type',curr_file_data{id,2},...
-                    'Snapshot',curr_file_data{id,1},...
-                    'Stratum',curr_file_data{id,3},...
-                    'Transect',curr_file_data{id,4},...
-                    'StartTime',datenum(curr_file_data{id,5}),...
-                    'EndTime',datenum(curr_file_data{id,6}));
-                idata=idata+1;
-            end
-        else
-            survey_data{ip}{1}=survey_data_cl('Voyage',survey_data_db{1},...,...
-                'SurveyName',survey_data_db{2});
-        end
-        close(dbconn);
-    catch err
-        print_errors_and_warnings([],'error',err);
+    if ~isfile(db_file)
+        continue;
     end
+    dbconn=connect_to_db(db_file);
+    subfilenames = filenames(idx_u==uip);
+
+    for ip=1:length(subfilenames)
+        try
+            idata=1;
+            idf = idf+1;
+            survey_data_db=dbconn.fetch('SELECT Voyage,SurveyName FROM survey ');
+
+            if isempty(survey_data_db)
+                voy = '';
+                sname = '';
+            else
+                voy = survey_data_db.Voyage{1};
+                sname = survey_data_db.SurveyName{1};
+            end
+
+            if ~isfolder(subfilenames{ip})
+                [~,file,~]=fileparts(subfilenames{ip});
+                sql_query = sprintf('SELECT Snapshot,Type,Stratum,Transect,StartTime,EndTime,Comment FROM logbook WHERE instr(Filename, ''%s'')>0',file);
+                %opts = databaseImportOptions(dbconn,sql_query);
+
+                %opts.VariableTypes(ismember(opts.VariableNames,{'StartTime','EndTime'})) = {'datetime'};
+
+                curr_file_data=dbconn.fetch(sql_query);
+                nb_data=size(curr_file_data,1);
+
+                for id=1:nb_data
+                    survey_data{idf}{idata}=survey_data_cl('Voyage',voy,...
+                        'SurveyName',sname,...
+                        'Type',curr_file_data.Type{id},...
+                        'Snapshot',curr_file_data.Snapshot(id),...
+                        'Stratum',curr_file_data.Stratum{id},...
+                        'Transect',curr_file_data.Transect(id),...
+                        'StartTime',datenum(curr_file_data.StartTime(id)),...
+                        'EndTime',datenum(curr_file_data.EndTime(id)));
+                    idata=idata+1;
+                end
+            else
+                survey_data{idf}{1}=survey_data_cl('Voyage',voy,...,...
+                    'SurveyName',sname);
+            end
+
+        catch err
+            print_errors_and_warnings([],'error',err);
+        end
+    end
+    close(dbconn);
 end
-
-
 
 
 end

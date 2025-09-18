@@ -11,14 +11,14 @@ if isempty(Filename)
     return;
 end
 
-[def_path_m,~,~]=fileparts(Filename{1});
+def_path_m = fullfile(tempdir,'data_echo');
 
 addRequired(p,'Filename',@(x) ischar(x)||iscell(x));
 addParameter(p,'PathToMemmap',def_path_m,@ischar);
 addParameter(p,'already_opened_files',{},@iscell);
 addParameter(p,'Frequencies',[],@isnumeric);
 addParameter(p,'load_bar_comp',[]);
-addParameter(p,'force_open',0);
+addParameter(p,'force_open',1);
 
 parse(p,Filename,varargin{:});
 
@@ -52,7 +52,7 @@ if p.Results.force_open==0
     
     %str_choice={'hours' 'days' 'weeks'};
     str_choice={'hours' 'days'};
-    open_by=question_dialog_fig([],'File combination','Do you want to group files by: ','opt',str_choice,'timeout',5);
+    open_by=question_dialog_fig([],'File combination','Do you want to group files by: ','opt',str_choice,'timeout',10);
     
     if isempty(open_by)
         new_layers=[];
@@ -83,7 +83,7 @@ if p.Results.force_open==0
     
     dates_to_load_str=cellfun(@(x) datestr(x,t_fmt),(num2cell(dates_to_load)),'un',0);
     
-     [idx_out,val] = listdlg_perso([],sprintf('Choose %s(s) to load',open_by),dates_to_load_str,'init_val',idx_to_load_selected,'timeout',5);
+    [idx_out,val] = listdlg_perso([],sprintf('Choose %s(s) to load',open_by),dates_to_load_str,'init_val',idx_to_load_selected,'timeout',10);
     if val==0
         new_layers=[];
         return;

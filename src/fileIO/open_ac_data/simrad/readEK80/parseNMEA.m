@@ -77,31 +77,35 @@ switch type(3:end)
             format = '%s %2.0f %2d %f %f %f %f %f %f %f %f %d %d';
             out = textscan(nmeadata, format, 1, 'delimiter', ',');
             
-        nmea.type=type;
-        nmea.time=[out{2} out{3} out{4}];                     
-        nmea.heading=double(out{5});
-        nmea.yaw=nan;
-        nmea.heave=out{8};
-        nmea.roll=out{6};
-        nmea.pitch=out{7};
+        nmea.type = type;
+        nmea.time = [out{2} out{3} out{4}];                     
+        nmea.heading = double(out{5});
+        nmea.yaw = nan;
+        nmea.heave = -out{8};
+        nmea.roll = out{6};
+        nmea.pitch = out{7};
         nmea.heading_type='T';
         nmea_type='attitude';
        
         else
-            %'$PASHR,065803.372,83.17,T,0.97,0.14,-0.36,0.021,0.021,0.015,2,1 ';
-            format = '%2.0f %2d %f %f %c %f %f %f %f %f %f %d %d';
+            %$PASHR,0,0,T,4.62,2.39,0,0,0,0,0    ,'
+            %'$PASHR,065803.372,83.17,T,0.97,0.14,-0.36,0.021,0.021,0.015,2,1 
+                        format = '%f %f %c %f %f %f %f %f %f %d %d';
             out = textscan(nmeadata, format, 1, 'delimiter', ',');
 
         nmea.type=type;
-        nmea.time=[out{1} out{2} out{3}];                     
-        nmea.heading=double(out{4});
-        nmea.yaw=nan;
-        nmea.heave=out{8};
-        nmea.roll=out{6};
-        nmea.pitch=out{7};
-        nmea.heading_type=out{5};
+        hh = floor(out{1}/1e4);
+        mm = floor((out{1}-hh*1e4)/1e2);
+        ss = out{1} - hh*1e4 - mm*1e2;
+        nmea.time = [hh mm ss];                     
+        nmea.heading = double(out{2});
+        nmea.yaw = nan;
+        nmea.heave = -out{6};
+        nmea.roll = out{4};
+        nmea.pitch = out{5};
+        nmea.heading_type=out{3};
         nmea_type='attitude';
-            
+
         end
     case 'HDG'
         %'$HCHDG,176.2,0.0,E,22.1,E   '
@@ -181,6 +185,19 @@ switch type(3:end)
                     'lon_hem', out{9});
         end
         nmea_type='gps';
+        
+    case 'ZDA'
+        %$GPZDA,172809.456,12,07,1996,00,00*45
+         format = '%2d %2d %f %2d %2d %4d %2d %2d %s';
+        
+        out = textscan(nmeadata, format, 1, 'delimiter', ',');
+        
+        nmea = struct('type', type, ...
+            'time', [out{6} out{5} out{4} out{1} out{2} out{3}]);
+        
+        nmea_type='time';
+        
+    
 
     case 'RMC'    
         
@@ -262,6 +279,15 @@ switch type(3:end)
              'depth', out{1}, ...
              'unit', 'M'...
              );
+         nmea_type='depth';
+         case 'TBD'
+             % $PNTBD,%f,M *hh'
+             format = '%f';
+             out = textscan(nmeadata, format, 1, 'delimiter', ',');
+             nmea = struct('type', type, ...
+                 'depth', out{1}, ...
+                 'unit', 'M'...
+                 );
          nmea_type='depth';
       case 'DBS'
         %$--DBS,x.x,f,x.x,M,x.x,F*hh<CR><LF>

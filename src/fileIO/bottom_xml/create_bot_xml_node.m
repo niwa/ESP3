@@ -60,7 +60,7 @@ switch bot_fmt_ver
         bottom_node.appendChild(tag_node);
         bottom_file.appendChild(bottom_node);
         
-    case '0.3'
+    case {'0.3' '0.4'}
         % ping number
         ping_str = sprintf('%.0f ',bot_xml.Bottom.Ping);
         ping_node = docNode.createElement('ping');

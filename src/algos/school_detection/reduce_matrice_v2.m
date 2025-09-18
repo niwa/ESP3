@@ -13,11 +13,11 @@ I_other_can(I_other_can==0)=nb_samples;
 J_other_can=ceil(other_candidates/nb_samples);
 
 
-idx_col=(dist_pings>=(nanmin(dist_pings(J_curr_can))-horz_link_max))&(dist_pings<=(nanmax(dist_pings(J_curr_can))+horz_link_max));
-idx_row=(range>=(nanmin(range(I_curr_can))-vert_link_max))&(range<=(nanmax(range(I_curr_can))+vert_link_max));
+idx_col=(dist_pings>=(min(dist_pings(J_curr_can))-horz_link_max))&(dist_pings<=(max(dist_pings(J_curr_can))+horz_link_max));
+idx_row=(range>=(min(range(I_curr_can))-vert_link_max))&(range<=(max(range(I_curr_can))+vert_link_max));
 
-idx_col_other=(dist_pings>=(nanmin(dist_pings(J_other_can))-horz_link_max))&(dist_pings<=(nanmax(dist_pings(J_other_can))+horz_link_max));
-idx_row_other=(range>=(nanmin(range(I_other_can))-vert_link_max))&(range<=(nanmax(range(I_other_can))+vert_link_max));
+idx_col_other=(dist_pings>=(min(dist_pings(J_other_can))-horz_link_max))&(dist_pings<=(max(dist_pings(J_other_can))+horz_link_max));
+idx_row_other=(range>=(min(range(I_other_can))-vert_link_max))&(range<=(max(range(I_other_can))+vert_link_max));
 % tic
 % idx_row_tot_first=find(idx_row&idx_row_other,1);
 % idx_col_tot_first=find(idx_col&idx_col_other,1);

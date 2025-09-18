@@ -87,13 +87,13 @@ while ~feof(f)                          % and read until it ends
     s = strtrim(fgetl(f));              % Remove any leading/trailing spaces
     if isempty(s)
         continue;
-    end;
+    end
     if (s(1)==';')                      % ';' start comment lines
         continue;
-    end;
+    end
     if (s(1)=='#')                      % '#' start comment lines
         continue;
-    end;
+    end
     if ( s(1)=='[' ) && (s(end)==']' )
         % We found section
         CurrMainField = genvarname(lower(s(2:end-1)));

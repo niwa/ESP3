@@ -35,19 +35,20 @@
 % Yoann Ladroit, NIWA. Type |help EchoAnalysis.m| for copyright information.
 
 %% Function
-function keyboard_func(src,callbackdata,main_figure)
+function keyboard_func(~,callbackdata,main_figure)
 
+cKey = callbackdata.Key;
 
 cursor_mode_tool_comp=getappdata(main_figure,'Cursor_mode_tool');
     
 if ~isdeployed()
-    disp_perso(main_figure,callbackdata.Key) ;
+    disp_perso(main_figure,cKey) ;
 end
 
 
 curr_disp=get_esp3_prop('curr_disp');
 
-switch callbackdata.Key
+switch cKey
     case {'f' 'e' 'f5' 'a' 'leftarrow','rightarrow','uparrow','downarrow','d','w','s'}
         layer=get_current_layer();
         if ~isempty(layer)
@@ -66,18 +67,20 @@ switch callbackdata.Key
 end
 
 
-
 try
-    switch callbackdata.Key
+    switch cKey
         
         case {'leftarrow','rightarrow','uparrow','downarrow','a','d','w','s'}
-            
-            
+                        
             axes_panel_comp=getappdata(main_figure,'Axes_panel');
-            main_axes=axes_panel_comp.main_axes;
-            
-            if ~isfield(axes_panel_comp,'main_echo')
-                return;
+            main_axes=axes_panel_comp.echo_obj.main_ax;
+            if strcmpi(curr_disp.YDir,'normal')
+                switch cKey
+                    case 'uparrow'
+                        cKey = 'downarrow';
+                    case 'downarrow'
+                        cKey = 'uparrow';
+                end
             end
             
             x_lim=double(get(main_axes,'xlim'));
@@ -88,16 +91,16 @@ try
             h_m=ceil(curr_disp.Move_dy_dx(2)*dx);
             v_m=curr_disp.Move_dy_dx(1)*dy;
             
-            switch callbackdata.Key
+            switch cKey
                 
                 case {'a' 'leftarrow'}
                     if strcmpi(callbackdata.Modifier,'control')
-                        if ~isempty(trans_obj.Regions) && strcmpi(callbackdata.Key,'a')
+                        if ~isempty(trans_obj.Regions) && strcmpi(cKey,'a')
                             curr_disp.setActive_reg_ID({trans_obj.Regions(:).Unique_ID});
                         end
                     else
                         if x_lim(1)>xdata(1)
-                            x0=nanmax(xdata(1),x_lim(1)-h_m);
+                            x0=max(xdata(1),x_lim(1)-h_m);
                             x_lim=[x0,x0+dx];
                             
                             set(main_axes,'xlim',x_lim);
@@ -108,22 +111,22 @@ try
                 case {'rightarrow' 'd'}
                     if x_lim(2)<xdata(end)
                         
-                        x1=nanmin(xdata(end),x_lim(2)+h_m);
+                        x1=min(xdata(end),x_lim(2)+h_m);
                         x_lim=[x1-dx,x1];
                         
-                        set(main_axes,'xlim',x_lim);
+                        set(main_axes,'xlim',x_lim+20);
                         set(main_axes,'ylim',y_lim);
                     end
                 case {'downarrow'}
                     if y_lim(2)<ydata(end)
-                        y_lim=[nanmin(ydata(end),y_lim(2)+v_m)-dy,nanmin(ydata(end),y_lim(2)+v_m)];
+                        y_lim=[min(ydata(end),y_lim(2)+v_m)-dy,min(ydata(end),y_lim(2)+v_m)];
                         set(main_axes,'ylim',y_lim);
                     end
                 case 's'
                     
                     if isempty(callbackdata.Modifier)
                         if y_lim(2)<ydata(end)
-                            y_lim=[nanmin(ydata(end),y_lim(2)+v_m)-dy,nanmin(ydata(end),y_lim(2)+v_m)];
+                            y_lim=[min(ydata(end),y_lim(2)+v_m)-dy,min(ydata(end),y_lim(2)+v_m)];
                             set(main_axes,'ylim',y_lim);
                         end
                     elseif all(ismember({'control' 'shift'},callbackdata.Modifier))
@@ -134,7 +137,7 @@ try
                     
                 case {'uparrow' 'w'}
                     if y_lim(1)>ydata(1)
-                        y_lim=[nanmax(ydata(1),y_lim(1)-v_m),nanmax(ydata(1),y_lim(1)-v_m)+dy];
+                        y_lim=[max(ydata(1),y_lim(1)-v_m),max(ydata(1),y_lim(1)-v_m)+dy];
                         set(main_axes,'ylim',y_lim);
                     end
             end
@@ -202,11 +205,13 @@ try
                     curr_disp.CursorMode='Normal';
             end
         case {'6' 'numpad6'}
-            switch curr_disp.CursorMode
-                case 'Pan'
-                    curr_disp.CursorMode='Normal';
-                otherwise
+            switch get(cursor_mode_tool_comp.create_reg,'state')
+                case 'off'
+                    set(cursor_mode_tool_comp.pan,'state','on');
                     curr_disp.CursorMode='Pan';
+                case 'on'
+                    set(cursor_mode_tool_comp.pan,'state','off');
+                    curr_disp.CursorMode='Normal';
             end
         case {'7' 'numpad7'}
             switch curr_disp.CursorMode
@@ -277,14 +282,14 @@ try
                 if isempty(id_map)
                     id_map=0;
                 end
-                c_new=cmaps{nanmin(rem(id_map,length(cmaps))+1,length(cmaps))};
+                c_new=cmaps{min(rem(id_map,length(cmaps))+1,length(cmaps))};
                 
                 curr_disp.Cmap=c_new;
             end
         case 'f'
             if length(layer.Frequencies)>1
                 if isempty(callbackdata.Modifier)
-                    curr_disp.ChannelID=layer.ChannelID{nanmin(rem(idx_freq,length(layer.ChannelID))+1,length(layer.ChannelID))};
+                    curr_disp.ChannelID=layer.ChannelID{min(rem(idx_freq,length(layer.ChannelID))+1,length(layer.ChannelID))};
                 elseif  strcmpi(callbackdata.Modifier,'shift')
                     id=idx_freq-1;
                     id(id==0)=length(layer.ChannelID);
@@ -297,7 +302,7 @@ try
                     fields=trans_obj.Data.Fieldname;
                     id_field=find(strcmp(curr_disp.Fieldname,fields));
                     if isempty(callbackdata.Modifier)
-                        curr_disp.setField(fields{nanmin(rem(id_field,length(fields))+1,length(fields))});
+                        curr_disp.setField(fields{min(rem(id_field,length(fields))+1,length(fields))});
                     elseif  strcmpi(callbackdata.Modifier,'shift')
                         id=id_field-1;
                         id(id==0)=length(fields);
@@ -316,20 +321,22 @@ try
             end
         case 'add'
             curr_disp=get_esp3_prop('curr_disp');
-            curr_disp.setCax(curr_disp.Cax+1);
+            cc = ceil(diff(curr_disp.Cax)/20);
+            curr_disp.setCax(curr_disp.Cax+cc);
         case 'subtract'
             curr_disp=get_esp3_prop('curr_disp');
-            curr_disp.setCax(curr_disp.Cax-1);
+            cc = ceil(diff(curr_disp.Cax)/20);
+            curr_disp.setCax(curr_disp.Cax-cc);
         case 'delete'
             delete_region_callback([],[],main_figure,curr_disp.Active_reg_ID);
         case 'l'
             show_status_bar(main_figure);
             load_bar_comp=getappdata(main_figure,'Loading_bar');
             load_bar_comp.progress_bar.setText('Loading Logbook');
-            if isempty(callbackdata.Modifier)
-                load_logbook_tab_from_db(main_figure,0);
+            if isempty(callbackdata.Modifier)    
+                load_logbook_fig(main_figure,false);
             elseif  strcmpi(callbackdata.Modifier,'shift')
-                load_logbook_tab_from_db(main_figure,0,1);
+                load_logbook_fig(main_figure,false,true);
             end
             hide_status_bar(main_figure);
         case 'y'
@@ -345,6 +352,7 @@ try
         case 'home'
             go_to_ping(1,main_figure);
         case {'x' 'end'}
+            number_lay = numel(get_esp3_prop('layers'));
             go_to_ping(length(number_lay),main_figure);
         case {'escape'}
             curr_disp.CursorMode=curr_disp.CursorMode;
@@ -360,18 +368,12 @@ try
                 
                 db_file=fullfile(path_f,'echo_logbook.db');
             end
-            disp_perso(main_figure,sprintf('Looking for new files for logbook %s',db_file));
-            [file_added,files_rem]=layer_cl().update_echo_logbook_dbfile('main_figure',main_figure,'DbFile',db_file);
             
+            disp_perso(main_figure,sprintf('Looking for new files for logbook %s',db_file));
+            [file_added,files_rem]=layer.update_echo_logbook_dbfile('main_figure',main_figure,'DbFile',db_file);
             if ~isempty(file_added)||~isempty(files_rem)
-                dest_fig=getappdata(main_figure,'echo_tab_panel');
-                [path_f,~]=fileparts(db_file);
-                tag=sprintf('logbook_%s',path_f);
-                tab_obj=findobj(dest_fig,'Tag',tag);
-                
-                if ~isempty(tab_obj)
-                    reload_logbook_fig(tab_obj(1),file_added);
-                end
+                load_logbook_fig(main_figure,true);
+                update_logbook_panel_f(fullfile(path_f,file_added));
             end
         otherwise
             if ~isdeployed
@@ -380,7 +382,7 @@ try
     end
     %update_info_panel([],[],1);
 catch err
-    warning('Error in Keyboard_func while pressing %s',callbackdata.Key);
+    warning('Error in Keyboard_func while pressing %s',cKey);
     print_errors_and_warnings(1,'error',err);
     hide_status_bar(main_figure); 
 end

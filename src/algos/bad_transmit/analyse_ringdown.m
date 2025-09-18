@@ -1,7 +1,5 @@
 function idx_ringdown = analyse_ringdown(RingDown,rd_thr)
 
-global DEBUG;
-
 %% PREPROCESSING ON INPUT VARIABLES
 
 % total number of pings
@@ -14,7 +12,7 @@ end
 
 % data are supposed to be one sample per ping only. If input is more than one sample, compute the mean value per ping
 if size(RingDown,1)>1 && size(RingDown,2)>1
-    RingDownMean = 20*log10(nanmean(10.^(RingDown/20)));
+    RingDownMean = 20*log10(mean(10.^(RingDown/20)));
 else
     RingDownMean = RingDown;
 end
@@ -35,7 +33,7 @@ end
 bin = min(11,round(nb_pings/5));
 
 [pdf_RD,x_RD] = pdf_perso(RingDownMean,'bin',2*bin);
-[~,idx_max] = nanmax(pdf_RD);
+[~,idx_max] = max(pdf_RD);
 RingDownNominal = x_RD(idx_max);
 
 % flag as good all values that are different from the nonimal value by less than twice the threshold
@@ -55,7 +53,7 @@ spc = 1;
 [s_pdf,~,y_value,~] = sliding_pdf((1:nb_pings),RingDownMean2,win,bin,spc,1);
 
 % OBSOLETE CODE
-% [~,idx_max]=nanmax(s_pdf);
+% [~,idx_max]=max(s_pdf);
 % idx_high_p=s_pdf<=(0.1*repmat(s_pdf(idx_max+(bin*(0:nb_pings-1))),size(s_pdf,1),1));
 % y_value(idx_high_p)=nan;
 
@@ -63,8 +61,8 @@ spc = 1;
 [~,idx_sort] = sort(s_pdf,1,'descend');
 idx_sort = idx_sort + ones(bin,1)*(0:size(idx_sort,2)-1)*bin;
 y_value_sorted = y_value(idx_sort);
-nb_keep=nanmin(size(y_value_sorted,1),3);
-RingDownMPV = nanmean(y_value_sorted(1:nb_keep,:));
+nb_keep=min(size(y_value_sorted,1),3);
+RingDownMPV = mean(y_value_sorted(1:nb_keep,:));
 
 % flag as good all values for whom difference with the sliding MPV is less than the threshold
 idx_ringdown_2 = abs(RingDownMean2-RingDownMPV) < rd_thr;
@@ -73,10 +71,10 @@ idx_ringdown_2 = abs(RingDownMean2-RingDownMPV) < rd_thr;
 %% COMBINING RESULTS
 % also keep pings whose ringdown value is one of the three most common
 % values in the sliding histogram
-idx_ringdown = ( idx_ringdown_2 & idx_ringdown_1 ) | nansum( bsxfun(@eq,RingDownMean2,y_value_sorted(1:nb_keep,:)) ) > 0;
+idx_ringdown = ( idx_ringdown_2 & idx_ringdown_1 ) | sum(bsxfun(@eq,RingDownMean2,y_value_sorted(1:nb_keep,:)),'omitnan') > 0;
 
 
-if DEBUG
+if  isdebugging
     
     figure();
     

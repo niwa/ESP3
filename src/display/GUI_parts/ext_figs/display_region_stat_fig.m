@@ -37,61 +37,33 @@
 %% Function
 function hfig = display_region_stat_fig(main_figure,regIntStruct,id)
 
-hfig=new_echo_figure(main_figure,'Tag',sprintf('reg_stat_%s',id),'Resize','off','Units','pixels','Position',[200 200 400 400]);
+hfig=new_echo_figure(main_figure,'Tag',sprintf('reg_stat_%s',id),'Resize','off','Units','pixels','Position',[200 200 250 250],'UiFigureBool',true);
 
-columnname = {'Variable','Value','unit'};
-columnformat = {'char','numeric','char'};
-regSummary=cell(6,3);
+layout = uigridlayout(hfig);
+layout.RowHeight = {'1x'};
+layout.ColumnWidth = {'1x'};
+Sa_lin = sum(regIntStruct.eint,'all','omitnan')./sum(max(regIntStruct.Nb_good_pings),'omitnan');
+rownames = {'Sv Mean' 'Sv std' 'Sa' 'Number of Samples' 'NASC' 'ABC' 'Region Length' 'Region Height' 'Nb Cells'};
 
-Sa_lin=(nansum(nansum(regIntStruct.eint))./nansum(nanmax(regIntStruct.Nb_good_pings)));
+units = {'%.2f dB' '%.2f dB' '%.2f dB' '%.0f' '%.6f m2/nmi2' '%.9f m2/m2' '%.0f m' '%.0f m' '%.0f'};
+regIntStruct.sv(pow2db_perso(regIntStruct.sv)<-900) = 0;
+vars = {pow2db_perso(mean(regIntStruct.sv(:)))...
+    std(pow2db_perso(regIntStruct.sv(:)),'omitnan')...
+    pow2db_perso(Sa_lin)...
+    sum(regIntStruct.nb_samples,'all','omitnan')...
+    mean(sum(regIntStruct.NASC,'omitnan'))...
+    mean(sum(regIntStruct.ABC,'omitnan'))...
+    max(regIntStruct.Dist_E(:))-min(regIntStruct.Dist_S(:))...
+    max(regIntStruct.Depth_max(:))-min(regIntStruct.Depth_min(:))...
+    nnz(regIntStruct.sv(:)>0)};
 
-regSummary{1,1}='Sv Mean';
-regSummary{1,2}=pow2db_perso(nanmean(regIntStruct.sv_mean(:)));
-regSummary{1,3}='dB';
+vvv = cellfun(@(x,y) sprintf(y,x),vars,units,'un',0);
+    
+t = table(vvv','RowNames',rownames);
 
-regSummary{2,1}='Sa';
-regSummary{2,2}=pow2db_perso(Sa_lin);
-regSummary{2,3}='dB';
+tt = uitable(layout,'Data',t);
+tt.ColumnEditable = false;
+tt.ColumnName = {};
 
-regSummary{3,1}='Number of Samples';
-regSummary{3,2}=nanmean(nansum(regIntStruct.nb_samples));
-regSummary{3,3}='';
 
-regSummary{4,1}='NASC';
-regSummary{4,2}=nanmean(nansum(regIntStruct.NASC));
-regSummary{4,3}='m2/nmi2';
-
-regSummary{5,1}='ABC';
-regSummary{5,2}=nanmean(nansum(regIntStruct.ABC));
-%   regSummary{5,2}= nansum(nansum(regIntStruct.eint))./nansum(nanmax(regIntStruct.Nb_good_pings));
-regSummary{5,3}='m2/m2';
-
-regSummary{6,1}='Region Length';
-regSummary{6,2}=nanmax(regIntStruct.Dist_E(:))-nanmin(regIntStruct.Dist_S(:));
-regSummary{6,3}='m';
-
-regSummary{7,1}='Region Height';
-regSummary{7,2}=nanmax(regIntStruct.Depth_max(:))-nanmin(regIntStruct.Depth_min(:));
-regSummary{7,3}='m';
-
-regSummary{8,1}='Nb Cells';
-regSummary{8,2}=nansum(regIntStruct.sv_mean(:)>0);
-regSummary{8,3}='';
-
-% regSummary{9,1}='Abscf';
-% regSummary{9,2}=Sa_lin;%Abscf Region
-% regSummary{9,3}='m2/m2';
-% 
-
-table_main=uitable('Parent',hfig,...
-    'Data', regSummary,...
-    'ColumnName', columnname,...
-    'ColumnFormat', columnformat,...
-    'ColumnEditable', [false false false],...
-    'Units','Normalized','Position',[0 0 1 1],...
-    'RowName',[]);
-
-pos_t = getpixelposition(table_main);
-
-set(table_main,'ColumnWidth',{pos_t(3)/3, pos_t(3)/3, pos_t(3)/3});
 

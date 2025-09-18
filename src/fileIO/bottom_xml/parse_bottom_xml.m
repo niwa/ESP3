@@ -8,7 +8,8 @@ if ~strcmpi(xml_struct.Name,'bottom_file')
     return;
 end
 
-bot_fmt_ver = num2str(xml_struct.Attributes(1).Value,'%.1f');
+idx_ver = strcmpi({xml_struct.Attributes(:).Name},'version');
+bot_fmt_ver = num2str(xml_struct.Attributes(idx_ver).Value,'%.1f');
 
 bottoms_node = get_childs(xml_struct,'bottom_line');
 
@@ -21,21 +22,21 @@ end
 nb_bot = length(bottoms_node);
 bottom_xml = cell(1,nb_bot);
 
-for i = 1:nb_bot
+for ibot = 1:nb_bot
     
-    bottom_xml{i}.Infos = get_node_att(xml_struct.Children(i));
+    bottom_xml{ibot}.Infos = get_node_att(xml_struct.Children(ibot));
     
-    if isnumeric(bottom_xml{i}.Infos.ChannelID)
-        bottom_xml{i}.Infos.ChannelID = num2str(bottom_xml{i}.Infos.ChannelID);
+    if isnumeric(bottom_xml{ibot}.Infos.ChannelID)
+        bottom_xml{ibot}.Infos.ChannelID = num2str(bottom_xml{ibot}.Infos.ChannelID);
     end
     
     switch bot_fmt_ver
         case '0.1'
-            bottom_xml{i}.Bottom = get_bottom_node(xml_struct.Children(i));
+            bottom_xml{ibot}.Bottom = get_bottom_node(xml_struct.Children(ibot));
         case '0.2'
-            bottom_xml{i}.Bottom = get_bottom_node_v2(xml_struct.Children(i));
-        case '0.3'
-            bottom_xml{i}.Bottom = get_bottom_node_v3(xml_struct.Children(i));
+            bottom_xml{ibot}.Bottom = get_bottom_node_v2(xml_struct.Children(ibot));
+        case {'0.3','0.4'}
+            bottom_xml{ibot}.Bottom = get_bottom_node_v3(xml_struct.Children(ibot));
     end
     
     

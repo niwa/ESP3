@@ -6,14 +6,14 @@ layer=get_current_layer();
 if isempty(layer)
     return;
 end
-update_algos(main_figure,'algo_name',{name});
+update_algos('algo_name',{name});
 
 idx_algo=find(strcmpi({layer.Algo(:).Name},name),1);
 
 if ~isempty(idx_algo)
     algos=layer.Algo;
 else
-    [trans_obj,idx_freq]=layer.get_trans(curr_disp);
+    [trans_obj,~]=layer.get_trans(curr_disp);
     algos=trans_obj.Algo;
     [idx_algo,found]=find_algo_idx(trans_obj,name);
     if found==0
@@ -30,6 +30,9 @@ panel_obj=algo_panels.get_algo_panel(name);
 if isempty(panel_obj)
     return;
 end
+
+tt = algos(idx_algo).algo_params_to_table();
+disp(tt);
 
 if ~isempty(panel_obj.default_params_h)
     names=get(panel_obj.default_params_h,'String');

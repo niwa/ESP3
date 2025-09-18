@@ -24,8 +24,8 @@ if isempty(p.Results.ac_db_filename)
 else
     ac_db_filename = p.Results.ac_db_filename;
 end
-
-create_ac_database(ac_db_filename,p.Results.overwrite_db);
+file_sql=fullfile(whereisEcho,'config','db','ac_db.sql');
+create_ac_database(ac_db_filename,file_sql,p.Results.overwrite_db,true);
 
 % connect to database
 dbconn = connect_to_db(ac_db_filename);
@@ -89,27 +89,19 @@ end
 Filenames_comp=fullfile(path_f,Filenames);
 
 all_layer=open_file_standalone(Filenames_comp,'','GPSOnly',GPS_only,'load_bar_comp',load_bar_comp);
-try
-    all_layer.add_ping_data_to_db([],0);
-catch err
-    print_errors_and_warnings([],'error',err);
-    disp_perso(main_figure,'Issue updating GPS data in ping data table from logbook');
-end
+
+% try
+%     all_layer.add_ping_data_to_db([],0);
+% catch err
+%     print_errors_and_warnings([],'error',err);
+%     disp_perso(main_figure,'Issue updating GPS data in ping data table from logbook');
+% end
 
 if isempty(all_layer)
     hide_status_bar(main_figure);
     return;
 end
 
-%GPS_only(id_rem) = [];
-
-% idx_gp = find(GPS_only==2);
-%
-% for ilay = idx_gp
-%     if ~isempty(gps_data_files{ilay})
-%         all_layer(ilay).GPSData = gps_data_files{ilay};
-%     end
-% end
 
 if  ~isempty(load_bar_comp)
     load_bar_comp.progress_bar.setText('Sorting Layers');
@@ -162,7 +154,7 @@ for ilay = 1:length(new_layers)
     set(load_bar_comp.progress_bar,  'Value',ilay-1);
     switch lay_obj.Filetype
         case 'EK80'
-            [header,~] = read_EK80_config(lay_obj.Filename{1});
+            [header,~] = read_EK80_config(lay_obj.Filename{1},false);
             s_manu = 'Simrad';
             s_name = header.ApplicationName;
             s_ver = header.Version;
@@ -179,9 +171,9 @@ for ilay = 1:length(new_layers)
         'software_manufacturer',s_manu,...
         'software_name',s_name,...
         'software_version',s_ver,...
-        'software_host','',...
+        'software_host','--',...
         'software_install_date',now,...
-        'software_comments','');
+        'software_comments','--');
     
     [start_time,end_time] = lay_obj.get_time_bound_files();
     
@@ -232,7 +224,7 @@ for ilay = 1:length(new_layers)
             config = lay_obj.Transceivers(itrans).Config;
             switch lay_obj.Transceivers(itrans).Mode
                 case 'CW'
-                    parameters_FM_pulse_type = '';
+                    parameters_FM_pulse_type = '--';
                 case 'FM'
                     
                     if params.FrequencyStart(1)>params.FrequencyEnd(1)
@@ -250,11 +242,12 @@ for ilay = 1:length(new_layers)
                 'parameters_frequency_min',params.FrequencyStart(1),...
                 'parameters_frequency_max',params.FrequencyEnd(1),...
                 'parameters_power',params.TransmitPower(1),....
-                'parameters_comments',''...
+                'parameters_comments','--'...
                 );
             if ~isempty(p_temp)
                 parameters_pkey{ilay}(itrans) = p_temp{1,1};
             else
+                parameters_pkey{ilay}(itrans) = 1;
                 warning('Problem loading parameters');
             end
             
@@ -264,7 +257,7 @@ for ilay = 1:length(new_layers)
                 case list_WBTs()
                     manu = 'Simrad' ;
                 otherwise
-                    manu = '';
+                    manu = '--';
             end
             
             transceiver_pkey_temp = add_transceiver_to_t_transceiver(dbconn,...
@@ -275,15 +268,18 @@ for ilay = 1:length(new_layers)
                 'transceiver_frequency_nominal',config.Frequency,...
                 'transceiver_frequency_upper',config.FrequencyMaximum,...
                 'transceiver_firmware',num2str(config.TransceiverSoftwareVersion),...
-                'transceiver_comments','');
+                'transceiver_comments','--');
             
             if ~isempty(transceiver_pkey_temp)
                 transceiver_pkey{ilay}(itrans) = transceiver_pkey_temp{1,1};
             else
+                transceiver_pkey{ilay}(itrans) = 1;
                 warning('Problem loading transceiver');
             end
             
             switch config.BeamType
+                case 0
+                    'Single-beam';
                 case {1,65}
                     bt = 'Single-beam, split-aperture';
                 otherwise
@@ -305,11 +301,12 @@ for ilay = 1:length(new_layers)
                 'transducer_psi',round(config.EquivalentBeamAngle*1e2)/1e2,...,...
                 'transducer_beam_angle_major',round(config.BeamWidthAlongship*1e2)/1e2,...
                 'transducer_beam_angle_minor',round(config.BeamWidthAthwartship*1e2)/1e2,...
-                'transducer_comments','');
+                'transducer_comments','--');
             
             if ~isempty(transducer_pkey_temp)
                 transducer_pkey{ilay}(itrans) = transducer_pkey_temp{1,1};
             else
+                transducer_pkey{ilay}(itrans) = 1;
                 warning('Problem loading transducer');
             end
             
@@ -327,11 +324,12 @@ for ilay = 1:length(new_layers)
                 'setup_transducer_orientation_vx',config.TransducerAlphaX,...
                 'setup_transducer_orientation_vy',config.TransducerAlphaY,...
                 'setup_transducer_orientation_vz',config.TransducerAlphaZ,...
-                'setup_comments','');
+                'setup_comments','--');
             
             if ~isempty(setup_pkey_temp)
                 setup_pkey{ilay}(itrans) = setup_pkey_temp{1,1};
             else
+                setup_pkey{ilay}(itrans) = 1;
                 warning('Problem loading setup');
             end
         end
@@ -367,22 +365,22 @@ if nb_vals{1,1} > 0
     
     if isnumeric(init_vals{1,1})
         if init_vals{1,1}<90
-            lat_max = nanmax(lat_max,init_vals{1,1});
+            lat_max = max(lat_max,init_vals{1,1});
         end
     end
     if isnumeric(init_vals{1,2})
         if init_vals{1,2}>-90
-            lat_min = nanmin(lat_max,init_vals{1,2});
+            lat_min = min(lat_max,init_vals{1,2});
         end
     end
     if isnumeric(init_vals{1,3})
         if init_vals{1,3}<180
-            lon_max = nanmax(lon_max,init_vals{1,3});
+            lon_max = max(lon_max,init_vals{1,3});
         end
     end
     if isnumeric(init_vals{1,4})
         if init_vals{1,4}>-180
-            lon_min = nanmin(lon_min,init_vals{1,4});
+            lon_min = min(lon_min,init_vals{1,4});
         end
     end
     

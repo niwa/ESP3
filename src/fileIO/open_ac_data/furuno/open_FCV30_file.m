@@ -2,8 +2,8 @@ function new_layers=open_FCV30_file(file_lst_cell,varargin)
 
 p = inputParser;
 
-[def_path_m,~,~]=fileparts(file_lst_cell);
-
+def_path_m = fullfile(tempdir,'data_echo');
+new_layers=[];
 addRequired(p,'file_lst',@(x) iscell(x)||ischar(x));
 addParameter(p,'PathToMemmap',def_path_m,@ischar);
 addParameter(p,'already_opened_files',{},@iscell);
@@ -31,8 +31,7 @@ for ic=1:numel(file_lst_cell)
             filename_ini=unique(filename_ini);
             
             [fidx,val] = listdlg_perso([],'Choose Files to open',filename_ini,'timeout',10);
-            if val==0
-                new_layers=[];
+            if val==0  
                 return;
             end
         case '.ini'
@@ -44,10 +43,7 @@ for ic=1:numel(file_lst_cell)
             'already_opened_files',p.Results.already_opened_files,...
             'PathToMemmap',p.Results.PathToMemmap,'load_bar_comp',p.Results.load_bar_comp,'file_idx',fidx);  
     catch err
-        warndlg_perso([],'',sprintf('Could not open files %s\n',file_lst));
+        dlg_perso([],'',sprintf('Could not open files %s\n',file_lst));
         print_errors_and_warnings(1,'error',err);
-        %             if ~isdeployed
-        %                 rethrow(err);
-        %             end
     end
 end

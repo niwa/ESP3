@@ -67,12 +67,6 @@ for ifi=1:numel(fields)
     end
 end
 
-% t=struct2table(struct_in);
-% 
-% dbconn=connect_to_db(ac_db_filename);  
-% dbconn.insert('t_deployment',fieldnames(struct_in),t);
-% 
-% dbconn.close();
 rm_fields={'deployment_comments' 'deployment_northlimit' 'deployment_eastlimit' 'deployment_southlimit' 'deployment_westlimit' 'deployment_uplimit' 'deployment_downlimit'};
 for i=1:numel(rm_fields)
     if isfield(struct_in,rm_fields{i})

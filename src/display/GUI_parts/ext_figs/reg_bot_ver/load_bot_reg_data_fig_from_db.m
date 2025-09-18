@@ -44,8 +44,10 @@ else
     [path_xml,reg_bot_file_str,bot_file_str]=layer.create_files_str();
 end
 
-nb_bot=1;
-nb_reg=1;
+
+ botDataSummary=[];
+ regDataSummary=[];
+
 for ip=1:length(path_xml)
     db_file=fullfile(path_xml{ip},'bot_reg.db');
     
@@ -53,37 +55,24 @@ for ip=1:length(path_xml)
         initialize_reg_bot_db(db_file);
     end
     
-    dbconn=sqlite(db_file,'connect');
+    dbconn = connect_to_db(db_file);
     
-    regions_db_temp=dbconn.fetch(sprintf('select Version,Filename,Comment,Save_time from region where Filename is "%s" order by datetime(Save_time)',reg_bot_file_str{ip}));
-    bottom_db_temp=dbconn.fetch(sprintf('select Version,Filename,Comment,Save_time from bottom where Filename is "%s" order by datetime(Save_time)',bot_file_str{ip}));
+    regions_db_temp=dbconn.fetch(sprintf('select Version,Filename,Comment,Save_time from region where instr(Filename, ''%s'')>0 order by datetime(Save_time)',reg_bot_file_str{ip}));
+    bottom_db_temp=dbconn.fetch(sprintf('select Version,Filename,Comment,Save_time from bottom where instr(Filename, ''%s'')>0 order by datetime(Save_time)',bot_file_str{ip}));
     dbconn.close();
     
-    if ~isempty(bottom_db_temp)
-        botDataSummary(nb_bot:nb_bot+size(bottom_db_temp,1)-1,1)=bottom_db_temp(:,1);
-        botDataSummary(nb_bot:nb_bot+size(bottom_db_temp,1)-1,2)=bottom_db_temp(:,2);
-        botDataSummary(nb_bot:nb_bot+size(bottom_db_temp,1)-1,3)=bottom_db_temp(:,3);
-        botDataSummary(nb_bot:nb_bot+size(bottom_db_temp,1)-1,4)=bottom_db_temp(:,4);
-    end
-    if ~isempty(regions_db_temp)
-        regDataSummary(nb_reg:nb_reg+size(regions_db_temp,1)-1,1)=regions_db_temp(:,1);
-        regDataSummary(nb_reg:nb_reg+size(regions_db_temp,1)-1,2)=regions_db_temp(:,2);
-        regDataSummary(nb_reg:nb_reg+size(regions_db_temp,1)-1,3)=regions_db_temp(:,3);
-        regDataSummary(nb_reg:nb_reg+size(regions_db_temp,1)-1,4)=regions_db_temp(:,4);
-    end
-    nb_bot=nb_bot+size(bottom_db_temp,1);
-    nb_reg=nb_reg+size(regions_db_temp,1);
+    botDataSummary= [botDataSummary;bottom_db_temp];
+    regDataSummary= [regDataSummary;regions_db_temp];
+
 end
 
-if nb_reg==1
-    regDataSummary=[];
+if istable(botDataSummary)
+    botDataSummary = table2cell(botDataSummary);
 end
 
-if nb_bot==1
-    botDataSummary=[];
+if istable(regDataSummary)
+    regDataSummary = table2cell(regDataSummary);
 end
-
-
 
 reg_bot_data_fig=new_echo_figure(main_figure,...
     'Units','pixels',...
@@ -115,7 +104,7 @@ set(bot_data_table.table_main,'ColumnWidth',...
 rc_menu = uicontextmenu(ancestor(bot_data_table.table_main,'figure'),'tag','bot');
 uimenu(rc_menu,'Label','Load Selected bottom version','Callback',{@import_bot_reg_cback,main_figure});
 uimenu(rc_menu,'Label','Remove Selected bottom version','Callback',{@remove_selected_version,main_figure});
-bot_data_table.table_main.UIContextMenu =rc_menu;
+bot_data_table.table_main.ContextMenu =rc_menu;
 %set_single_select_mode_table(bot_data_table.table_main) ;
 
 % Create the uitable
@@ -138,7 +127,7 @@ set(reg_data_table.table_main,'ColumnWidth',...
 rc_menu = uicontextmenu(ancestor(reg_data_table.table_main,'figure'),'tag','reg');
 uimenu(rc_menu,'Label','Load Selected region version','Callback',{@import_bot_reg_cback,main_figure});
 uimenu(rc_menu,'Label','Remove Selected region version','Callback',{@remove_selected_version,main_figure});
-reg_data_table.table_main.UIContextMenu =rc_menu;
+reg_data_table.table_main.ContextMenu =rc_menu;
 
 setappdata(reg_bot_data_fig,'bot_data_table',bot_data_table);
 setappdata(reg_bot_data_fig,'reg_data_table',reg_data_table);
@@ -167,7 +156,7 @@ end
 
 end
 
-function insert_comment(src,evt,main_figure)
+function insert_comment(src,evt,~)
 layer=get_current_layer();
 reg_bot_data_fig=ancestor(src,'figure');
 
@@ -190,16 +179,17 @@ ver=tb.table_main.Data{evt.Indices(1),1};
 Comment=tb.table_main.Data{evt.Indices(1),3};
 idx_ver=cellfun(@(x) x==ver,tb.table_main.Data(:,1));
 tb.table_main.Data(idx_ver,3)={Comment};
+
 for ip=1:length(path_xml)
     db_file=fullfile(path_xml{ip},'bot_reg.db');
     
     dbconn=sqlite(db_file,'connect');
     
-    data_db=dbconn.fetch(sprintf('select Filename,%s,Save_time,Comment,Version from %s WHERE Filename is "%s" AND Version = %f',...
+    data_db=dbconn.fetch(sprintf('SELECT Filename,%s,Save_time,Comment,Version from %s WHERE instr(Filename, ''%s'')>0 AND Version = %f',...
         str_file,str_w,files{ip},ver));
-    dbconn.exec(sprintf('delete from %s WHERE Filename is "%s" AND Version = %f',str_w,files{ip},ver));
-    dbconn.insert(str_w,{'Filename' str_file 'Save_time' 'Comment' 'Version'},...
-        {data_db{1} data_db{2} data_db{3} Comment ver});
+    dbconn.exec(sprintf('DELETE FROM %s WHERE instr(Filename, ''%s'')>0 AND Version = %f',str_w,files{ip},ver));
+    dbconn.sqlwrite(str_w,...
+        table(data_db.Filename,data_db.Save_time,data_db.(str_file),Comment,ver,'VariableNames',{'Filename' str_file 'Save_time' 'Comment' 'Version'}));
     
     dbconn.close();
 end
@@ -239,10 +229,10 @@ end
 for ip=1:length(path_xml)
     db_file=fullfile(path_xml{ip},'bot_reg.db');
     
-    dbconn=sqlite(db_file,'connect');
-    %test=dbconn.fetch(sprintf('select * from %s WHERE Filename is "%s" AND Version = %f',str_w,file_str{ip},ver));
+    dbconn = connect_to_db(db_file);
+    %test=dbconn.fetch(sprintf('select * from %s WHERE instr(Filename, ''%s'')>0 AND Version = %f',str_w,file_str{ip},ver));
     for iv=1:numel(ver)
-        dbconn.exec(sprintf('delete from %s WHERE Filename is "%s" AND Version = %f',str_w,files{ip},ver(iv)));
+        dbconn.exec(sprintf('DELETE FROM %s WHERE instr(Filename, ''%s'')>0 AND Version = %f',str_w,files{ip},ver(iv)));
     end
     dbconn.close();
 end
@@ -286,7 +276,7 @@ switch src.Parent.Tag
         display_bottom(main_figure);
     case 'reg'
         layer.load_bot_regs('bot_ver',[],'reg_ver',ver);
-        display_regions(main_figure,'all');
+        display_regions('all');
         curr_disp.setActive_reg_ID({});
 end
 

@@ -1,70 +1,73 @@
 function format_color_gui(fig,font_choice,cmap,varargin)
-%background_col=get(groot,'defaultUicontrolBackgroundColor');
 
-%-- Alex change: BackgroundColor proprety of uitab doesn't like names and
-%prefer RGB triplet (at least on R0216b)
-% background_col = 'white';
-
-if nargin>3
-    [cmap_t,background_col,col_lab,col_grid,col_bot,col_txt,col_tracks]=init_cmap(cmap);
-    colormap(fig,cmap_t);
+if ~isempty(cmap)&&nargin>3
+    if isstruct(cmap)
+        cmap_struct = cmap;
+    else
+        cmap_struct = init_cmap(cmap);
+        colormap(fig,cmap_struct.cmap);
+    end
 else
-    background_col=[0.98 0.98 1];
-    col_lab=[0 0 0.2];
-    col_grid = [0.95 0.95 1];
+    cmap_struct.col_ax=[0.98 0.98 1];
+    cmap_struct.col_lab=[0 0 0.2];
+    cmap_struct.col_grid = [0.95 0.95 1];
 end
-for i=1:length(fig)
-    if ~isvalid(fig(i))
+
+for uif=1:length(fig)
+    if ~isvalid(fig(uif))
         continue;
     end
-    if isprop(fig(i),'Color')
-        set(fig(i),'Color',background_col);
+    if isprop(fig(uif),'Color')
+        set(fig(uif),'Color',cmap_struct.col_ax);
     end
-    
-    if isprop(fig(i),'BackgroundColor')
-        set(fig(i),'BackgroundColor',background_col);
-    end
-    
-    c_obj=findobj(fig(i),'Type','colorbar');
-    set(c_obj,'Color',col_lab);
-    
-    panel_obj=findobj(fig(i),'Type','uipanel');
-    set(panel_obj,'BackgroundColor',background_col,'bordertype','line','ForegroundColor',col_lab,'HighlightColor',background_col);
 
-    uibut_obj=findobj(fig(i),'Type','uibuttongroup');
-    set(uibut_obj,'bordertype','line','HighlightColor',col_grid);
-    
-     tab_obj=findobj(fig(i),'Type','uitab','-property','BackgroundColor');
-     set(tab_obj,'BackgroundColor',background_col);
-     if nargin>3
-         ax_obj=findobj(fig(i),'Type','axes');
-         set(ax_obj,'Color',background_col,'GridColor',...
-             col_grid,'MinorGridColor',col_grid,'XColor',col_lab,'YColor',col_lab);
-         set(ax_obj.Title,'Color',col_lab);
-         l_obj=findobj(fig(i),'Type','legend');
-         set(l_obj,'TextColor',col_lab,'Color',background_col);
-         
-     end
-    buttongroup_obj=findobj(fig(i),'Type','uibuttongroup','-property','BackgroundColor');
-    set(buttongroup_obj,'BackgroundColor',background_col,'ForegroundColor',col_lab);
-    
-    control_obj=findobj(fig(i),'Type','uicontrol','-not',{'Style','popupmenu','-or','Style','edit','-or','Style','pushbutton'});
+    if isprop(fig(uif),'BackgroundColor')
+        set(fig(uif),'BackgroundColor',cmap_struct.col_ax);
+    end
+
+    c_obj=findobj(fig(uif),'Type','colorbar');
+    set(c_obj,'Color',cmap_struct.col_lab);
+
+    panel_obj=findobj(fig(uif),'Type','uipanel');
+    set(panel_obj,'BackgroundColor',cmap_struct.col_ax,'bordertype','line','ForegroundColor',cmap_struct.col_lab,'HighlightColor',cmap_struct.col_ax);
+
+    uibut_obj=findobj(fig(uif),'Type','uibuttongroup');
+    set(uibut_obj,'bordertype','line','HighlightColor',cmap_struct.col_grid);
+
+    tab_obj=findobj(fig(uif),'Type','uitab','-property','BackgroundColor');
+    set(tab_obj,'BackgroundColor',cmap_struct.col_ax);
+
+    if nargin>3
+        ax_obj=findobj(fig(uif),'Type','axes');
+        set(ax_obj,'Color',cmap_struct.col_ax,'GridColor',...
+            cmap_struct.col_grid,'MinorGridColor',cmap_struct.col_grid,'XColor',cmap_struct.col_lab,'YColor',cmap_struct.col_lab);
+        set([ax_obj(:).Title],'Color',cmap_struct.col_lab);
+        uigl_obj =findobj(fig(uif),'Type','uigridlayout');
+        set(uigl_obj,'BackgroundColor',cmap_struct.col_ax);
+        l_obj=findobj(fig(uif),'Type','legend');
+        set(l_obj,'TextColor',cmap_struct.col_lab,'Color',cmap_struct.col_ax);
+
+    end
+    buttongroup_obj=findobj(fig(uif),'Type','uibuttongroup','-property','BackgroundColor');
+    set(buttongroup_obj,'BackgroundColor',cmap_struct.col_ax,'ForegroundColor',cmap_struct.col_lab);
+
+    control_obj=findobj(fig(uif),'Type','uicontrol','-not',{'Style','popupmenu','-or','Style','edit','-or','Style','pushbutton'});
     %control_obj=findobj(fig(i),'Type','uicontrol');
-    set(control_obj,'BackgroundColor',background_col);
-        
+    set(control_obj,'BackgroundColor',cmap_struct.col_ax);
 
-    
-    load_bar_comp=getappdata(fig(i),'Loading_bar');
+
+
+    load_bar_comp=getappdata(fig(uif),'Loading_bar');
     if ~isempty(load_bar_comp)
-        load_bar_comp.progress_bar.progaxes.Color=background_col;
-        load_bar_comp.progress_bar.progaxes.GridColor=col_lab;
+        load_bar_comp.progress_bar.progaxes.Color=cmap_struct.col_ax;
+        load_bar_comp.progress_bar.progaxes.GridColor=cmap_struct.col_lab;
     end
-    
+
     if ~isempty(font_choice)
-        if strcmp(fig(i).Tag,'font_choice')
+        if strcmp(fig(uif).Tag,'font_choice')
             continue;
         end
-        text_obj=findobj(fig(i),'-property','FontName');
+        text_obj=findobj(fig(uif),'-property','FontName');
         if ~isempty(text_obj)
             set(text_obj,'FontName',font_choice);
         end

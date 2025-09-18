@@ -1,0 +1,1925 @@
+---------------------------------------------------------
+CLASS ac_data_cl:
+---------------------------------------------------------
+PROPERTIES :
+- SubData
+- Fieldname
+- Type
+- FileId
+- BlockId
+- Nb_samples
+- Nb_pings
+- Nb_beams
+- MemapName
+
+METHODS :
+- obj ac_data_cl(varargin)
+- varargout add_to_sub_data(varargin)
+- L addlistener(sources, properties, eventname, callback)
+- L addlistener(sources, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertynames, eventname, callback)
+- varargout concatenate_Data(varargin)
+- delete(obj)
+- TF eq(A, B)
+- varargout find_field_idx(varargin)
+- HM findobj(H, varargin)
+- prop findprop(object, propname)
+- TF ge(A, B)
+- ac_data_file get_data_idx_file(ac_data_obj, file_id)
+- varargout get_datamat(varargin)
+- varargout get_nb_pings_per_block(varargin)
+- varargout get_nb_pings_per_file(varargin)
+- varargout get_numbers(varargin)
+- varargout get_samples(varargin)
+- varargout get_subdatamat(varargin)
+- varargout group_ac_data(varargin)
+- TF gt(A, B)
+- varargout init_sub_data(varargin)
+- validity isvalid(obj)
+- TF le(A, B)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertynames, eventname, callback)
+- L listener(sources, eventname, callback)
+- L listener(sources, properties, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- TF lt(A, B)
+- varargout multiply_sub_data(varargin)
+- TF ne(A, B)
+- notify(sources, eventname)
+- notify(sources, eventname, eventdata)
+- varargout remove_sub_data(varargin)
+- varargout replace_sub_data_v2(varargin)
+
+
+---------------------------------------------------------
+CLASS algo_cl:
+---------------------------------------------------------
+PROPERTIES :
+- Name
+- Function
+- Input_params
+- Description
+- Display_name
+- Varargout
+
+METHODS :
+- L addlistener(sources, eventname, callback)
+- L addlistener(sources, properties, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertynames, eventname, callback)
+- obj algo_cl(varargin)
+- tt algo_params_to_table(obj)
+- lhs1 copy(rhs1)
+- algo_obj_cp copy_algo(algo_obj)
+- delete(obj)
+- varargout does_it_work_on_mbes(varargin)
+- TF eq(A, B)
+- HM findobj(H, varargin)
+- prop findprop(object, propname)
+- TF ge(A, B)
+- str get_algo_descr_and_params(obj)
+- algo_param_obj get_algo_param(obj, name)
+- varargout get_str_for_eval(varargin)
+- TF gt(A, B)
+- varargout init_algo_input_params(varargin)
+- varargout init_func_and_descr(varargin)
+- varargout init_varargout(varargin)
+- input_struct input_params_to_struct(obj)
+- validity isvalid(obj)
+- TF le(A, B)
+- L listener(sources, properties, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertynames, eventname, callback)
+- L listener(sources, eventname, callback)
+- TF lt(A, B)
+- TF ne(A, B)
+- notify(sources, eventname)
+- notify(sources, eventname, eventdata)
+- varargout reset_range(varargin)
+- set_input_param_validation_fcn(obj, input_param_name, validation_fcn)
+- set_input_param_value(obj, input_param_name, value)
+- set_input_param_value_range(obj, input_param_name, value_range)
+
+
+---------------------------------------------------------
+CLASS attitude_nav_cl:
+---------------------------------------------------------
+PROPERTIES :
+- Heading
+- Heave
+- Pitch
+- Roll
+- Yaw
+- Time
+- NMEA_motion
+- NMEA_heading
+
+METHODS :
+- obj attitude_nav_cl(varargin)
+- attitude_out concatenate_AttitudeNavPing(attitude_1, attitude_2)
+- Static delete(obj)
+- varargout display_att(varargin)
+- att_nav_section get_AttitudeNav_idx_section(att_nav_obj, idx)
+- Static obj load_att_from_file(fileN)
+- varargout resample_attitude_nav_data(varargin)
+- save_attitude_to_file(obj, fileN, idx_ping)
+
+
+---------------------------------------------------------
+CLASS bin_file_cl:
+---------------------------------------------------------
+PROPERTIES :
+- filename
+- encoding
+- machine_fmt
+- permission
+- content
+- position
+- blocksize
+- blockstart
+- filesize
+
+METHODS :
+- L addlistener(sources, eventname, callback)
+- L addlistener(sources, properties, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertynames, eventname, callback)
+- fobj bin_file_cl(filename, varargin)
+- delete(obj)
+- iseof eof(fobj)
+- TF eq(A, B)
+- HM findobj(H, varargin)
+- prop findprop(object, propname)
+- TF ge(A, B)
+- TF gt(A, B)
+- validity isvalid(obj)
+- TF le(A, B)
+- L listener(sources, eventname, callback)
+- L listener(sources, properties, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertynames, eventname, callback)
+- TF lt(A, B)
+- TF ne(A, B)
+- notify(sources, eventname)
+- notify(sources, eventname, eventdata)
+- data readf(fobj, varargin)
+- rewindf(fobj)
+- seekf(fobj, offset, varargin)
+- pos tellf(fobj)
+
+
+---------------------------------------------------------
+CLASS bot_params_cl:
+---------------------------------------------------------
+PROPERTIES :
+- E1
+- E2
+
+METHODS :
+- obj bot_params_cl(varargin)
+- obj_out concatenate_Bottom_param(obj_1, obj_2)
+- delete(obj)
+- bot_params_section get_bottom_param_idx_section(bottom_obj, idx)
+
+
+---------------------------------------------------------
+CLASS bottom_cl:
+---------------------------------------------------------
+PROPERTIES :
+- Fmt_version
+- Origin
+- Sample_idx
+- Tag
+- Bottom_params
+- Version
+
+METHODS :
+- obj bottom_cl(varargin)
+- line_obj bottom_to_line(obj, r_trans, time_trans)
+- bot_out concatenate_Bottom(bot_1, bot_2)
+- varargout create_bottom_from_evl(varargin)
+- delete(obj)
+- bottom_section get_bottom_idx_section(bottom_obj, idx)
+
+
+---------------------------------------------------------
+CLASS config_cl:
+---------------------------------------------------------
+PROPERTIES :
+- EthernetAddress
+- IPAddress
+- SerialNumber
+- TransceiverName
+- TransceiverNumber
+- TransceiverSoftwareVersion
+- TransceiverType
+- ChannelID
+- ChannelNumber
+- MaxTxPowerTransceiver
+- PulseLength
+- AngleOffsetAlongship
+- AngleOffsetAthwartship
+- AngleSensitivityAlongship
+- AngleSensitivityAthwartship
+- SoundSpeedNominal
+- SounderType
+- BeamType
+- BeamWidthAlongship
+- BeamWidthAthwartship
+- EquivalentBeamAngle
+- Frequency
+- FrequencyMaximum
+- FrequencyMinimum
+- Gain
+- Impedance
+- Ztrd
+- MaxTxPowerTransducer
+- SaCorrection
+- TransducerName
+- XML_string
+- Cal_FM
+- TransducerAlphaX
+- TransducerAlphaY
+- TransducerAlphaZ
+- TransducerMounting
+- TransducerOffsetX
+- TransducerOffsetY
+- TransducerOffsetZ
+- TransducerOrientation
+- TransducerSerialNumber
+- MotionCompBool
+- MotionCompStr
+- Version
+- EsOffset
+- NbQuadrants
+- RXArrayShape
+- TXArrayShape
+
+METHODS :
+- [config_str, fields, fields_name, fact, fields_fmt, fields_units] config2str(config_obj)
+- config_obj config_cl(varargin)
+- config_obj_to_xml(config_obj, xml_file)
+- delete(obj)
+- cal get_cal_fields(obj, cal)
+- Static ff get_config_cal_fields
+- config_out group_config(config_in)
+- config_obj update_config_obj_from_xml(config_obj, xml_file)
+
+
+---------------------------------------------------------
+CLASS curr_state_disp_cl:
+---------------------------------------------------------
+PROPERTIES :
+- ChannelID
+- Freq
+- CurrFolder
+- SecChannelIDs
+- SecFreqs
+- AllChannels
+- DispSecFreqs
+- DispSecFreqsWithOffset
+- DispSecFreqsOr
+- Fieldname
+- SecFieldnames
+- Fieldnames
+- Type
+- Xaxes
+- Xaxes_current
+- Cax
+- Caxes
+- YDir
+- DispBottom
+- DispUnderBottom
+- UnderBotTransparency
+- DispTracks
+- DispBadTrans
+- DispSpikes
+- DispReg
+- DispFeatures
+- DispLines
+- DispColorbar
+- DispSurveyLines
+- CursorMode
+- BeamAngularLimit
+- Grid_x
+- Grid_y
+- CurrLayerID
+- GPU_computation
+- NbLayers
+- Cmap
+- ReverseCmap
+- Font
+- Bot_changed_flag
+- UIupdate
+- Online
+- Basemap
+- Basemaps
+- Move_dy_dx
+- Disp_dy_dx
+- Active_reg_ID
+- Active_line_ID
+- Al_opt_tab_size_ratio
+- Reg_changed_flag
+- R_disp
+- V_axes_ratio
+- H_axes_ratio
+- EchoQuality
+
+METHODS :
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, properties, eventname, callback)
+- L addlistener(sources, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertynames, eventname, callback)
+- obj curr_state_disp_cl(varargin)
+- delete(obj)
+- TF eq(A, B)
+- HM findobj(H, varargin)
+- prop findprop(object, propname)
+- TF ge(A, B)
+- Static [AlphaMapDispStr, AlphaMapDispStrMenu] getAlphamapDispProp
+- cax getCaxField(obj, field)
+- Static [HandleDispStr, HandleDispStrMenu] getHandleDispProp
+- Alphamap get_alphamap(obj)
+- [dx, dy] get_dx_dy(obj)
+- pointer get_pointer(obj)
+- TF gt(A, B)
+- varargout init_grid_val(varargin)
+- validity isvalid(obj)
+- TF le(A, B)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertynames, eventname, callback)
+- L listener(sources, eventname, callback)
+- L listener(sources, properties, eventname, callback)
+- TF lt(A, B)
+- TF ne(A, B)
+- notify(sources, eventname)
+- notify(sources, eventname, eventdata)
+- setActive_reg_ID(obj, ID)
+- setCax(obj, cax)
+- setField(obj, field)
+- setType(obj)
+- setTypeCax(obj)
+- set_dx_dy(obj, dx, dy, curr_axes)
+- varargout update_curr_disp(varargin)
+
+
+---------------------------------------------------------
+CLASS curve_cl:
+---------------------------------------------------------
+PROPERTIES :
+- XData
+- YData
+- Depth
+- SD
+- Tag
+- Xunit
+- Yunit
+- Name
+- Type
+- Unique_ID
+
+METHODS :
+- obj curve_cl(varargin)
+- sucess curve_to_csv(obj, fileN)
+- delete(obj)
+- yD filter_curve(curve_obj, s_method, win_s)
+
+
+---------------------------------------------------------
+CLASS decision_tree_cl:
+---------------------------------------------------------
+PROPERTIES :
+- Title
+- Frequencies
+- Variables
+- Classes
+- Nodes
+- ClassificationType
+- VarName
+
+METHODS :
+- varargout apply_classification_tree(varargin)
+- obj decision_tree_cl(XMLFileName)
+- delete(obj)
+- IDs get_class_node_IDs(obj)
+- IDs get_condition_node_IDs(obj)
+- vars get_frequencies(obj)
+- node get_node(obj, id)
+- IDs get_node_ids(obj)
+- [vars, use_for_clustering] get_variables(obj)
+
+
+---------------------------------------------------------
+CLASS env_data_cl:
+---------------------------------------------------------
+PROPERTIES :
+- Acidity
+- Depth
+- Salinity
+- SoundSpeed
+- AttModel
+- Temperature
+- SVP
+- CTD
+- CTD_fname
+- DropKeelOffset
+- DropKeelOffsetIsManual
+- Latitude
+- SoundVelocityProfile
+- SoundVelocitySource
+- WaterLevelDraft
+- WaterLevelDraftIsManual
+- TransducerName
+
+METHODS :
+- L addlistener(sources, propertynames, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, properties, eventname, callback)
+- L addlistener(sources, eventname, callback)
+- lhs1 copy(rhs1)
+- new_obj copy_env_data(obj)
+- delete(obj)
+- obj env_data_cl(varargin)
+- env_data_struct env_data_to_struct(obj)
+- TF eq(A, B)
+- HM findobj(H, varargin)
+- prop findprop(object, propname)
+- TF ge(A, B)
+- TF gt(A, B)
+- validity isvalid(obj)
+- TF le(A, B)
+- L listener(sources, properties, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertynames, eventname, callback)
+- L listener(sources, eventname, callback)
+- load_ctd(env_obj, fname)
+- load_svp(env_obj, fname)
+- TF lt(A, B)
+- TF ne(A, B)
+- notify(sources, eventname)
+- notify(sources, eventname, eventdata)
+- save_ctd(env_obj, fname)
+- save_svp(env_obj, fname)
+- obj set_ctd(obj, depth, temperature, salinity, ori)
+- obj set_svp(obj, depth, soundspeed, ori)
+- env_data_obj svp_from_ctd(env_data_obj)
+
+
+---------------------------------------------------------
+CLASS esp3_cl:
+---------------------------------------------------------
+PROPERTIES :
+- main_figure
+- layers
+- current_layer_id
+- app_path
+- process
+- curr_disp
+- echo_disp_obj
+- echo_3D_obj
+- logbook_fig_obj
+- scm_obj
+- bpool
+- ppool
+- future_op_obj
+- w_h
+
+METHODS :
+- add_echo_disp_obj(obj, echo_disp_obj_vec)
+- varargout add_future_op_obj(varargin)
+- varargout add_layers_to_esp3(varargin)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, properties, eventname, callback)
+- L addlistener(sources, eventname, callback)
+- L addlistener(sources, propertynames, eventname, callback)
+- varargout clean_temp_files(varargin)
+- varargout clear_future_op_obj(varargin)
+- varargout connect_parpool(varargin)
+- delete(obj)
+- varargout disconnect_parpool(varargin)
+- varargout display_all_gps_data_from_data_folders(varargin)
+- TF eq(A, B)
+- obj esp3_cl(varargin)
+- HM findobj(H, varargin)
+- prop findprop(object, propname)
+- TF ge(A, B)
+- [lay, lay_idx] get_layer(obj)
+- Static [col_from_xml, tags_from_xml, descr_from_xml] get_reg_colors_from_xml
+- TF gt(A, B)
+- validity isvalid(obj)
+- TF le(A, B)
+- varargout list_logbooks(varargin)
+- L listener(sources, eventname, callback)
+- L listener(sources, properties, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertynames, eventname, callback)
+- varargout load_layers_from_future_obj(varargin)
+- load_scm_obj(esp3_obj)
+- TF lt(A, B)
+- TF ne(A, B)
+- notify(sources, eventname)
+- notify(sources, eventname, eventdata)
+- varargout open_file(varargin)
+- varargout run_scripts(varargin)
+- set_layer(obj, lay_obj)
+- Static update_java_path
+
+
+---------------------------------------------------------
+CLASS feature_3D_cl:
+---------------------------------------------------------
+PROPERTIES :
+- Name
+- ID
+- Tag
+- Unique_ID
+- E
+- N
+- H
+- Time
+- dE
+- dN
+- dH
+- E_grid
+- N_grid
+- H_grid
+- Zone
+- Alongdist
+- Acrossdist
+- Idx_r
+- Idx_beam
+- Idx_ping
+- Sv
+- Sv_grid
+- ConvHull
+- Volume
+
+METHODS :
+- L addlistener(sources, eventname, callback)
+- L addlistener(sources, properties, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertynames, eventname, callback)
+- [obj, res] compute_Convhull(obj)
+- delete(obj)
+- TF eq(A, B)
+- obj feature_3D_cl(varargin)
+- HM findobj(H, varargin)
+- prop findprop(object, propname)
+- TF ge(A, B)
+- out get_lim(obj, varargin)
+- obj grid_feature(obj, n, sc)
+- TF gt(A, B)
+- validity isvalid(obj)
+- TF le(A, B)
+- L listener(sources, eventname, callback)
+- L listener(sources, properties, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertynames, eventname, callback)
+- TF lt(A, B)
+- TF ne(A, B)
+- notify(sources, eventname)
+- notify(sources, eventname, eventdata)
+
+
+---------------------------------------------------------
+CLASS filter_cl:
+---------------------------------------------------------
+PROPERTIES :
+- channelID
+- NoOfCoefficients
+- DecimationFactor
+- Coefficients
+
+METHODS :
+- delete(obj)
+- obj filter_cl
+
+
+---------------------------------------------------------
+CLASS gps_data_cl:
+---------------------------------------------------------
+PROPERTIES :
+- Lat
+- Long
+- Time
+- Dist
+- Speed
+- NMEA
+
+METHODS :
+- varargout att_heading_from_gps(varargin)
+- [obj_out, id_keep] clean_gps_track(obj, varargin)
+- obj compute_dist_and_speed(obj)
+- gps_data_out concatenate_GPSData(gps_data_1, gps_data_2)
+- Static delete(obj)
+- varargout display_speed(varargin)
+- gps_data_section get_GPSDData_idx_section(gps_data_obj, idx)
+- gps_data_section get_GPSDData_time_section(gps_data_obj, ts, te)
+- varargout get_straight_dist_and_time_diff(varargin)
+- varargout get_tot_dist_and_time_diff(varargin)
+- obj gps_data_cl(varargin)
+- geostruct gps_to_geostruct(obj, idx_ping)
+- Static obj load_gps_from_file(fileN)
+- varargout resample_gps_data(varargin)
+- save_gps_to_file(obj, output_file, idx_ping)
+- varargout speed_from_gps(varargin)
+
+
+---------------------------------------------------------
+CLASS input_param_cl:
+---------------------------------------------------------
+PROPERTIES :
+- Name
+- Value
+- Validation_fcn
+- Default_value
+- Value_range
+- MultiSelect
+- Disp_name
+- Tooltipstring
+- Precision
+- Units
+
+METHODS :
+- L addlistener(sources, eventname, callback)
+- L addlistener(sources, properties, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertynames, eventname, callback)
+- lhs1 copy(rhs1)
+- delete(obj)
+- TF eq(A, B)
+- HM findobj(H, varargin)
+- prop findprop(object, propname)
+- TF ge(A, B)
+- cc get_class(obj)
+- name get_name(obj)
+- TF gt(A, B)
+- obj input_param_cl(varargin)
+- validity isvalid(obj)
+- TF le(A, B)
+- L listener(sources, eventname, callback)
+- L listener(sources, properties, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertynames, eventname, callback)
+- TF lt(A, B)
+- TF ne(A, B)
+- notify(sources, eventname)
+- notify(sources, eventname, eventdata)
+- set_validation_fcn(obj, validation_fcn)
+- set_value(obj, value)
+- set_value_range(obj, value_range)
+- str to_string(obj)
+
+
+---------------------------------------------------------
+CLASS layer_cl:
+---------------------------------------------------------
+PROPERTIES :
+- Unique_ID
+- Filename
+- Filetype
+- SounderIdentifier
+- Transceivers
+- OriginCrest
+- Lines
+- ChannelID
+- Frequencies
+- AvailableChannelIDs
+- AvailableFrequencies
+- GPSData
+- AttitudeNav
+- EnvData
+- Curves
+- EchoIntStruct
+- EchoInt3DStruct
+- SurveyData
+- Algo
+- NotchFilter
+
+METHODS :
+- varargout CVS_BottomRegions(varargin)
+- varargout Sv_freq_response_func(varargin)
+- varargout TS_freq_response_func(varargin)
+- varargout add_algo(varargin)
+- varargout add_attitude(varargin)
+- varargout add_bottoms_from_bot_xml(varargin)
+- varargout add_config_from_config_xml(varargin)
+- add_curves(obj, curves)
+- add_lines(obj, lines)
+- varargout add_lines_from_line_xml(varargin)
+- varargout add_ping_data_to_db(varargin)
+- varargout add_regions_from_reg_xml(varargin)
+- varargout add_survey_data_db(varargin)
+- add_trans(layer, trans_obj)
+- varargout add_transceiver(varargin)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertynames, eventname, callback)
+- L addlistener(sources, eventname, callback)
+- L addlistener(sources, properties, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- varargout apply_algo(varargin)
+- varargout apply_classification(varargin)
+- varargout apply_cw_cal(varargin)
+- clear_curves(obj)
+- varargout concatenate_layers(varargin)
+- lhs1 copy(rhs1)
+- varargout copy_algo_across(varargin)
+- varargout copy_bottom_to_other_freq(varargin)
+- varargout copy_region_across(varargin)
+- varargout create_bot_xml_from_db(varargin)
+- varargout create_files_line_str(varargin)
+- varargout create_files_str(varargin)
+- varargout create_lay_line_xml_node(varargin)
+- varargout create_motion_comp_subdata(varargin)
+- varargout create_reg_xml_from_db(varargin)
+- varargout create_survey_options_xml(varargin)
+- delete(obj)
+- varargout delete_layers(varargin)
+- varargout delete_regions_from_uid(varargin)
+- varargout disp_lines_data(varargin)
+- varargout disp_transceivers_beam_configurations(varargin)
+- varargout display_cal(varargin)
+- varargout display_cal_db(varargin)
+- TF eq(A, B)
+- varargout export_region_echoes_to_xyz(varargin)
+- varargout export_region_to_xls(varargin)
+- varargout export_region_values_to_xls(varargin)
+- varargout export_slice_transect_to_xls(varargin)
+- varargout find_cid_idx(varargin)
+- varargout find_freq_idx(varargin)
+- varargout find_layer_idx(varargin)
+- varargout find_layer_idx_files(varargin)
+- varargout find_layer_idx_files_path(varargin)
+- HM findobj(H, varargin)
+- prop findprop(object, propname)
+- TF ge(A, B)
+- varargout generate_bottoms_for_other_freqs(varargin)
+- varargout generate_freq_differences(varargin)
+- varargout generate_regions_for_other_freqs(varargin)
+- varargout get(varargin)
+- varargout get_att_data_from_csv(varargin)
+- idx get_curves_per_tag(obj, tag)
+- curves_obj get_curves_per_type(obj, type)
+- tags get_curves_tag(obj)
+- varargout get_cw_cal(varargin)
+- varargout get_env_str(varargin)
+- line_obj get_first_line(obj)
+- fLim get_flim(layer)
+- varargout get_fm_cal(varargin)
+- fold_lay get_folder(obj)
+- [f_min, f_max, f_nom, f_start, f_end] get_freq_min_max_nom_start_end(obj)
+- varargout get_geo_bounds(varargin)
+- varargout get_gps_data_from_csv(varargin)
+- reg_uid get_layer_reg_uid(layer)
+- t_uid get_layer_tracks_uid(layer)
+- idx get_lines_per_ID(obj, ID)
+- idx get_lines_per_Tag(obj, tag)
+- varargout get_nb_regions(varargin)
+- varargout get_path_files(varargin)
+- varargout get_survdata_at_time(varargin)
+- varargout get_survey_data(varargin)
+- varargout get_survey_options(varargin)
+- varargout get_time_bound_files(varargin)
+- varargout get_time_bounds(varargin)
+- [trans_obj, idx_cid] get_trans(obj, curr_disp)
+- varargout group_channels(varargin)
+- TF gt(A, B)
+- validity isvalid(obj)
+- varargout layer_cal_to_db(varargin)
+- obj layer_cl(varargin)
+- varargout layer_computeSpSv(varargin)
+- TF le(A, B)
+- varargout list_files_layers(varargin)
+- varargout list_layers_survey_data(varargin)
+- list list_lines(obj)
+- memap_files list_memaps(obj)
+- L listener(sources, propertynames, eventname, callback)
+- L listener(sources, eventname, callback)
+- L listener(sources, properties, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- varargout load_bot_regs(varargin)
+- varargout load_bottom_regions_from_folder(varargin)
+- load_ctd(obj, fname, ori)
+- varargout load_echo_logbook_db(varargin)
+- varargout load_ek_bot(varargin)
+- load_svp(obj, fname, ori)
+- TF lt(A, B)
+- varargout multi_freq_slice_transect2D(varargin)
+- TF ne(A, B)
+- varargout notch_filter_layer(varargin)
+- notify(sources, eventname)
+- notify(sources, eventname, eventdata)
+- varargout produce_pitch_roll_analysis(varargin)
+- regenerate_ID_num(obj)
+- varargout remove_transceiver(varargin)
+- varargout replace_gps_data_layer(varargin)
+- rm_curves_per_ID(obj, ID)
+- rm_curves_per_ID_and_type(obj, ID, type)
+- rm_line_id(obj, ID)
+- rm_memaps(layer, idx_memaps)
+- rm_region_across_id(obj, ID)
+- varargout save_bot_reg_to_db(varargin)
+- varargout save_bot_regs(varargin)
+- save_ctd(obj, fname)
+- save_svp(obj, fname)
+- setNotchFilter(obj, bandstops, load_bar_comp)
+- set_EnvData(obj, env_data_obj)
+- varargout set_cw_cal(varargin)
+- varargout set_field_to_region_with_uid(varargin)
+- varargout set_survey_data(varargin)
+- varargout set_tag_to_region_with_uid(varargin)
+- varargout sort_per_survey_data(varargin)
+- varargout split_layer(varargin)
+- varargout update_echo_logbook_dbfile(varargin)
+- varargout write_bot_to_bot_xml(varargin)
+- varargout write_config_to_xml(varargin)
+- varargout write_reg_to_reg_xml(varargin)
+
+
+---------------------------------------------------------
+CLASS line_cl:
+---------------------------------------------------------
+PROPERTIES :
+- Name
+- ID
+- Reference
+- Tag
+- Type
+- Units
+- Range
+- Time
+- Data
+- UTC_diff
+- Dist_diff
+- File_origin
+- Dr
+- LineColor
+- LineWidth
+
+METHODS :
+- L addlistener(sources, eventname, callback)
+- L addlistener(sources, properties, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertynames, eventname, callback)
+- change_range(obj, dr)
+- change_time(obj, dt)
+- lines_cat concatenate_lines(lines, merge_type)
+- line_copy copy_line(line_obj)
+- delete(obj)
+- TF eq(A, B)
+- HM findobj(H, varargin)
+- prop findprop(object, propname)
+- TF ge(A, B)
+- line_section get_line_time_section(line_obj, ts, te)
+- [time_corr, dist_corr, range_corr, data_corr] get_time_dist_and_range_corr(obj, time_ref, dist_ref)
+- TF gt(A, B)
+- validity isvalid(obj)
+- TF le(A, B)
+- obj line_cl(varargin)
+- varargout line_to_xml_node(varargin)
+- L listener(sources, eventname, callback)
+- L listener(sources, properties, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertynames, eventname, callback)
+- TF lt(A, B)
+- TF ne(A, B)
+- notify(sources, eventname)
+- notify(sources, eventname, eventdata)
+- str print(obj)
+
+
+---------------------------------------------------------
+CLASS map_input_cl:
+---------------------------------------------------------
+PROPERTIES :
+- Title
+- SurveyName
+- Voyage
+- Snapshot
+- Stratum
+- Transect
+- Filename
+- Lat
+- Long
+- Time
+- SliceLat
+- SliceLong
+- SliceTime_S
+- SliceTime_E
+- SliceAbscf
+- Regions
+- Nb_ST
+- Nb_Tracks
+- LatLim
+- LongLim
+- ValMax
+- Rmax
+- Basemap
+- PlotType
+- StationCode
+
+METHODS :
+- delete(obj)
+- varargout display_map_input_cl(varargin)
+- varargout display_map_input_cl_geobubbles(varargin)
+- varargout get_str(varargin)
+- obj map_input_cl(varargin)
+- Static obj map_input_cl_from_obj(ext_obj, varargin)
+
+
+---------------------------------------------------------
+CLASS mbs_cl:
+---------------------------------------------------------
+PROPERTIES :
+- Header
+- Input
+- Output
+- OutputFile
+
+METHODS :
+- L addlistener(sources, eventname, callback)
+- L addlistener(sources, properties, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertynames, eventname, callback)
+- delete(obj)
+- TF eq(A, B)
+- varargout find_mbs(varargin)
+- HM findobj(H, varargin)
+- prop findprop(object, propname)
+- TF ge(A, B)
+- varargout getStringEorF(varargin)
+- TF gt(A, B)
+- validity isvalid(obj)
+- TF le(A, B)
+- L listener(sources, eventname, callback)
+- L listener(sources, properties, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertynames, eventname, callback)
+- TF lt(A, B)
+- obj mbs_cl(varargin)
+- varargout mbs_to_survey_obj(varargin)
+- TF ne(A, B)
+- notify(sources, eventname)
+- notify(sources, eventname, eventdata)
+- varargout print_output(varargin)
+- varargout readMbsScript(varargin)
+- varargout readMbsScriptHeaders(varargin)
+
+
+---------------------------------------------------------
+CLASS mbs_header_cl:
+---------------------------------------------------------
+PROPERTIES :
+- Script
+- MbsId
+- title
+- main_species
+- voyage
+- areas
+- author
+- created
+- vertical_slice_size
+- comments
+- use_exclude_regions
+- default_absorption
+- es60_correction
+- motion_correction
+- shadow_zone_correction
+- shadow_zone_extrapolate_height
+- shadow_zone_extrapolate_type
+
+METHODS :
+- delete(obj)
+- obj mbs_header_cl
+
+
+---------------------------------------------------------
+CLASS mbs_input_cl:
+---------------------------------------------------------
+PROPERTIES :
+- snapshot
+- stratum
+- transect
+- dfileDir
+- crestDir
+- channel
+- calRev
+- botRev
+- regRev
+- rawFileName
+- rawSubDir
+- algo
+- calCrest
+- calRaw
+- absorption
+- length
+- reg
+- reg_str
+- transducer
+- dfileNum
+- rawDir
+- EsError
+
+METHODS :
+- delete(obj)
+- obj mbs_input_cl
+
+
+---------------------------------------------------------
+CLASS mbs_output_cl:
+---------------------------------------------------------
+PROPERTIES :
+- regionSum
+- regionSumAbscf
+- regionSumVbscf
+- stratumSum
+- transectSum
+- slicedTransectSum
+
+METHODS :
+- obj mbs_output_cl(varargin)
+
+
+---------------------------------------------------------
+CLASS params_cl:
+---------------------------------------------------------
+PROPERTIES :
+- PingNumber
+- BeamNumber
+- BeamAngleAlongship
+- BeamAngleAthwartship
+- BandWidth
+- ChannelMode
+- Frequency
+- FrequencyEnd
+- FrequencyStart
+- PulseForm
+- PulseLength
+- TeffPulseLength
+- TeffCompPulseLength
+- SampleInterval
+- Slope
+- TransmitPower
+
+METHODS :
+- params_out concatenate_Params(param_start, param_end, nb_p)
+- delete(obj)
+- cal_params get_cal_params_fields(obj)
+- Static ff get_params_cal_fields
+- params_section get_params_idx_section(params_obj, idx)
+- [params_obj_out, idx_group] group_params(params_obj, group_direction, ftype)
+- param_str param2str(param_obj, ib, idx_ping)
+- obj params_cl(varargin)
+- obj_red reduce_params(obj)
+
+
+---------------------------------------------------------
+CLASS path_elt_cl:
+---------------------------------------------------------
+PROPERTIES :
+- Path_to_folder
+- Path_description
+- Path_tooltipstring
+- Path_fieldname
+
+METHODS :
+- L addlistener(sources, eventname, callback)
+- L addlistener(sources, properties, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertynames, eventname, callback)
+- delete(obj)
+- TF eq(A, B)
+- HM findobj(H, varargin)
+- prop findprop(object, propname)
+- TF ge(A, B)
+- TF gt(A, B)
+- validity isvalid(obj)
+- TF le(A, B)
+- L listener(sources, eventname, callback)
+- L listener(sources, properties, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertynames, eventname, callback)
+- TF lt(A, B)
+- TF ne(A, B)
+- notify(sources, eventname)
+- notify(sources, eventname, eventdata)
+- path_elt_obj path_elt_cl(path_to_folder, varargin)
+
+
+---------------------------------------------------------
+CLASS process_cl:
+---------------------------------------------------------
+PROPERTIES :
+- Freq
+- CID
+- Algo
+
+METHODS :
+- L addlistener(sources, eventname, callback)
+- L addlistener(sources, properties, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertynames, eventname, callback)
+- delete(obj)
+- TF eq(A, B)
+- varargout find_process_algo(varargin)
+- HM findobj(H, varargin)
+- prop findprop(object, propname)
+- TF ge(A, B)
+- TF gt(A, B)
+- validity isvalid(obj)
+- TF le(A, B)
+- L listener(sources, eventname, callback)
+- L listener(sources, properties, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertynames, eventname, callback)
+- TF lt(A, B)
+- TF ne(A, B)
+- notify(sources, eventname)
+- notify(sources, eventname, eventdata)
+- obj process_cl(varargin)
+- varargout set_process_list(varargin)
+
+
+---------------------------------------------------------
+CLASS raw_idx_cl:
+---------------------------------------------------------
+PROPERTIES :
+- filename
+- raw_type
+- nb_samples
+- time_dg
+- type_dg
+- pos_dg
+- len_dg
+- chan_dg
+- b_ordering
+- Version
+
+METHODS :
+- L addlistener(sources, propertynames, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, properties, eventname, callback)
+- L addlistener(sources, eventname, callback)
+- prop addprop(object, propname)
+- delete(obj)
+- TF eq(A, B)
+- HM findobj(H, varargin)
+- prop findprop(object, propname)
+- TF ge(A, B)
+- Static ver get_curr_raw_idx_cl_version
+- nb_nmea_dg get_nb_nmea_dg(idx_obj)
+- [nb_pings, channels] get_nb_pings_per_channels(idx_obj)
+- nb_samples get_nb_samples_per_block_per_channels(idx_obj, block_size)
+- nb_samples get_nb_samples_per_channels(idx_obj)
+- time_dg get_time_by_chan_dg(idx_obj, type, chan)
+- time_dg get_time_dg(idx_obj, type)
+- time_cell get_time_per_channels(idx_obj)
+- TF gt(A, B)
+- validity isvalid(obj)
+- TF le(A, B)
+- L listener(sources, properties, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertynames, eventname, callback)
+- L listener(sources, eventname, callback)
+- TF lt(A, B)
+- TF ne(A, B)
+- notify(sources, eventname)
+- notify(sources, eventname, eventdata)
+- raw_idx_obj raw_idx_cl(filename, varargin)
+- rem_idx(raw_idx_obj, idx_rem)
+
+
+---------------------------------------------------------
+CLASS region_cl:
+---------------------------------------------------------
+PROPERTIES :
+- Fmt_version
+- Name
+- ID
+- Tag
+- Origin
+- Version
+- Unique_ID
+- Remove_ST
+- Line_ID
+- Type
+- Idx_ping
+- Idx_r
+- Shape
+- MaskReg
+- Poly
+- Reference
+- Cell_w
+- Cell_w_unit
+- Cell_h
+- Cell_h_unit
+
+METHODS :
+- varargout concatenate_regions(varargin)
+- varargout concatenate_regions_v2(varargin)
+- delete(obj)
+- str disp_str(obj)
+- h_fig display_region(reg_obj, trans_obj, varargin)
+- varargout get_combined_mask(varargin)
+- varargout get_combined_poly(varargin)
+- mask get_mask(obj)
+- varargout get_mask_from_intersection(varargin)
+- varargout get_region_3D_echoes(varargin)
+- mask get_sub_mask(obj, idx_r, idx_p)
+- varargout merge_regions(varargin)
+- str print(obj)
+- obj region_cl(varargin)
+- varargout split_region_per_fileID(varargin)
+- varargout split_regions(varargin)
+- varargout tag_sliced_output(varargin)
+- str tag_str(obj)
+
+
+---------------------------------------------------------
+CLASS sub_ac_data_cl:
+---------------------------------------------------------
+PROPERTIES :
+- Memap
+- Type
+- Fmt
+- ConvFactor
+- Scale
+- Fieldname
+- Units
+- DefaultValue
+
+METHODS :
+- L addlistener(sources, eventname, callback)
+- L addlistener(sources, properties, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertynames, eventname, callback)
+- varargout concatenate_SubData(varargin)
+- delete(obj)
+- TF eq(A, B)
+- HM findobj(H, varargin)
+- prop findprop(object, propname)
+- TF ge(A, B)
+- obj_out get_sub_data_file_id(obj, file_id)
+- TF gt(A, B)
+- validity isvalid(obj)
+- TF le(A, B)
+- L listener(sources, eventname, callback)
+- L listener(sources, properties, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertynames, eventname, callback)
+- TF lt(A, B)
+- TF ne(A, B)
+- notify(sources, eventname)
+- notify(sources, eventname, eventdata)
+- obj sub_ac_data_cl(field, varargin)
+- Static sub_ac_data_temp sub_ac_data_from_files(dfiles, dsize, fieldnames)
+- Static [sub_ac_data_temp, curr_name] sub_ac_data_from_struct(curr_data, dir_data, fieldnames)
+
+
+---------------------------------------------------------
+CLASS survey_cl:
+---------------------------------------------------------
+PROPERTIES :
+- SurvInput
+- SurvOutput
+
+METHODS :
+- L addlistener(sources, eventname, callback)
+- L addlistener(sources, properties, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertynames, eventname, callback)
+- varargout clean_output(varargin)
+- delete(obj)
+- TF eq(A, B)
+- HM findobj(H, varargin)
+- prop findprop(object, propname)
+- TF ge(A, B)
+- varargout generate_output_v2(varargin)
+- TF gt(A, B)
+- validity isvalid(obj)
+- TF le(A, B)
+- L listener(sources, eventname, callback)
+- L listener(sources, properties, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertynames, eventname, callback)
+- TF lt(A, B)
+- TF ne(A, B)
+- notify(sources, eventname)
+- notify(sources, eventname, eventdata)
+- varargout plot_survey_strat_result(varargin)
+- varargout plot_survey_trans_result(varargin)
+- varargout print_output(varargin)
+- varargout print_output_xls(varargin)
+- obj survey_cl(varargin)
+
+
+---------------------------------------------------------
+CLASS survey_data_cl:
+---------------------------------------------------------
+PROPERTIES :
+- Voyage
+- SurveyName
+- Snapshot
+- Stratum
+- Type
+- Transect
+- Comment
+- StartTime
+- EndTime
+
+METHODS :
+- L addlistener(sources, eventname, callback)
+- L addlistener(sources, properties, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertynames, eventname, callback)
+- delete(obj)
+- TF eq(A, B)
+- HM findobj(H, varargin)
+- prop findprop(object, propname)
+- TF ge(A, B)
+- varargout get_files_from_surv_struct(varargin)
+- TF gt(A, B)
+- validity isvalid(obj)
+- TF le(A, B)
+- L listener(sources, eventname, callback)
+- L listener(sources, properties, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertynames, eventname, callback)
+- TF lt(A, B)
+- TF ne(A, B)
+- notify(sources, eventname)
+- notify(sources, eventname, eventdata)
+- i_str print_survey_data(obj)
+- varargout surv_data_to_logbook_db(varargin)
+- obj survey_data_cl(varargin)
+- varargout survey_data_obj_to_ac_db_struct(varargin)
+
+
+---------------------------------------------------------
+CLASS survey_input_cl:
+---------------------------------------------------------
+PROPERTIES :
+- Infos
+- Options
+- Cal
+- Algos
+- Regions_WC
+- Snapshots
+
+METHODS :
+- L addlistener(sources, eventname, callback)
+- L addlistener(sources, properties, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertynames, eventname, callback)
+- varargout check_n_complete_input(varargin)
+- varargout complete_survey_input_cl_from_struct(varargin)
+- delete(obj)
+- TF eq(A, B)
+- HM findobj(H, varargin)
+- prop findprop(object, propname)
+- TF ge(A, B)
+- varargout get_start_design_and_radius(varargin)
+- TF gt(A, B)
+- validity isvalid(obj)
+- TF le(A, B)
+- folders list_data_folders(obj)
+- [snapshot_vec, type_vec, stratum_vec, transect_vec, reg_num_vec, files, regs, cells, opts_cell] list_transects(surv_in_obj)
+- L listener(sources, eventname, callback)
+- L listener(sources, properties, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertynames, eventname, callback)
+- varargout load_files_from_survey_input(varargin)
+- TF lt(A, B)
+- varargout merge_survey_input_for_integration(varargin)
+- TF ne(A, B)
+- notify(sources, eventname)
+- notify(sources, eventname, eventdata)
+- surv_input_obj survey_input_cl(varargin)
+- varargout survey_input_to_survey_xml(varargin)
+
+
+---------------------------------------------------------
+CLASS survey_options_cl:
+---------------------------------------------------------
+PROPERTIES :
+- Feature_bool
+- SvThr
+- Use_exclude_regions
+- Es60_correction
+- Motion_correction
+- Shadow_zone
+- Shadow_zone_height
+- Vertical_slice_size
+- Vertical_slice_units
+- Horizontal_slice_size
+- IntType
+- IntRef
+- Remove_tracks
+- Remove_ST
+- Export_ST
+- Export_TT
+- Denoised
+- Frequency
+- Channel
+- FrequenciesToLoad
+- FrequenciesMinToEI_FMmode
+- FrequenciesMaxToEI_FMmode
+- ChannelsToLoad
+- Absorption
+- CopyBottomFromFrequency
+- CTD_profile
+- CTD_profile_fname
+- SVP_profile
+- Temperature
+- Salinity
+- SoundSpeed
+- BadTransThr
+- ShiftBot
+- SaveBot
+- SaveReg
+- DepthMin
+- DepthMax
+- RangeMin
+- RangeMax
+- RefRangeMin
+- RefRangeMax
+- AngleMin
+- AngleMax
+- ExportSlicedTransects
+- ExportRegions
+- RunInt
+
+METHODS :
+- L addlistener(sources, eventname, callback)
+- L addlistener(sources, properties, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertynames, eventname, callback)
+- lhs1 copy(rhs1)
+- obj_cp copy_survey_option(obj)
+- delete(obj)
+- TF eq(A, B)
+- HM findobj(H, varargin)
+- prop findprop(object, propname)
+- TF ge(A, B)
+- TF gt(A, B)
+- validity isvalid(obj)
+- TF le(A, B)
+- L listener(sources, eventname, callback)
+- L listener(sources, properties, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertynames, eventname, callback)
+- TF lt(A, B)
+- TF ne(A, B)
+- notify(sources, eventname)
+- notify(sources, eventname, eventdata)
+- str print_survey_options(obj)
+- surv_options_struct surv_options_to_struct(obj)
+- varargout survey_option_to_xml_file(varargin)
+- obj survey_options_cl(varargin)
+- varargout survey_options_to_xml_node(varargin)
+- obj update_options(obj, struct_opt)
+
+
+---------------------------------------------------------
+CLASS survey_output_cl:
+---------------------------------------------------------
+PROPERTIES :
+- stratumSum
+- transectSum
+- slicedTransectSum
+- regionSum
+- regionSumAbscf
+- regionSumVbscf
+- regionsIntegrated
+
+METHODS :
+- L addlistener(sources, eventname, callback)
+- L addlistener(sources, properties, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertynames, eventname, callback)
+- delete(obj)
+- TF eq(A, B)
+- HM findobj(H, varargin)
+- prop findprop(object, propname)
+- TF ge(A, B)
+- TF gt(A, B)
+- validity isvalid(obj)
+- TF le(A, B)
+- L listener(sources, eventname, callback)
+- L listener(sources, properties, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertynames, eventname, callback)
+- TF lt(A, B)
+- TF ne(A, B)
+- notify(sources, eventname)
+- notify(sources, eventname, eventdata)
+- varargout sprint_regionSum(varargin)
+- varargout sprint_regionSumAbscf(varargin)
+- varargout sprint_regionSumVbscf(varargin)
+- varargout sprint_slicedTransectSum(varargin)
+- varargout sprint_stratumSum(varargin)
+- varargout sprint_transectSum(varargin)
+- obj survey_output_cl(nb_strat, nb_trans, nb_reg)
+
+
+---------------------------------------------------------
+CLASS test_esp3_cl:
+---------------------------------------------------------
+PROPERTIES :
+- esp3_obj
+
+METHODS :
+- addTeardown(teardownable, fcn, varargin)
+- L addlistener(sources, propertynames, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, properties, eventname, callback)
+- L addlistener(sources, eventname, callback)
+- appliedFixture applyFixture(testCase, fixture)
+- assertClass(assertable, actual, expectedClass, varargin)
+- assertEmpty(assertable, actual, varargin)
+- assertEqual(assertable, actual, expected, varargin)
+- varargout assertError(assertable, actual, errorClassOrID, varargin)
+- assertFail(assertable, varargin)
+- assertFalse(assertable, actual, varargin)
+- assertGreaterThan(assertable, actual, floor, varargin)
+- assertGreaterThanOrEqual(assertable, actual, floor, varargin)
+- assertInstanceOf(assertable, actual, expectedBaseClass, varargin)
+- assertLength(assertable, actual, expectedLength, varargin)
+- assertLessThan(assertable, actual, ceiling, varargin)
+- assertLessThanOrEqual(assertable, actual, ceiling, varargin)
+- assertMatches(assertable, actual, expression, varargin)
+- assertNotEmpty(assertable, actual, varargin)
+- assertNotEqual(assertable, actual, notExpected, varargin)
+- assertNotSameHandle(assertable, actual, notExpectedHandle, varargin)
+- assertNumElements(assertable, actual, expectedElementCount, varargin)
+- assertReturnsTrue(assertable, actual, varargin)
+- assertSameHandle(assertable, actual, expectedHandle, varargin)
+- assertSize(assertable, actual, expectedSize, varargin)
+- assertSubstring(assertable, actual, substring, varargin)
+- assertThat(assertable, actual, constraint, varargin)
+- assertTrue(assertable, actual, varargin)
+- varargout assertWarning(assertable, actual, warningID, varargin)
+- varargout assertWarningFree(assertable, actual, varargin)
+- assumeClass(assumable, actual, expectedClass, varargin)
+- assumeEmpty(assumable, actual, varargin)
+- assumeEqual(assumable, actual, expected, varargin)
+- varargout assumeError(assumable, actual, errorClassOrID, varargin)
+- assumeFail(assumable, varargin)
+- assumeFalse(assumable, actual, varargin)
+- assumeGreaterThan(assumable, actual, floor, varargin)
+- assumeGreaterThanOrEqual(assumable, actual, floor, varargin)
+- assumeInstanceOf(assumable, actual, expectedBaseClass, varargin)
+- assumeLength(assumable, actual, expectedLength, varargin)
+- assumeLessThan(assumable, actual, ceiling, varargin)
+- assumeLessThanOrEqual(assumable, actual, ceiling, varargin)
+- assumeMatches(assumable, actual, expression, varargin)
+- assumeNotEmpty(assumable, actual, varargin)
+- assumeNotEqual(assumable, actual, notExpected, varargin)
+- assumeNotSameHandle(assumable, actual, notExpectedHandle, varargin)
+- assumeNumElements(assumable, actual, expectedElementCount, varargin)
+- assumeReturnsTrue(assumable, actual, varargin)
+- assumeSameHandle(assumable, actual, expectedHandle, varargin)
+- assumeSize(assumable, actual, expectedSize, varargin)
+- assumeSubstring(assumable, actual, substring, varargin)
+- assumeThat(assumable, actual, constraint, varargin)
+- assumeTrue(assumable, actual, varargin)
+- varargout assumeWarning(assumable, actual, warningID, varargin)
+- varargout assumeWarningFree(assumable, actual, varargin)
+- compare_cw_calibration_results(testCase)
+- compare_scripts_results(testCase)
+- lhs1 copy(rhs1)
+- tempFolder createTemporaryFolder(testCase)
+- delete(teardownable)
+- TF eq(A, B)
+- fatalAssertClass(fatalAssertable, actual, expectedClass, varargin)
+- fatalAssertEmpty(fatalAssertable, actual, varargin)
+- fatalAssertEqual(fatalAssertable, actual, expected, varargin)
+- varargout fatalAssertError(fatalAssertable, actual, errorClassOrID, varargin)
+- fatalAssertFail(fatalAssertable, varargin)
+- fatalAssertFalse(fatalAssertable, actual, varargin)
+- fatalAssertGreaterThan(fatalAssertable, actual, floor, varargin)
+- fatalAssertGreaterThanOrEqual(fatalAssertable, actual, floor, varargin)
+- fatalAssertInstanceOf(fatalAssertable, actual, expectedBaseClass, varargin)
+- fatalAssertLength(fatalAssertable, actual, expectedLength, varargin)
+- fatalAssertLessThan(fatalAssertable, actual, ceiling, varargin)
+- fatalAssertLessThanOrEqual(fatalAssertable, actual, ceiling, varargin)
+- fatalAssertMatches(fatalAssertable, actual, expression, varargin)
+- fatalAssertNotEmpty(fatalAssertable, actual, varargin)
+- fatalAssertNotEqual(fatalAssertable, actual, notExpected, varargin)
+- fatalAssertNotSameHandle(fatalAssertable, actual, notExpectedHandle, varargin)
+- fatalAssertNumElements(fatalAssertable, actual, expectedElementCount, varargin)
+- fatalAssertReturnsTrue(fatalAssertable, actual, varargin)
+- fatalAssertSameHandle(fatalAssertable, actual, expectedHandle, varargin)
+- fatalAssertSize(fatalAssertable, actual, expectedSize, varargin)
+- fatalAssertSubstring(fatalAssertable, actual, substring, varargin)
+- fatalAssertThat(fatalAssertable, actual, constraint, varargin)
+- fatalAssertTrue(fatalAssertable, actual, varargin)
+- varargout fatalAssertWarning(fatalAssertable, actual, warningID, varargin)
+- varargout fatalAssertWarningFree(fatalAssertable, actual, varargin)
+- HM findobj(H, varargin)
+- prop findprop(object, propname)
+- Static testCase forInteractiveUse(rhs1)
+- TF ge(A, B)
+- fixtures getSharedTestFixtures(testCase, fixtureClassName)
+- TF gt(A, B)
+- validity isvalid(obj)
+- launchESP3(testCase)
+- TF le(A, B)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, properties, eventname, callback)
+- L listener(sources, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertynames, eventname, callback)
+- log(loggable, varargin)
+- TF lt(A, B)
+- TF ne(A, B)
+- notify(sources, eventname, eventdata)
+- notify(sources, eventname)
+- onFailure(testCase, failureTasks, varargin)
+- open_test_files(testCase)
+- result run(testCase, varargin)
+- run_scripts(testCase)
+- test_algos(testCase)
+- obj test_esp3_cl
+- verifyClass(verifiable, actual, expectedClass, varargin)
+- verifyEmpty(verifiable, actual, varargin)
+- verifyEqual(verifiable, actual, expected, varargin)
+- varargout verifyError(verifiable, actual, errorClassOrID, varargin)
+- verifyFail(verifiable, varargin)
+- verifyFalse(verifiable, actual, varargin)
+- verifyGreaterThan(verifiable, actual, floor, varargin)
+- verifyGreaterThanOrEqual(verifiable, actual, floor, varargin)
+- verifyInstanceOf(verifiable, actual, expectedBaseClass, varargin)
+- verifyLength(verifiable, actual, expectedLength, varargin)
+- verifyLessThan(verifiable, actual, ceiling, varargin)
+- verifyLessThanOrEqual(verifiable, actual, ceiling, varargin)
+- verifyMatches(verifiable, actual, expression, varargin)
+- verifyNotEmpty(verifiable, actual, varargin)
+- verifyNotEqual(verifiable, actual, notExpected, varargin)
+- verifyNotSameHandle(verifiable, actual, notExpectedHandle, varargin)
+- verifyNumElements(verifiable, actual, expectedElementCount, varargin)
+- verifyReturnsTrue(verifiable, actual, varargin)
+- verifySameHandle(verifiable, actual, expectedHandle, varargin)
+- verifySize(verifiable, actual, expectedSize, varargin)
+- verifySubstring(verifiable, actual, substring, varargin)
+- verifyThat(verifiable, actual, constraint, varargin)
+- verifyTrue(verifiable, actual, varargin)
+- varargout verifyWarning(verifiable, actual, warningID, varargin)
+- varargout verifyWarningFree(verifiable, actual, varargin)
+
+
+---------------------------------------------------------
+CLASS transceiver_cl:
+---------------------------------------------------------
+PROPERTIES :
+- Data
+- Range
+- Sample_offset
+- Ping_offset
+- Alpha
+- Alpha_ori
+- Time
+- Bottom
+- ST
+- Tracks
+- Regions
+- Features
+- Params
+- Config
+- Filters
+- GPSDataPing
+- AttitudeNavPing
+- Algo
+- Mode
+- TransducerImpedance
+- TransceiverDepth
+- Spikes
+- Version
+
+METHODS :
+- varargout TS_f_from_region(varargin)
+- varargout addBadSector(varargin)
+- varargout add_algo_trans_obj(varargin)
+- varargout add_feature(varargin)
+- varargout add_region(varargin)
+- varargout add_st_from_idx(varargin)
+- L addlistener(sources, propertynames, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, propertyname, eventname, callback)
+- L addlistener(sources, properties, eventname, callback)
+- L addlistener(sources, eventname, callback)
+- varargout apply_algo_trans_obj(varargin)
+- varargout apply_transceiver_cw_cal(varargin)
+- varargout bottom_to_evl_str(varargin)
+- varargout bp_percent2str(varargin)
+- varargout clean_bottom(varargin)
+- varargout computeSpSv(varargin)
+- varargout compute_absorption(varargin)
+- varargout compute_ping_impedance(varargin)
+- varargout compute_soundspeed_and_range(varargin)
+- varargout concatenate_Transceivers(varargin)
+- varargout correctTriangleWave(varargin)
+- varargout create_WC_region(varargin)
+- varargout create_regions_from_linked_candidates(varargin)
+- varargout create_track_regs(varargin)
+- varargout create_trans_bot_xml_node(varargin)
+- varargout create_trans_reg_xml_node(varargin)
+- delete(trans_obj)
+- varargout disp_calibration_env_params(varargin)
+- varargout disp_config_params(varargin)
+- varargout disp_reg_tag_on_map(varargin)
+- varargout echo_integrate_3D(varargin)
+- TF eq(A, B)
+- varargout estimate_shadow_zone(varargin)
+- varargout evaluate_algo(varargin)
+- varargout extract_bathy_from_split_beam(varargin)
+- varargout filter_bottom(varargin)
+- varargout find_algo_idx(varargin)
+- [idx, found] find_reg_idx(trans_obj, unique_ID)
+- [idx, found] find_reg_idx_id(trans_obj, ID)
+- [idx, found] find_reg_name(trans_obj, nn)
+- [idx, found] find_reg_name_id(trans_obj, nn, ID)
+- idx find_regions_ID(trans_obj, ID)
+- idx find_regions_Unique_ID(trans_obj, ID)
+- idx find_regions_name(trans_obj, nns)
+- idx find_regions_origin(trans_obj, origin)
+- idx find_regions_ref(trans_obj, Reference)
+- idx find_regions_tag(trans_obj, tags)
+- idx find_regions_type(trans_obj, type)
+- HM findobj(H, varargin)
+- prop findprop(object, propname)
+- TF ge(A, B)
+- varargout generate_WBT_pulse(varargin)
+- varargout get_3dB_f(varargin)
+- str_tt get_CID_freq_str(trans_obj)
+- varargout get_absorption(varargin)
+- varargout get_algo_per_name(varargin)
+- trans_angle get_angles(trans_obj)
+- varargout get_att_comp_bool(varargin)
+- varargout get_badtrans_idx(varargin)
+- varargout get_badtrans_perc(varargin)
+- varargout get_badtrans_tag(varargin)
+- t_angle get_beams_pointing_angles(trans_obj, varargin)
+- [BW_al, BW_at] get_beamwidth_at_f_c(trans_obj, cal_struct)
+- bID get_blockID(trans_obj)
+- varargout get_bottom_depth(varargin)
+- varargout get_bottom_features(varargin)
+- varargout get_bottom_idx(varargin)
+- varargout get_bottom_range(varargin)
+- f_c get_center_frequency(trans_obj, ip)
+- Static ver get_curr_transceiver_cl_version
+- varargout get_current_gain(varargin)
+- varargout get_current_sacorr(varargin)
+- varargout get_data_from_region(varargin)
+- varargout get_data_to_process(varargin)
+- varargout get_dist(varargin)
+- features_obj get_feature_by_id(trans_obj, unique_ID)
+- varargout get_feature_mask(varargin)
+- fileID get_fileID(trans_obj)
+- ss get_freq_str(trans_obj)
+- varargout get_idx_beams(varargin)
+- varargout get_idx_r_idx_ping(varargin)
+- varargout get_lat(varargin)
+- varargout get_loaded_bot_reg_version(varargin)
+- varargout get_long(varargin)
+- [mean_depth, Sa] get_mean_depth_from_region(trans_obj, unique_id)
+- p_out get_params_value(trans_obj, param_name, varargin)
+- varargout get_phase(varargin)
+- pos_trans get_position(trans_obj)
+- varargout get_pulse(varargin)
+- varargout get_pulse_Teff(varargin)
+- varargout get_pulse_comp_Teff(varargin)
+- varargout get_pulse_length(varargin)
+- IDs get_reg_IDs(trans_obj)
+- IDs get_reg_Unique_IDs(trans_obj)
+- IDs get_reg_first_Unique_ID(trans_obj)
+- varargout get_reg_spec(varargin)
+- varargout get_reg_specs_to_integrate(varargin)
+- tags get_reg_tags(trans_obj)
+- varargout get_region_descriptors(varargin)
+- reg get_region_from_Unique_ID(trans_obj, ID)
+- reg get_region_from_name(trans_obj, nns)
+- depth get_samples_depth(trans_obj, idx_r, idx_ping, varargin)
+- range_trans get_samples_range(trans_obj, varargin)
+- varargout get_shadow_zone_height_est(varargin)
+- varargout get_slope_est(varargin)
+- varargout get_soundspeed(varargin)
+- mask_spikes get_spikes(trans_obj, idx_r, idx_ping)
+- varargout get_st_sig(varargin)
+- varargout get_subdatamat_AcUp_pos(varargin)
+- depth get_surface_height(trans_obj, varargin)
+- varargout get_time_range(varargin)
+- varargout get_transceiver_cw_cal(varargin)
+- varargout get_transceiver_fm_cal(varargin)
+- varargout get_transceiver_from_file_ID(varargin)
+- pings get_transceiver_pings(trans_obj, varargin)
+- samples get_transceiver_samples(trans_obj, varargin)
+- time get_transceiver_time(trans_obj, varargin)
+- depth get_transducer_depth(trans_obj, varargin)
+- heave get_transducer_heave(trans_obj, varargin)
+- t_angle get_transducer_pointing_angle(trans_obj)
+- varargout get_xxx_ENH(varargin)
+- varargout group_transceivers(varargin)
+- TF gt(A, B)
+- varargout integrate_region(varargin)
+- issb is_split_beam(trans_obj)
+- ismb ismb(trans_obj)
+- validity isvalid(obj)
+- TF le(A, B)
+- L listener(sources, eventname, callback)
+- L listener(sources, properties, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertyname, eventname, callback)
+- L listener(sources, propertynames, eventname, callback)
+- TF lt(A, B)
+- varargout mask_from_regions(varargin)
+- varargout mask_from_st(varargin)
+- TF ne(A, B)
+- varargout need_escorr(varargin)
+- id new_id(trans_obj)
+- varargout notch_filter_transceiver(varargin)
+- notify(sources, eventname)
+- notify(sources, eventname, eventdata)
+- varargout processSv_f_r_2(varargin)
+- varargout processTS_f_v2(varargin)
+- varargout recompute_angles(varargin)
+- list regions_to_str(trans_obj)
+- varargout replace_gps_data_trans(varargin)
+- varargout reset_transceiver_depth(varargin)
+- rm_ST(trans_obj)
+- rm_all_region(trans_obj)
+- rm_feature_id(trans_obj, unique_ID)
+- rm_feature_idx(trans_obj, idx_r, idx_ping, idx_beam)
+- rm_region_id(trans_obj, unique_ID)
+- rm_region_name(trans_obj, nn)
+- rm_region_name_id(trans_obj, nn, ID)
+- rm_region_name_idx_r_idx_p(trans_obj, nn, idx_r, idx_p)
+- rm_region_origin(trans_obj, origin)
+- rm_region_type_id(trans_obj, type, ID)
+- rm_regions(trans_obj)
+- varargout rm_st_from_idx(varargin)
+- rm_tracks(trans_obj)
+- varargout save_st_to_xls(varargin)
+- varargout save_tt_to_xls(varargin)
+- varargout setBadSector(varargin)
+- varargout setBottom_from_evl(varargin)
+- varargout set_ST(varargin)
+- varargout set_absorption(varargin)
+- varargout set_bot_reg_from_lsss_snap(varargin)
+- set_position(trans_obj, pos_trans, trans_angle)
+- varargout set_pulse_Teff(varargin)
+- varargout set_pulse_comp_Teff(varargin)
+- set_spikes(trans_obj, idx_r, idx_ping, mask)
+- varargout set_sv_diff(varargin)
+- varargout set_transceiver_cw_cal(varargin)
+- set_transceiver_range(trans_obj, range)
+- set_transceiver_time(trans_obj, time)
+- varargout set_transducer_depth(varargin)
+- varargout set_transducer_depth_from_line(varargin)
+- varargout shift_bottom(varargin)
+- varargout slice_transect2D_new_int(varargin)
+- varargout sv_f_from_region(varargin)
+- trans_obj transceiver_cl(varargin)
+- varargout validate_region(varargin)
+
+

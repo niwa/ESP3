@@ -60,17 +60,17 @@ YScale = YScaleDef;
 
 
 MoveFoc = 0;
-if (nargin==1),
+if (nargin==1)
    %--- move focus to subplot # ---
    MoveFoc = 1;
-elseif (nargin==2),
+elseif (nargin==2)
    % do nothing
-elseif (nargin>2),
+elseif (nargin>2)
    Narg = length(varargin);
-   if (0.5*Narg==floor(0.5.*Narg)),
+   if (0.5*Narg==floor(0.5.*Narg))
 
-      for I=1:2:Narg-1,
-         switch varargin{I},
+      for I=1:2:Narg-1
+         switch varargin{I}
           case 'Min'
  	     Min = varargin{I+1};
           case 'Max'
@@ -110,16 +110,16 @@ switch MoveFoc
     %--- move focus to subplot # ---
     H    = get(gcf,'Children');
     Ptot = length(H);
-    if (length(M)==1),
+    if (isscalar(M))
        M    = Ptot - M + 1; 
-    elseif (length(M)==2),
+    elseif (length(M)==2)
        %--- check for subplot size ---
        Pos1  = get(H(1),'Position');
        Pos1x = Pos1(1);
-       for Icheck=2:1:Ptot,
+       for Icheck=2:1:Ptot
           PosN  = get(H(Icheck),'Position');
           PosNx = PosN(1);
-          if (PosNx==Pos1x),
+          if (PosNx==Pos1x)
              NumberOfCol = Icheck - 1;
              break;
           end
@@ -160,7 +160,7 @@ switch MoveFoc
     Hgcf = gcf;
     clf;
     figure(Hgcf);
-    for Pi=1:1:Ptot,
+    for Pi=1:1:Ptot
        Row = ceil(Pi./N);
        Col = Pi - (Row - 1)*N;
 
@@ -177,7 +177,7 @@ switch MoveFoc
 
        switch XTickL
         case 'Margin'
-           if (Row~=M),
+           if (Row~=M)
               %--- erase XTickLabel ---
               set(gca,'XTickLabel',[]);
            end
@@ -191,7 +191,7 @@ switch MoveFoc
 
        switch YTickL
         case 'Margin'
-           if (Col~=1),
+           if (Col~=1)
               %--- erase YTickLabel ---
               set(gca,'YTickLabel',[]);
            end    

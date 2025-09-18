@@ -1,8 +1,10 @@
 function  layers=open_FCV30_file_stdalone_v2(file_lst,varargin)
 
+layers = [];
+
 p = inputParser;
 
-[def_path_m,~,~]=fileparts(file_lst);
+def_path_m = fullfile(tempdir,'data_echo');
 
 addRequired(p,'file_lst',@(x) ischar(x)||iscell(x));
 addParameter(p,'PathToMemmap',def_path_m,@ischar);
@@ -13,14 +15,14 @@ addParameter(p,'FieldNames',{});
 addParameter(p,'GPSOnly',0);
 addParameter(p,'load_bar_comp',[]);
 addParameter(p,'file_idx',[]);
-addParameter(p,'block_len',get_block_len(100,'cpu'),@(x) x>0);
+addParameter(p,'block_len',[],@(x) x>0 || isempty(x));
 
 parse(p,file_lst,varargin{:});
 
 [main_path,~,~]=fileparts(file_lst);
 load_bar_comp=p.Results.load_bar_comp;
 
-[path_to_data,fname,ext]=fileparts(file_lst);
+[path_to_data,~,ext]=fileparts(file_lst);
 switch ext
     case '.lst'
         list_files=importdata(file_lst);
@@ -79,7 +81,6 @@ end
 
 [ini_config_files,~,id_config_unique]=unique(filename_ini);
 
-%file_mat_ini=cellfun(@(x) fullfile(folder_lst,'echoanalysisfiles',[x '.mat']),fname_ini_mat,'UniformOutput',0);
 
 id_config=(1:length(ini_config_files));
 
@@ -92,7 +93,6 @@ end
 if ~isempty(id_not_al)
     id_config=id_config(id_not_al);
 else
-    layers=[];
     return;
 end
 
@@ -101,16 +101,12 @@ G=20;
 SL=30;
 ME=0;
 c=1500;
-alpha=9/1000;
 L0=0.152;
 
-[fields,~,fmt_fields,factor_fields]=init_fields();
+[fields,~,fmt_fields,factor_fields,~]=init_fields();
 
-nb_config=length(id_config);
-
-layers(nb_config)=layer_cl();
 ilay=0;
-
+block_len = get_block_len(50,'cpu',p.Results.block_len);
 
 for iconfig=id_config
     ilay=ilay+1;
@@ -132,12 +128,12 @@ for iconfig=id_config
     if ~isempty(load_bar_comp)
         set(load_bar_comp.progress_bar, 'Minimum',0, 'Maximum',nb_pings_tot, 'Value',0);
     end
-    idx_pings_tot=1:nb_pings_tot;
+    idx_ping_tot=1:nb_pings_tot;
     nb_samples_max=5*1e4;
+
+    block_size=min(ceil(block_len/nb_samples_max),numel(idx_ping_tot));
     
-    block_size=nanmin(ceil(p.Results.block_len/nb_samples_max),numel(idx_pings_tot));
-    
-    num_ite=ceil(numel(idx_pings_tot)/block_size);
+    num_ite=ceil(numel(idx_ping_tot)/block_size);
     
     
     
@@ -151,29 +147,29 @@ for iconfig=id_config
     
     fileID=-ones(1,numel(fields));
     [~,curr_filename,~]=fileparts(tempname);
-    curr_data_name_t=fullfile(p.Results.PathToMemmap,curr_filename);
+    curr_data_name_t=fullfile(p.Results.PathToMemmap,curr_filename,'ac_data');
     
     for ifif=1:numel(fields)
         curr_data_name{ifif}=[curr_data_name_t fields{ifif} '.bin'];
         fileID(ifif) = fopen(curr_data_name{ifif},'w');
     end
-    
+     ptx = 2208;
     
     for ui=1:num_ite
-        idx_pings=idx_pings_tot((ui-1)*block_size+1:nanmin(ui*block_size,numel(idx_pings_tot)));
+        idx_ping=idx_ping_tot((ui-1)*block_size+1:min(ui*block_size,numel(idx_ping_tot)));
         
-        nb_pings=numel(idx_pings);
+        nb_pings=numel(idx_ping);
         
         
         for u=1:nb_pings
-            ip=idx_pings(u);
+            ip=idx_ping(u);
             if ~isempty(load_bar_comp)
                 str_disp=sprintf('Getting infos for file %s',filename_dat{ip});
                 set(load_bar_comp.progress_bar, 'Value',ip);
                 load_bar_comp.progress_bar.setText(str_disp);
             end
             
-            fid=fopen(filename_dat{ip},'r','n');
+            fid=fopen(filename_dat{ip},'r','n','US-ASCII');
             
             header.Model=fread(fid,8,'*char')';
             header.Fmt_ver=fread(fid,1,'ushort')';
@@ -186,7 +182,6 @@ for iconfig=id_config
             header.Date(6)=fread(fid,1,'short')';
             header.Remarks=char(fread(fid,287,'short')');
             
-            params.Time(ip)=datenum(header.Date);
             params.Mode(ip)=fread(fid,1,'short');
             params.TotalBeamNumber(ip)=fread(fid,1,'short');
             params.Beam_Id(ip,:)=fread(fid,5,'short');
@@ -236,11 +231,11 @@ for iconfig=id_config
             fclose(fid);
         end
         
-        nb_samples=floor(nanmax(echo.DataSize)/8);
-        echo.Data=nan(nanmax(echo.DataSize),nb_pings);
+        nb_samples=floor(max(echo.DataSize)/8);
+        echo.Data=nan(max(echo.DataSize),nb_pings);
         
         for u=1:nb_pings
-            ip=idx_pings(u);
+            ip=idx_ping(u);
             if ~isempty(load_bar_comp)
                 str_disp=sprintf('Getting Ping Data for %s',filename_dat{ip});
                 set(load_bar_comp.progress_bar, 'Value',ip);
@@ -261,10 +256,6 @@ for iconfig=id_config
         echo.comp_sig_4=echo.Data(7:8:end,:)+1j*echo.Data(8:8:end,:);
         
         idx_s=1:nb_samples;
-        %         SigIn=2*sqrt(...
-        %             (real(echo.comp_sig_1(idx_s,:))+real(echo.comp_sig_2(idx_s,:))+real(echo.comp_sig_3(idx_s,:))+real(echo.comp_sig_4(idx_s,:))).^2+...
-        %             (imag(echo.comp_sig_1(idx_s,:))+imag(echo.comp_sig_2(idx_s,:))+imag(echo.comp_sig_3(idx_s,:))+imag(echo.comp_sig_4(idx_s,:))).^2 ...
-        %             )/2^32/sqrt(2);
         
         SigIn=4*sqrt(...
             (real(echo.comp_sig_1(idx_s,:))+real(echo.comp_sig_2(idx_s,:))).^2+...
@@ -272,18 +263,17 @@ for iconfig=id_config
             )/2^32/sqrt(2);
         
         EL=20*log10(SigIn);
+        lambda = c/params.Frequency(ip);
         
-        PowerdB=EL-(SL+ME);
+        AG = 10*log10(ptx*lambda^2/(16*pi^2));
         
-        %         alongphi_1=fcv_phase(echo.comp_sig_1(idx_s,:),echo.comp_sig_2(idx_s,:));
-        %         acrossphi_1=fcv_phase(echo.comp_sig_3(idx_s,:),echo.comp_sig_4(idx_s,:));
-        %
+        PowerdB=EL-(SL+ME) + AG;
+             
         alongphi=angle(echo.comp_sig_2(idx_s,:).*conj(echo.comp_sig_1(idx_s,:)));
         acrossphi=angle(echo.comp_sig_4(idx_s,:).*conj(echo.comp_sig_3(idx_s,:)));
         
-        
-        AlongAngle=180/pi*asin(bsxfun(@rdivide,c*alongphi,(2*pi*params.Frequency(idx_pings)).*(L0*cosd(att.Pitch(idx_pings)))));
-        AcrossAngle=-180/pi*asin(bsxfun(@rdivide,c*acrossphi,(2*pi*params.Frequency(idx_pings)).*(L0*cosd(att.Roll(idx_pings)))));
+        AlongAngle=180/pi*asin(bsxfun(@rdivide,c*alongphi,(2*pi*params.Frequency(idx_ping)).*(L0*cosd(att.Pitch(idx_ping)))));
+        AcrossAngle=-180/pi*asin(bsxfun(@rdivide,c*acrossphi,(2*pi*params.Frequency(idx_ping)).*(L0*cosd(att.Roll(idx_ping)))));
         
         fwrite(fileID(strcmp(fields,'alongangle')),double(AlongAngle)/factor_fields(strcmpi(fields,'alongangle')),fmt_fields{strcmpi(fields,'alongangle')});
         fwrite(fileID(strcmp(fields,'acrossangle')),double(AcrossAngle)/factor_fields(strcmpi(fields,'acrossangle')),fmt_fields{strcmpi(fields,'acrossangle')});
@@ -299,8 +289,7 @@ for iconfig=id_config
     k=2*pi*params.Frequency/c;
     psi=5.78./(k*a).^2;
     
-    
-    config_current.TransceiverName='FCV30';
+    config_current.TransceiverName='FCV-30';
     config_current.Gain=G/2;
     config_current.SaCorrection=0;
     config_current.Frequency=38000;
@@ -312,20 +301,20 @@ for iconfig=id_config
     config_current.AngleSensitivityAthwartship=1/L0;
     config_current.PulseLength=params.TXPulseWidth(1);
     
-    echo.Data(nanmax(echo.DataSize)+1:end,:)=[];
+    echo.Data(max(echo.DataSize)+1:end,:)=[];
     
     sub_ac_data_temp=sub_ac_data_cl.sub_ac_data_from_files(curr_data_name,[nb_samples nb_pings_tot],fields);
     
-    params_current.Time=NMEA.UTC;
     params_current.BandWidth(:)=params.ChirpWidth(1);
     params_current.ChannelMode=params.Mode;
     params_current.Frequency(:)=params.Frequency;
     params_current.FrequencyEnd(:)=params.Frequency+params.ChirpWidth(1)/2;
     params_current.FrequencyStart(:)=params.Frequency-params.ChirpWidth(1)/2;
     params_current.PulseLength(:)=params.TXPulseWidth(1);
-    params_current.SampleInterval(:)=nanmean(diff(T,1,1),1);
-    params_current.Absorption(:)=alpha;
-    params_current.TransmitPower(:)=2000;
+    params_current.SampleInterval(:)=mean(diff(T,1,1),1);
+    
+    params_current.TransmitPower(:)=2208;
+    
     env_data=env_data_cl();
     env_data.SoundSpeed=c;
     
@@ -334,24 +323,22 @@ for iconfig=id_config
     
     ac_data_temp=ac_data_cl('SubData',sub_ac_data_temp,...
         'Nb_samples',length(R),...
-        'Nb_pings',length(params_current.Time),...
+        'Nb_beams',1,...
+        'Nb_pings',numel(params_current.PingNumber),...
         'MemapName',curr_data_name_t);
-    
+    config_current.SounderType = 'Split-beam (FURUNO)';
     trans_obj=transceiver_cl('Data',ac_data_temp,...
-        'AttitudeNavPing',att_data,...
-        'GPSDataPing',gps_data,...
         'Range',R(:,1),...
-        'Time',params_current.Time,...
+        'Time',NMEA.UTC,...
         'Config',config_current,...
         'Params',params_current);
-    
-
-    
-    layers(ilay)=layer_cl('ChannelID',{'FCV30'},...
+   trans_obj.set_absorption(env_data);
+   lay_tmp=layer_cl('ChannelID',{'FCV-30'},...
         'Filename',{ini_config_files{iconfig}},...
-        'Filetype','FCV30','Transceivers'...
+        'Filetype','FCV-30','Transceivers'...
         ,trans_obj,'GPSData',gps_data,'AttitudeNav',att_data,'EnvData',env_data);
     clear echo att NMEA params header;
+    layers = [layers lay_tmp];
     for ifif=1:numel(fields)
         fclose(fileID(ifif));
     end
@@ -361,14 +348,4 @@ if ~isempty(load_bar_comp)
 end
 end
 
-function sig_phase=fcv_phase(s1,s2)
-
-p1=sqrt(real(s1).^2+imag(s1).^2);
-p2=sqrt(real(s2).^2+imag(s2).^2);
-
-sig_phase=acos((real(s1).*real(s2)+imag(s1).*imag(s2))./(p1.*p2));
-sig_phase((real(s1).*imag(s2)-real(s2).*imag(s1))<0)=-sig_phase((real(s1).*imag(s2)-real(s2).*imag(s1))<0);
-
-
-end
 

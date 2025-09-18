@@ -6,11 +6,17 @@ if isempty(layer)
 end
     
 [path_file,~,~]=fileparts(layer.Filename{1});
+if ~isfolder(path_file)
+    app_path=get_esp3_prop('app_path');
+    path_file=app_path.data_root.Path_to_folder;
+end
+
 [svp_filename,svp_path]= uigetfile( {fullfile(path_file,'*.espsvp')}, 'Pick an SVP file (ESP3 format) ','MultiSelect','off');  
 
 if ~(svp_filename~=0)
     return;
 end
+
 layer.EnvData.load_svp(fullfile(svp_path,svp_filename));
 update_environnement_tab(main_figure,1);
 layer.layer_computeSpSv();

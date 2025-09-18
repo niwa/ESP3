@@ -93,11 +93,10 @@ if ~isempty(node)
             if strcmp(layer.Unique_ID,userdata.ids)
                 return;
             end
+            check_saved_bot_reg(main_figure);
             [idx,~]=layers.find_layer_idx(userdata.ids);
             set_esp3_prop('layers',layers);
             set_current_layer(layers(idx));
-
-            check_saved_bot_reg(main_figure);
             loadEcho(main_figure);
     end
 end

@@ -1,0 +1,2 @@
+CID,FREQ,G0,EQA,SACORRECT,BeamWidthAthwartship,AngleOffsetAthwartship,BeamWidthAlongship,AngleOffsetAlongship,RMS,depth,sphere_range_av,sphere_range_std,nb_echoes,nb_central_echoes,sphere_ts,sphere_type,up_or_down_cast,FrequencyStart,FrequencyEnd,Slope,TransmitPower,PulseLength,Mode,abs,soundspeed
+GPT  38 kHz 0090720580ea 2-1 ES38B,38000,26.401,-20.005,-0.614,7.197,-0.099,7.077,0.087,0.105,0,25.269,0.836,16013,376,-42.416,WC38.1mm,static,38000,38000,0,2000,0.001,CW,9.757,1500

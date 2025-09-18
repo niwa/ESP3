@@ -1,4 +1,4 @@
-function save_bot_xml_callback(~,~,main_figure)
+function save_bot_xml_callback(~,~,~)
 layer=get_current_layer();
 layer.write_bot_to_bot_xml();
 curr_disp=get_esp3_prop('curr_disp');

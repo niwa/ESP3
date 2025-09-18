@@ -9,11 +9,11 @@ switch main_echo.Type
         xdata=xdata+1/2;
 end
 
-[trans_obj,idx_freq]=layer.get_trans(curr_disp);
+[trans_obj,~]=layer.get_trans(curr_disp);
 trans=trans_obj;
 Number=trans.get_transceiver_pings();
 Samples=trans.get_transceiver_samples();
-[~,idx_ping_ori]=nanmin(abs(xdata(1)-Number));
+[~,idx_ping_ori]=min(abs(xdata(1)-Number));
 
-[~,idx_r_ori]=nanmin(abs(ydata(1)-Samples));
+[~,idx_r_ori]=min(abs(ydata(1)-Samples));
 end

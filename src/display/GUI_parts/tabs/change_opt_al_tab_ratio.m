@@ -1,4 +1,4 @@
-function change_opt_al_tab_ratio(src,evt)
+function change_opt_al_tab_ratio(src,~)
 
 curr_fig = ancestor(src,'figure');
 

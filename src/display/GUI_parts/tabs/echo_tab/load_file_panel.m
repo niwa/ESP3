@@ -3,7 +3,7 @@ function load_file_panel(main_figure,echo_tab_panel)
 if isappdata(main_figure,'file_tab')
     file_tab_comp=getappdata(main_figure,'file_tab');
     delete(file_tab_comp.file_tab);
-    rmappdata(main_figure,'file_tab',file_tab_comp);
+    rmappdata(main_figure,'file_tab');
 end
 
 app_path=get_esp3_prop('app_path');
@@ -38,7 +38,9 @@ file_tab_comp.JPanel.add(file_tab_comp.FileChooser);
 file_tab_comp.FileChooser.repaint();
 drawnow;
 
-filterSpec={'Pick a raw/crest/asl/fcv30/logbook file (*.raw,d*,*A,*.lst,*.ini,*.db)' {'*.raw';'d*';'*A';'*.lst';'*.ini';'echo_logbook.db'}};
+[~,ext,~] = get_ftypes_and_extensions();
+
+filterSpec={sprintf('Pick a %s  file',strjoin(ext,'/')) ext};
 
 file_tab_comp.FileChooser.setAcceptAllFileFilterUsed(true);
 fileFilter = {};
@@ -46,6 +48,7 @@ fileFilter = {};
 for filterIdx = 1 : size(filterSpec,1)
     fileFilter{end+1} = add_file_filter(file_tab_comp.FileChooser, filterSpec{filterIdx,:}); %#ok<AGROW>
 end
+
 try
     file_tab_comp.FileChooser.setFileFilter(fileFilter{1});  % use the first filter by default
 catch
@@ -94,8 +97,6 @@ if isempty(survey_data{1})
 else
     title(ax,sprintf('Survey %s, Voyage %s',survey_data{1}{1}.SurveyName,survey_data{1}{1}.Voyage),'Interpreter','none');
 end
-
-
 
 end
 
@@ -203,8 +204,8 @@ try
             gps_data(idx_empty)=[];
             txt(idx_empty)=[];
             
-            LatLim_cell=cellfun(@(x) [nanmin(x.Lat) nanmax(x.Lat)],gps_data,'un',0);
-            LonLim_cell=cellfun(@(x) [nanmin(x.Long) nanmax(x.Long)],gps_data,'un',0);
+            LatLim_cell=cellfun(@(x) [min(x.Lat) max(x.Lat)],gps_data,'un',0);
+            LonLim_cell=cellfun(@(x) [min(x.Long) max(x.Long)],gps_data,'un',0);
             
             idx_rem=cellfun(@(x) all(x==[-90 90]),LatLim_cell)|cellfun(@(x) all(x==[-180 180]),LonLim_cell);
             LatLim_cell(idx_rem)=[];
@@ -298,7 +299,7 @@ catch
 end
 end
 
-function button_cbacks(FileChooser, eventData, main_figure)
+function button_cbacks(FileChooser, eventData, ~)
 switch char(eventData.getActionCommand)
     case 'CancelSelection'
         
@@ -308,7 +309,8 @@ switch char(eventData.getActionCommand)
         if isempty(files)
             files = char(FileChooser.getSelectedFile);
         end
-        open_file([],[],files,main_figure)
+        esp3_obj=getappdata(groot,'esp3_obj');
+        esp3_obj.open_file('file_id',files);
         
     otherwise
         % should never happen

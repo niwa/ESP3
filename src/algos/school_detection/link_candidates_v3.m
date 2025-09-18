@@ -88,7 +88,7 @@ while u<length(vec_candidates(1:end-1))
         
         inside_idx=((dist_pings(ping_other)-dist_curr).^2/horz_link_max^2+(range(sample_other)-range_curr).^2/vert_link_max^2)<=1;
         
-        if sum(inside_idx)>0
+        if sum(inside_idx,'omitnan')>0
             linkable_candidates_idx=unique(idx_can_other(inside_idx));
             for iii=linkable_candidates_idx(:)'
                 linking_mat(iii,i)=1;
@@ -163,7 +163,7 @@ for ii=1:length(u)
     I_curr_can(I_curr_can==0)=nb_samples;
     J_curr_can=ceil(idx_curr/nb_samples);
     
-    if ((nanmax(dist_pings(J_curr_can))-nanmin(dist_pings(J_curr_can)))>=l_min_tot )&&((nanmax(range(I_curr_can))-nanmin(range(I_curr_can)))>=h_min_tot)   
+    if ((max(dist_pings(J_curr_can))-min(dist_pings(J_curr_can)))>=l_min_tot )&&((max(range(I_curr_can))-min(range(I_curr_can)))>=h_min_tot)   
         linked_candidates(candidates_ori==u(ii))=id;
         id=id+1;
     else

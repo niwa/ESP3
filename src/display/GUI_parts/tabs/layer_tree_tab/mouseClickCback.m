@@ -31,7 +31,7 @@ if eventData.isMetaDown||eventData.getClickCount==2
             jmenu.repaint;
         catch
         end
-    elseif eventData.getClickCount==2
+    elseif eventData.getClickCount>=2
         treePath = jtree.getPathForLocation(clickX, clickY);
         if~isempty(treePath)
             layers=get_esp3_prop('layers');
@@ -47,11 +47,11 @@ if eventData.isMetaDown||eventData.getClickCount==2
                         return;
                     end
                     if contains(userdata.ids,IDs)
+                        check_saved_bot_reg(main_figure);
                         [idx,~]=find_layer_idx(layers,userdata.ids);
                         set_esp3_prop('layers',layers);
                         set_current_layer(layers(idx));
-                        check_saved_bot_reg(main_figure);
-                            show_status_bar(main_figure,1);
+                        show_status_bar(main_figure,1);
 
                         loadEcho(main_figure);
                         hide_status_bar(main_figure);
@@ -96,16 +96,21 @@ menuLayItem0 = JMenuItem(str_goto);
 menuLayItem9 = JMenuItem('Load other channels');
 menuLayItem10 = JMenuItem('Remove channels');
 menuLayItem8 = JMenuItem('Edit layer Survey Data');
-menuLayItem1 = JMenuItem('Merge Selected layers');
-menuLayItem2 = JMenuItem('Split Selected Layers (per survey data)');
-menuLayItem3 = JMenuItem('Split Selected Layers (per files)');
-menuLayItem11 = JMenuItem('Remove  selected files');
+menuLayItem13 = JMenuItem('Display curtain in 3D view');
+menuLayItem14 = JMenuItem('Display bathy in 3D view');
+menuLayItem18 = JMenuItem('Display high-resolution bathy in 3D view');
+menuLayItem15 = JMenuItem('Display 3D Features ID in 3D view');
+menuLayItem16 = JMenuItem('Display 3D Features Sv in 3D view');
+menuLayItem17 = JMenuItem('Display 3D Features Gridded Sv in 3D view');
+menuLayItem1 = JMenuItem('Merge highlighted layers');
+menuLayItem2 = JMenuItem('Split highlighted Layers (per survey data)');
+menuLayItem3 = JMenuItem('Split highlighted Layers (per files)');
+menuLayItem11 = JMenuItem('Remove highlighted files');
 menuLayItem4 = JMenuItem('Export Gps Data to Shapefile');
 menuLayItem6 = JMenuItem('Export Gps Data to _gps_data.csv');
 menuLayItem12 = JMenuItem('Plot Pitch/Roll/Heave analysis');
-str_delete='<HTML><center><FONT color="Red"><b>Remove selected layers</b></Font> ';
+str_delete='<HTML><center><FONT color="Red"><b>Remove highlighted layers</b></Font> ';
 menuLayItem5 = JMenuItem(str_delete);
-
 
 set(handle(menuLayItem0,'CallbackProperties'), 'ActionPerformedCallback',{@open_selected_callback,main_figure,IDs});
 set(handle(menuLayItem9,'CallbackProperties'), 'ActionPerformedCallback',{@load_other_channels_cback,main_figure,IDs,0});
@@ -119,6 +124,13 @@ set(handle(menuLayItem4,'CallbackProperties'), 'ActionPerformedCallback',{@expor
 set(handle(menuLayItem6,'CallbackProperties'), 'ActionPerformedCallback',{@export_gps_to_csv_callback,main_figure,IDs,'_gps_data'});
 set(handle(menuLayItem12,'CallbackProperties'), 'ActionPerformedCallback',{@pitch_roll_analysis_callback,main_figure,IDs});
 set(handle(menuLayItem5,'CallbackProperties'), 'ActionPerformedCallback',{@delete_layer_callback,main_figure,IDs});
+set(handle(menuLayItem13,'CallbackProperties'), 'ActionPerformedCallback',{@display_in_3D_callback,IDs,'curtain'});
+set(handle(menuLayItem14,'CallbackProperties'), 'ActionPerformedCallback',{@display_in_3D_callback,IDs,'bathy'});
+set(handle(menuLayItem18,'CallbackProperties'), 'ActionPerformedCallback',{@display_in_3D_callback,IDs,'highres-bathy'});
+set(handle(menuLayItem15,'CallbackProperties'), 'ActionPerformedCallback',{@display_in_3D_callback,IDs,'feature_ID_scatter'});
+set(handle(menuLayItem16,'CallbackProperties'), 'ActionPerformedCallback',{@display_in_3D_callback,IDs,'feature_sv_scatter'});
+set(handle(menuLayItem17,'CallbackProperties'), 'ActionPerformedCallback',{@display_in_3D_callback,IDs,'feature_sv_griddded_scatter'});
+
 
 jmenu = JPopupMenu;
 jmenu.add(menuLayItem0);
@@ -133,6 +145,12 @@ jmenu.add(menuLayItem4);
 jmenu.add(menuLayItem6);
 jmenu.add(menuLayItem5);
 jmenu.add(menuLayItem12);
+jmenu.add(menuLayItem13);
+jmenu.add(menuLayItem14);
+jmenu.add(menuLayItem18);
+jmenu.add(menuLayItem15);
+jmenu.add(menuLayItem16);
+jmenu.add(menuLayItem17);
 end
 
 function load_other_channels_cback(~,~,main_figure,IDs,rem)
@@ -163,15 +181,10 @@ for i_lay=idx
     layer_obj=layers(i_lay);
     Filename=layer_obj.Filename{1};
     channels_open=deblank(layer_obj.ChannelID);
-    ftype = get_ftype(Filename);
-   
-    switch ftype
-        case {'EK80' 'EK60' 'ASL'}
-            frequency=layer_obj.AvailableFrequencies;
-            channels_tmp=deblank(layer_obj.AvailableChannelIDs);
-        otherwise
-            continue;
-    end
+
+    frequency=layer_obj.AvailableFrequencies;
+    channels_tmp=deblank(layer_obj.AvailableChannelIDs);
+
     
     if isempty(frequency)
         continue;
@@ -185,21 +198,23 @@ for i_lay=idx
             [frequency_to_add,idx_s] = sort(frequency_to_add);
             channels_to_add = channels_to_add(idx_s);
             
-            str_d='Channels to load';
+            str_d='load';
         else
             frequency_to_add=frequency(ismember(channels,channels_open));
             channels_to_add=channels(ismember(channels,channels_open));
             [frequency_to_add,idx_s] = sort(frequency_to_add);
             channels_to_add = channels_to_add(idx_s);
-            str_d='Channels to remove';
+            str_d='remove';
         end
+
         list_freq_str = cellfun(@(x,y) sprintf('%.0f kHz: %s',x,y),num2cell(frequency_to_add/1e3), channels_to_add,'un',0);
+
         if isempty(list_freq_str)
-            warndlg_perso(main_figure,layers_Str_comp{i_lay},[layers_Str_comp{i_lay} ': All Channels already loaded.'])
+            dlg_perso(main_figure,layers_Str_comp{i_lay},sprintf('%s: no channel(s) to %s.',layers_Str_comp{i_lay},str_d))
             continue;
         end
         
-        [select,val] = listdlg_perso(main_figure,str_d,list_freq_str);
+        [select,val] = listdlg_perso(main_figure,sprintf('Channel(s) to %s.',str_d),list_freq_str);
         if val==0 || isempty(select)
             continue;
         else
@@ -249,7 +264,7 @@ end
 end
 
 
-function remove_selected_files_callback(src,evt,main_figure,IDs,files)
+function remove_selected_files_callback(~,~,main_figure,IDs,files)
 layers=get_esp3_prop('layers');
 layer=get_current_layer();
 selected_layers=IDs;
@@ -371,7 +386,7 @@ end
 
 
 
-function open_selected_callback(src,evt,main_figure,IDs)
+function open_selected_callback(~,~,main_figure,IDs)
 
 layers=get_esp3_prop('layers');
 layer=get_current_layer();
@@ -387,10 +402,10 @@ if ~isempty(IDs)
     if strcmp(layer.Unique_ID,ID)
         return;
     end
+    check_saved_bot_reg(main_figure);
     [idx,~]=find_layer_idx(layers,ID);
     set_esp3_prop('layers',layers);
     set_current_layer(layers(idx));
-    check_saved_bot_reg(main_figure);
     loadEcho(main_figure);
     
 end
@@ -398,7 +413,7 @@ end
 
 
 
-function merge_selected_callback(src,evt,main_figure,IDs)
+function merge_selected_callback(~,~,main_figure,IDs)
 layers=get_esp3_prop('layers');
 layer=get_current_layer();
 selected_layers=IDs;

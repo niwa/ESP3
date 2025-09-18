@@ -42,7 +42,7 @@
 function check_fmt_box(src,~,min_val,max_val,deflt_val,precision)
 
 switch precision
-    case {'%s' '%c'}
+    case {'%s' '%c' 'bool'}
         return;
     otherwise
         E = str2double(get(src,'string'));

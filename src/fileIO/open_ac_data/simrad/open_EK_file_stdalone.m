@@ -43,6 +43,8 @@
 
 %% Function
 function [layers,id_rem] = open_EK_file_stdalone(Filename_cell,varargin)
+id_rem = [];
+layers = layer_cl.empty();
 
 p = inputParser;
 
@@ -55,13 +57,11 @@ if ~iscell(Filename_cell)
 end
 
 if isempty(Filename_cell)
-    id_rem = [];
-    layers = [];
     return;
 end
 
 
-[def_path_m,~,~] = fileparts(Filename_cell{1});
+def_path_m = fullfile(tempdir,'AbsSlopeecho');
 
 if ischar(Filename_cell)
     def_gps_only_val = 0;
@@ -74,24 +74,27 @@ addParameter(p,'PathToMemmap',def_path_m,@ischar);
 addParameter(p,'Calibration',[]);
 addParameter(p,'Frequencies',[]);
 addParameter(p,'Channels',{});
+addParameter(p,'open_all_channels',false);
+addParameter(p,'parallel_process',false,@islogical);
 addParameter(p,'FieldNames',{});
 addParameter(p,'EsOffset',[]);
 addParameter(p,'GPSOnly',def_gps_only_val);
 addParameter(p,'LoadEKbot',0);
 addParameter(p,'force_open',0);
-addParameter(p,'sub_sample',1);
+addParameter(p,'env_data',env_data_cl.empty());
+addParameter(p,'Keep_complex_data',false,@islogical);
+addParameter(p,'ComputeImpedance',false,@islogical);
 addParameter(p,'load_bar_comp',[]);
 
 parse(p,Filename_cell,varargin{:});
-
 cal = p.Results.Calibration;
+
 vec_freq_init = sort(p.Results.Frequencies);
 
 channels_init = deblank(p.Results.Channels);
 load_bar_comp = p.Results.load_bar_comp;
-
-%profile on;
-%For further profiling, it looks like the bottle neck is in
+% profile on;
+% For further profiling, it looks like the bottle neck is in
 % the parsing of NMEA messages coming from the POS/MV, as they are
 % recorded at 10Hz, for GPTS and in the match filtering process for WBT
 % data...
@@ -102,18 +105,14 @@ else
     GPSOnly = p.Results.GPSOnly;
 end
 
-
-
 if ~isequal(Filename_cell, 0)
     
     nb_files = numel(Filename_cell);
-            if ~isempty(load_bar_comp)
-            set(load_bar_comp.progress_bar, 'Minimum',0, 'Maximum',length(Filename_cell),'Value',0);
-            end
+    if ~isempty(load_bar_comp)
+        set(load_bar_comp.progress_bar, 'Minimum',0, 'Maximum',length(Filename_cell),'Value',0);
+    end
     layers(length(Filename_cell)) = layer_cl();
     id_rem = [];
-    
-  
     
     for uu = 1:nb_files
         
@@ -126,25 +125,29 @@ if ~isequal(Filename_cell, 0)
         [path_f,fileN,~] = fileparts(Filename);
         
         try
-            ftype = get_ftype(Filename);
+
+            echo_folder = get_esp3_file_folder(path_f,true);
+            fileIdx = fullfile(echo_folder,[fileN '_echoidx.mat']);
             
-            fileIdx = fullfile(path_f,'echoanalysisfiles',[fileN '_echoidx.mat']);
-            
-            if ~isfolder(fullfile(path_f,'echoanalysisfiles'))
-                mkdir(fullfile(path_f,'echoanalysisfiles'));
-            end
-             
-            if ~isfile(fileIdx)
-                %idx_raw_obj=idx_from_raw(Filename,p.Results.load_bar_comp);
-                idx_raw_obj = idx_from_raw_v2(Filename,p.Results.load_bar_comp);
+    
+            try
+                fidx = load(fileIdx);   
+                idx_raw_obj = fidx.idx_raw_obj;
+            catch
+                idx_raw_obj = raw_idx_cl(Filename,p.Results.load_bar_comp);
                 save(fileIdx,'idx_raw_obj');
-            else
-                load(fileIdx);
+            end
+
+
+            if ~ismember(idx_raw_obj.raw_type,{'EK60','EK80','MS70','ME70'})
+                id_rem=union(id_rem,uu);
+                continue;
             end
             
-            [~,et] = start_end_time_from_file(Filename);
             
-            dgs = find((strcmp(idx_raw_obj.type_dg,'RAW0')|strcmp(idx_raw_obj.type_dg,'RAW3'))&idx_raw_obj.chan_dg==nanmin(idx_raw_obj.chan_dg));
+            [~,et] = start_end_time_from_file(Filename,idx_raw_obj.raw_type);
+            
+            dgs = find((strcmp(idx_raw_obj.type_dg,'RAW0')|strcmp(idx_raw_obj.type_dg,'RAW3'))&idx_raw_obj.chan_dg==min(idx_raw_obj.chan_dg,[],'omitnan'));
             
             if isempty(dgs)
                 if ~isempty(load_bar_comp)
@@ -156,11 +159,11 @@ if ~isequal(Filename_cell, 0)
                 continue;
             end
             
-            if et-idx_raw_obj.time_dg(dgs(end))>2*nanmax(diff(idx_raw_obj.time_dg(dgs)))
+            if et-idx_raw_obj.time_dg(end)>2*max(diff(idx_raw_obj.time_dg(dgs)),[],'omitnan')||idx_raw_obj.Version<raw_idx_cl.get_curr_raw_idx_cl_version()
                 fprintf('Re-Indexing file: %s\n',Filename);
                 delete(fileIdx);
-                idx_raw_obj = idx_from_raw_v2(Filename,p.Results.load_bar_comp);
-                save(fileIdx,'idx_raw_obj');
+                idx_raw_obj = raw_idx_cl(Filename,p.Results.load_bar_comp);
+                    save(fileIdx,'idx_raw_obj');
             end
             
             
@@ -179,17 +182,24 @@ if ~isequal(Filename_cell, 0)
                 
                 continue;
             end
-            switch ftype
+            %config_trans = {};
+            switch idx_raw_obj.raw_type
                 case 'EK80'
-                    [~,config] = read_EK80_config(Filename);
-                    
+                    [~,config] = read_EK80_config(Filename);                   
                     frequency = cellfun(@(x) x.Frequency,config);
-                    channels = cellfun(@(x) deblank(x.ChannelID),config,'un',0);
-                    
-                case 'EK60'
+                    channels = cellfun(@(x) deblank(x.ChannelID),config,'un',0); 
+                case {'EK60' 'ME70' 'MS70'}
                     %fid=fopen(Filename,'r');
-                    fid = fopen(Filename,'r','n','US-ASCII');
-                    [~, frequency,channels] = readEKRaw_ReadHeader(fid);
+                    fid = fopen(Filename,'r','l','US-ASCII');
+                    [header, frequency,channels] = readEKRaw_ReadHeader(fid);
+
+                    if isempty(header)
+                        frewind(fid);
+                        [~,~] = read_EK80_config(fid,false);
+                        [~, frequency,channels] = readEKRaw_ReadHeader(fid);
+                    end
+
+
                     fclose(fid);
                 otherwise
                     continue;
@@ -199,7 +209,7 @@ if ~isequal(Filename_cell, 0)
             channels  = channels(channels_id);
             
             if isempty(frequency)
-                warndlg_perso([],'Failed',['Cannot open file ' Filename]);
+                dlg_perso([],'Failed',['Cannot open file ' Filename]);
                 continue;
             end
             
@@ -216,11 +226,22 @@ if ~isequal(Filename_cell, 0)
             if ~all(ismember(vec_freq_init,vec_freq_temp))
                 vec_freq_init = [];
             end
-            
-            idx_common_channels = ismember(channels_temp,channels_init);
-            idx_common_freqs = ismember(vec_freq_temp,vec_freq_init);
+            idx_common_channels = [];
+            if ~isempty(channels_init)
+                idx_common_channels = ismember(channels_temp,channels_init);
+            end
+            idx_common_freqs = [];
+            if ~isempty(vec_freq_init)
+                idx_common_freqs = ismember(vec_freq_temp,vec_freq_init);
+            end
+
+            if p.Results.open_all_channels||(p.Results.parallel_process&&isempty(idx_common_channels))
+                idx_common_channels = (1:numel(channels_temp));
+                idx_common_freqs = (1:numel(vec_freq_temp));
+            end
  
-            if (sum(idx_common_channels)==transceivercount||sum(idx_common_channels)==numel(channels_init))&&~isempty(channels_init)
+            if p.Results.open_all_channels||(p.Results.parallel_process&&isempty(idx_common_channels))||...
+                    ((sum(idx_common_channels)==transceivercount||sum(idx_common_channels)==numel(channels_init))&&(~isempty(channels_init)))
                 vec_freq = vec_freq_temp(idx_common_channels);
                 channels_sub = channels_temp(idx_common_channels);
             else
@@ -234,9 +255,8 @@ if ~isequal(Filename_cell, 0)
                             
                             %set_figure_state(fig,state_fig);
                             if val==0 || isempty(select)
-                                id_rem = [];
-                                layers = [];
-                                return;
+                                id_rem=union(id_rem,uu);
+                                continue;
                             else
                                 vec_freq = vec_freq_tot(select);
                                 channels_sub = channels_temp(select);
@@ -250,8 +270,13 @@ if ~isequal(Filename_cell, 0)
                         channels_sub = channels_temp;
                     end
                 else
-                    vec_freq = vec_freq_temp(idx_common_freqs);
-                    channels_sub = channels_temp(idx_common_freqs);
+                    if any(idx_common_channels)
+                        vec_freq = vec_freq_temp(idx_common_channels);
+                        channels_sub = channels_temp(idx_common_channels);
+                    else
+                        vec_freq = vec_freq_temp(idx_common_freqs);
+                        channels_sub = channels_temp(idx_common_freqs);
+                    end
                 end
             end
             
@@ -262,10 +287,8 @@ if ~isequal(Filename_cell, 0)
             end
             
             vec_freq_init = vec_freq;
+            channels_init = channels_sub;
 
-
-            
-           
             
             if any(nb_pings<=1)
                 id_rem=union(id_rem,uu);
@@ -279,24 +302,24 @@ if ~isequal(Filename_cell, 0)
                 continue;
             end
             
-            
-            [trans_obj,envdata,NMEA,mru0_att] =data_from_raw_idx_cl_v7(path_f,idx_raw_obj,...%new version.3x faster for EK80 files. than v5...
+            [trans_obj,envdata,NMEA,mru0_att,mru1_att,mru1_gps] = data_from_raw_idx_cl(path_f,idx_raw_obj,...
                 'Frequencies',vec_freq,...
                 'Channels',channels_sub,...
                 'GPSOnly',GPSOnly(uu),...
                 'FieldNames',p.Results.FieldNames,...
-                'PathToMemmap',p.Results.PathToMemmap,...
-                'load_bar_comp',p.Results.load_bar_comp);
-            
-            
-            
+                'PathToMemmap',p.Results.PathToMemmap,...   
+                'env_data',p.Results.env_data,...
+                'load_bar_comp',p.Results.load_bar_comp,...
+                'Keep_complex_data',p.Results.Keep_complex_data,....
+                'ComputeImpedance',p.Results.ComputeImpedance);
+
             if isempty(trans_obj)&&GPSOnly(uu)==0
                 id_rem=union(id_rem,uu);
                 continue;
             end
             
             if ~isa(trans_obj,'transceiver_cl')
-                warndlg_perso([],'','Could not read file.');
+                dlg_perso([],'','Could not read file.');
                 id_rem=union(id_rem,uu);
                 continue;
             end
@@ -348,63 +371,91 @@ if ~isequal(Filename_cell, 0)
                 end
             end
             
-            NMEA_att=setdiff({'SHR' 'HDT' 'VLW' 'HDG' 'XDR' 'IWAIMU' 'DID'},NMEA_ignore);
-            NMEA_gps=setdiff({'GGA' 'GGL' 'RMC'},NMEA_ignore);
+            NMEA_att = setdiff({'SHR' 'HDT' 'VLW' 'HDG' 'XDR' 'IWAIMU' 'DID'},NMEA_ignore);
+            NMEA_hdg = setdiff({'HDT' 'HDG'},NMEA_ignore);
+            NMEA_gps = setdiff({'GGA' 'RMC' 'GLL'},NMEA_ignore);
             
-            
-            idx_NMEA_gps=false(numel(NMEA_gps),numel(NMEA.type));
-            for ig=1:numel(NMEA_gps)
-                idx_NMEA_gps(ig,:)=strcmpi(NMEA.type,NMEA_gps{ig});
+            idx_NMEA_gps = [];
+
+            if isempty(mru1_gps.Lat)
+                idx_NMEA_gps=false(numel(NMEA_gps),numel(NMEA.type));
+                
+                for ig=1:numel(NMEA_gps)
+                    idx_NMEA_gps(ig,:)=strcmpi(NMEA.type,NMEA_gps{ig});
+                end
+
+                [~,idx_GPS]=max(sum(idx_NMEA_gps,2));
+
+                ori_gpses=NMEA.ori(idx_NMEA_gps(idx_GPS,:));
+                [ori_unique,~,ib]=unique(ori_gpses);
+                ib_mode=mode(ib);
+                if isnan(ib_mode)
+                    ori_mode='';
+                else
+                    ori_mode=ori_unique(ib_mode);
+                end
+
+                if ~isempty(idx_NMEA_gps)
+                    idx_NMEA_gps=find((idx_NMEA_gps(idx_GPS,:)&strcmpi(NMEA.ori,ori_mode)));
+                end
             end
-            
-            [~,idx_GPS]=max(sum(idx_NMEA_gps,2));
-            
-            ori_gpses=NMEA.ori(idx_NMEA_gps(idx_GPS,:));
-            [ori_unique,~,ib]=unique(ori_gpses);
-            ib_mode=mode(ib);
-            if isnan(ib_mode)
-                ori_mode='';
-            else
-                ori_mode=ori_unique(ib_mode);
+
+            mru_att = mru0_att;
+            if numel(mru1_att.Time) > numel(mru0_att.Time)
+                mru_att = mru1_att;
             end
+
+            idx_NMEA_att = [];
             
-            idx_NMEA_gps=find((idx_NMEA_gps(idx_GPS,:)&strcmpi(NMEA.ori,ori_mode)));
-            idx_NMEA_att=find(ismember(NMEA.type,NMEA_att));
+            if isempty(mru_att.Roll)
+                idx_NMEA_att = find(ismember(NMEA.type,NMEA_att));
+            end
+
+            if ~any(mru_att.Heading)
+                idx_NMEA_att = union(idx_NMEA_att,find(ismember(NMEA.type,NMEA_hdg)));
+            end
+
             
-            
-            [gps_data_tmp,attitude_full,time_diff]=nmea_to_attitude_gps_v2(NMEA.string,NMEA.time,union(idx_NMEA_att,idx_NMEA_gps));
+            [gps_data_tmp,attitude_full_tmp,time_diff]=nmea_to_attitude_gps_v2(NMEA.string,NMEA.time,union(idx_NMEA_att,idx_NMEA_gps));
+            gps_data=gps_data_tmp.clean_gps_track();
+
+            if numel(mru1_gps.Time) > numel(gps_data.Time)
+                gps_data = mru1_gps;
+            end
             
             time_str='';
             if time_diff>0
-                time_str=sprintf('Computer time is %s in advance on GPS time',datestr(time_diff/(24*60*60),'HH:MM:SS'));
+                time_str = sprintf('Computer time is %s in advance on GPS time',string(seconds(time_diff),'hh:mm:ss.SSSS'));
             elseif time_diff<0
-                sprintf('Computer time is %s behind GPS time',datestr((-time_diff)/(24*60*60),'HH:MM:SS'));
+                time_str = sprintf('Computer time is %s behind GPS time',string(seconds(time_diff),'hh:mm:ss.SSSS'));
             end
             if ~isempty(p.Results.load_bar_comp)
                 p.Results.load_bar_comp.progress_bar.setText(time_str);
             else
                 disp(time_str);
             end
-            
-            if isempty(attitude_full)
-                if ~isempty(gps_data_tmp)
-                    attitude_full=att_heading_from_gps(gps_data_tmp,2);
-                end
-            elseif all(isnan(attitude_full.Heading))
-                if ~isempty(gps_data_tmp)
-                    attitude_heading=att_heading_from_gps(gps_data_tmp,2);
+
+            if isempty(attitude_full_tmp)||~any(attitude_full_tmp.Roll) && ~isempty(mru_att.Roll)
+                attitude_full = mru_att;
+            else
+                attitude_full = attitude_full_tmp;
+            end
+
+            if isempty(attitude_full) && ~isempty(gps_data)
+                attitude_full = att_heading_from_gps(gps_data,2);
+            end
+
+            if all(isnan(attitude_full.Heading))||all(attitude_full.Heading==0)
+                if ~isempty(attitude_full_tmp) && any(attitude_full_tmp.Heading)
+                     attitude_full.Heading=resample_data_v2(attitude_full_tmp.Heading,attitude_full_tmp.Time,attitude_full.Time,'Type','Angle');
+                elseif ~isempty(gps_data) && ~isempty(gps_data.Lat)
+                    attitude_heading=att_heading_from_gps(gps_data,2);
                     attitude_full.Heading=resample_data_v2(attitude_heading.Heading,attitude_heading.Time,attitude_full.Time,'Type','Angle');
                     attitude_full.NMEA_heading=attitude_heading.NMEA_heading;
                 end
             end
-            
-            gps_data=gps_data_tmp.clean_gps_track();
-            %gps_data=gps_data_tmp;
-            if isempty(attitude_full)||~any(attitude_full.Roll)&&~isempty(mru0_att.Roll)
-                attitude_full=mru0_att;
-            end
-            
-            new_lines=nmea_to_lines(NMEA,setdiff({'DFT','DBS','OFS'},NMEA_ignore));
+                  
+            new_lines=nmea_to_lines(NMEA,setdiff({'DFT','DBS','OFS','TBD'},NMEA_ignore));
             
             if ~isempty(new_lines)
                 trans_depth=new_lines(1).Range;
@@ -416,20 +467,22 @@ if ~isequal(Filename_cell, 0)
             end
             
             if GPSOnly(uu)==0
-                for i =1:length(trans_obj)
-                    if trans_obj(i).need_escorr()
+                for itr =1:length(trans_obj)
+                    if trans_obj(itr).need_escorr()
                         es_offset=p.Results.EsOffset;
-                        if (isempty(es_offset)||isnan(es_offset)||~isnumeric(es_offset))&&isfile(fullfile(path_f,'survey_options.xml'))
-                            survey_options_obj=parse_survey_options_xml(fullfile(path_f,'survey_options.xml'));
-                            es_offset = survey_options_obj.Es60_correction;
+
+                        if (isempty(es_offset) || ismember('EsOffset',p.UsingDefaults) || isnan(es_offset) || ~isnumeric(es_offset)) && isfile(fullfile(path_f,'survey_options.xml'))
+                            surv_options_obj = parse_survey_options_xml(fullfile(path_f,'survey_options.xml'));
+                            es_offset = surv_options_obj.Es60_correction.Value;
                         end
-                        trans_obj(i).correctTriangleWave('EsOffset',es_offset,...
+                        trans_obj(itr).correctTriangleWave('EsOffset',es_offset,...
                             'load_bar_comp',p.Results.load_bar_comp);
                     end
                 end
+                
                 if ~isempty(cal)
                     for n=1:length(trans_obj)
-                        idx_cal=find(trans_obj(n).get_params_value('Frequency',1)==cal.F);
+                        idx_cal=find(trans_obj(n).get_params_value('Frequency',1)==cal.FREQ);
                         if ~isempty(idx_cal)
                             
                             tau = trans_obj(n).get_params_value('PulseLength',1);
@@ -445,7 +498,7 @@ if ~isequal(Filename_cell, 0)
                         end
                     end
                 end
-                
+
                 vec_freq=nan(1,numel(trans_obj));
                 for itrans=1:length(trans_obj)
                     vec_freq(itrans)=trans_obj(itrans).Config.Frequency;
@@ -455,13 +508,12 @@ if ~isequal(Filename_cell, 0)
                 for itrans=1:length(trans_obj)
                     
                     if~isempty(trans_depth)
-                        [dt,idx]=nanmin(abs(depth_time(:)-trans_obj(itrans).Time(:)'));
-                        idx_rem= dt>nanmax(10*mode(diff(trans_obj(itrans).Time)),5*mode(diff(depth_time)));
-                        trans_depth_resampled=trans_depth(idx);
+                        trans_depth_resampled=resample_data_v2(trans_depth(:)',depth_time(:)',trans_obj(itrans).Time(:)');
+                        idx_rem= isnan(trans_depth_resampled);
                         trans_depth_resampled(idx_rem)=0;
-                        trans_obj(itrans).TransducerDepth=trans_depth_resampled;
+                        trans_obj(itrans).TransceiverDepth = trans_depth_resampled;
                     else
-                        trans_obj(itrans).TransducerDepth = zeros(size(trans_obj(itrans).Time));
+                        trans_obj(itrans).TransceiverDepth = zeros(size(trans_obj(itrans).Time));
                     end
                 end
                 
@@ -469,56 +521,18 @@ if ~isequal(Filename_cell, 0)
                     id_rem=union(id_rem,uu);
                     continue;
                 end
+               
                 
-
-                
-                for i =1:length(trans_obj)
-                    gps_data_ping=gps_data.resample_gps_data(trans_obj(i).Time);
-                    attitude=attitude_full.resample_attitude_nav_data(trans_obj(i).Time);   
-                    trans_obj(i).Params=trans_obj(i).Params.reduce_params();
-                    trans_obj(i).GPSDataPing=gps_data_ping;
-                    trans_obj(i).AttitudeNavPing=attitude;
-                    trans_obj(i).set_pulse_Teff();
-                    trans_obj(i).set_pulse_comp_Teff();
+                for itr =1:length(trans_obj)                  
+                    trans_obj(itr).Params=trans_obj(itr).Params.reduce_params();
+                    trans_obj(itr).set_pulse_Teff();
+                    trans_obj(itr).set_pulse_comp_Teff();
                 end
             end
-            
-            layers(uu)=layer_cl('Filename',{Filename},'Filetype',ftype,'GPSData',gps_data,'AttitudeNav',attitude_full,'EnvData',envdata,...
+
+            layers(uu)=layer_cl('Filename',{Filename},'Filetype',idx_raw_obj.raw_type,'GPSData',gps_data,'AttitudeNav',attitude_full,'EnvData',envdata,...
                 'AvailableFrequencies',av_frequencies,'AvailableChannelIDs',av_cids);
             
-            config_file=fullfile(path_f,[fileN '_config.xml']);
-            
-            if isfile(config_file)
-                try
-                    fid=fopen(config_file,'r');
-                    t_line=fread(fid,'*char');
-                    t_line=t_line';
-                    fclose(fid);
-                    [~,output,type]=read_xml0(t_line);
-                    switch type
-                        case 'Configuration'
-                            for i=1:length(trans_obj)
-                                idx = find(strcmp(deblank( trans_obj(i).Config.ChannelID),deblank(cellfun(@(x) x.ChannelIdShort,output,'un',0))));
-                                if ~isempty(idx)
-                                    config_obj=config_obj_from_xml_struct(output(idx),t_line);
-                                    if~isempty(config_obj)
-                                        trans_obj(i).Config=config_obj;
-                                    end
-                                end
-                            end
-                    end
-                catch
-                    warndlg_perso([],'XML',sprintf('Could not read Config for file %s\n',fileN),5)     
-                end
-            else
-                if strcmpi(ftype,'ek80')
-                    fid=fopen(config_file,'w+');
-                    if fid>0
-                        fwrite(fid,trans_obj(1).Config.XML_string,'char');
-                        fclose(fid);
-                    end
-                end
-            end
             
             layers(uu).add_trans(trans_obj);
             layers(uu).add_lines(new_lines);
@@ -527,15 +541,12 @@ if ~isequal(Filename_cell, 0)
             end
         catch err
             id_rem=union(id_rem,uu);
-            warndlg_perso([],'',sprintf('Could not open files %s\n',Filename));
+            dlg_perso([],'',sprintf('Could not open files %s\n',Filename));
             print_errors_and_warnings(1,'error',err);
-            %             if ~isdeployed
-            %                 rethrow(err);
-            %             end
         end
         
         if ~isempty(load_bar_comp)
-            set(load_bar_comp.progress_bar,'Value',uu);
+            set(load_bar_comp.progress_bar, 'Minimum',0, 'Maximum',length(Filename_cell),'Value',uu);
         end
         
     end
@@ -545,7 +556,7 @@ if ~isequal(Filename_cell, 0)
     else
         layers(id_rem)=[];
     end
-    
+
     clear('data','transceiver');
     
     %            profile off;
