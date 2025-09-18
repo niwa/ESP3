@@ -89,7 +89,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 * **Yoann Ladroit**, NIWA - *Initial work and main developer* - Yoann.ladroit@niwa.co.nz - [yladroit](https://bitbucket.org/yladroit)
 * **Alexandre C.G. Schimel**, NIWA  - *Developer* - Alexandre.Schimel@niwa.co.nz - [AlexandreSchimel](https://bitbucket.org/AlexandreSchimel)
-* **Alicia Maurice**,NIWA - *Developer - tester* - Alicia.Maurice@niwa.co.nz - [Alicia.Maurice](https://git.niwa.co.nz/Alicia.Maurice)
+* **Alicia Maurice**,NIWA - *Developer* - Alicia.Maurice@niwa.co.nz - [Alicia.Maurice](https://git.niwa.co.nz/Alicia.Maurice)
 * **Pablo Escobar-Flores**,NIWA - *Developer - tester* - Pablo.Escobar@niwa.co.nz - [Pabloe1982](https://bitbucket.org/Pabloe1982)
 
 ---
