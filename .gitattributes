@@ -1,5 +1,7 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+* text eol=lf
+*.png binary
 # Custom for Matlab
 *.m     diff=matlab
 # Standard to msysgit
