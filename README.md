@@ -1,4 +1,4 @@
-![EchoAnalysis_tot.png](https://github.com/niwa/ESP3/tree/master/icons/EchoAnalysis_tot.png)
+![EchoAnalysis_tot.png](https://raw.githubusercontent.com/niwa/ESP3/master/icons/EchoAnalysis_tot.png)
 
 ESP3 is an **open-source** software for visualizing and processing **fisheries acoustics data**, developed by the fisheries acoustics team at NIWA (Wellington, New Zealand). Its focus is the processing of fisheries acoustic surveys, with attention to reproducibility and consistency. It is built in priority for SIMRAD EK60 and EK80 data (.raw) but also supports a few other formats to some extent (NIWA CREST, Furuno FCV-30 and ASL AZFP).
 
@@ -59,7 +59,7 @@ A compiled version of the latest stable release is available for install on a Wi
 
 * Download the latest installer for the ESP3 compiled version on SourceForge:
 
-[![Download ESP3](https://github.com/niwa/ESP3/blob/master/icons/echoanalysis.png)](https://github.com/niwa/ESP3/releases)
+[![Download ESP3](https://raw.githubusercontent.com/niwa/ESP3/master/icons/echoanalysis.png)](https://github.com/niwa/ESP3/releases)
 
 Note: Earlier compiled versions are also available [here](https://sourceforge.net/projects/esp3/files/).
 
