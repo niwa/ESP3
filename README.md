@@ -60,7 +60,7 @@ A compiled version of the latest stable release is available for install on a Wi
 * Download the latest installer for the ESP3 compiled version:
 
 <p align="center">
-	[<img src="https://github.com/niwa/ESP3/blob/dev_alicia/icons/esp3_download.png">](https://github.com/niwa/ESP3/releases)
+	[![Download ESP3](<img src="https://github.com/niwa/ESP3/blob/dev_alicia/icons/esp3_download.png">)](https://github.com/niwa/ESP3/releases)
 </p>
 
 
