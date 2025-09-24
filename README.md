@@ -57,7 +57,7 @@ A compiled version of the latest stable release is available for install on a Wi
 
 ### Installing
 
-* Download the latest installer for the ESP3 compiled version on SourceForge:
+* Download the latest installer for the ESP3 compiled version:
 
 [![Download ESP3](https://github.com/niwa/ESP3/blob/dev_alicia/icons/esp3_download.png)](https://github.com/niwa/ESP3/releases)
 
