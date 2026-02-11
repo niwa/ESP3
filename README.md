@@ -53,7 +53,7 @@ A compiled version of the latest stable release is available for install on a Wi
 
 ### Prerequisites
 
-* Download and install the (free) [Matlab Compiler Runtime R2022b (9.13)](https://au.mathworks.com/products/compiler/matlab-runtime.html). 
+* Download and install the (free) [Matlab Compiler Runtime R2024b (24.2)](https://au.mathworks.com/products/compiler/matlab-runtime.html). 
 
 ### Installing
 
