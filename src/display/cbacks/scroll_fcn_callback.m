@@ -2,7 +2,8 @@ function scroll_fcn_callback(src,callbackdata)
 
 main_figure = get_esp3_prop('main_figure');
 echo_tab_panel=getappdata(main_figure,'echo_tab_panel');
-curr_obj=gco;
+curr_obj=gco; 
+
 
 if isfield(curr_obj,'Type')
     type_obj=curr_obj.Type;
@@ -44,7 +45,23 @@ else
     pos=[mean(x_lim) mean(y_lim)];
 end
 
-
+if any(pos<0)||pos(1)<x_lim(1)||pos(1)>x_lim(end)||pos(2)<y_lim(1)||pos(2)>y_lim(end)
+    if isa(curr_obj, 'matlab.graphics.axis.GeographicAxes')
+        if callbackdata.VerticalScrollCount>0
+            curr_obj.ZoomLevel = curr_obj.ZoomLevel-0.1;
+        else
+            curr_obj.ZoomLevel = curr_obj.ZoomLevel+0.1;
+        end
+    elseif isa(curr_obj, 'matlab.graphics.axis.Axes')
+        if callbackdata.VerticalScrollCount<0
+            zoom(2);
+        else
+            zoom(0.5);
+        end
+    else
+        return;
+    end
+end
 
 if any(pos<0)||pos(1)<x_lim(1)||pos(1)>x_lim(end)||pos(2)<y_lim(1)||pos(2)>y_lim(end)
     return;

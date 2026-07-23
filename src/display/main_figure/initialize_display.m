@@ -115,9 +115,16 @@ end
 
 
 function enter_panel(figHandle,~)
-%set(figHandle, 'Pointer', 'hand');
+
 replace_interaction(figHandle,'interaction','WindowButtonMotionFcn','id',1);
 replace_interaction(figHandle,'interaction','WindowScrollWheelFcn','id',1);
+
+curr_obj = gco; 
+
+if isa(curr_obj, 'matlab.graphics.axis.GeographicAxes')
+    interactions.WindowScrollWheelFcn(1)=iptaddcallback(figHandle,'WindowScrollWheelFcn',@scroll_fcn_callback);
+end
+
 end
 
 
