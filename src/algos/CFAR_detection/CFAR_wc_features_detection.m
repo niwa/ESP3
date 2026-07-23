@@ -101,18 +101,13 @@ if up_bar
 end
 [~,Np] = trans_obj.get_pulse_length();
 min_specular_sample_buffer = 5*max(Np,[],'all','omitnan');
-debug_disp = isdebugging;
+%debug_disp = isdebugging;
+debug_disp = 1;
 
 fandir = 'across';
-%idx_p = 1030:1040;
-idx_p = 621:630;
+idx_p = 1420:1450;
 
-if debug_disp && (isempty(idx_p)||any(ismember(idx_ping_tot,idx_p)))
-
-    %         detection_mask_3D = false(size(detection_mask_pc));
-    %         detection_mask_3D(ii) = true;
-
-    curr_disp = curr_state_disp_cl();
+    curr_disp=get_esp3_prop('curr_disp');
 
     ff = new_echo_figure([],...
         'Name','CFAR detector',...
@@ -132,7 +127,6 @@ if debug_disp && (isempty(idx_p)||any(ismember(idx_ping_tot,idx_p)))
     wc_fan_cfar.gl_ax.Tag = 'After CFAR detector';
     wc_fan_cfar_pc.gl_ax.Tag = 'After CFAR detector and within-ping clustering';
     %wc_fan_cfar_pc_3D.gl_ax.Tag = 'After CFAR detector, withing-ping clustering and 3D clustering';
-end
 
 for ui=1:num_ite
 
@@ -204,6 +198,10 @@ for ui=1:num_ite
     acd = data_struct.WC.AcrossDist;
     rr= data_struct.WC.Range;
     tt = data_struct.WC.Time;
+    E = data_struct.WC.E;
+    N = data_struct.WC.N;
+    H = data_struct.WC.H;
+    Zone = data_struct.WC.Zone;
 
     [nb_samples,nb_pings,~] = size(detection_mask_pc);
 
@@ -217,32 +215,28 @@ for ui=1:num_ite
 
     sv = sv_SPB(ii);
 
-    if debug_disp && (isempty(idx_p)||any(ismember(idx_ping,idx_p)))
-
         for ip = 1:numel(idx_p)
             if ismember(idx_p(ip),idx_ping)
                 ipp = find(idx_p(ip) == idx_ping);
                 disp_ping_wc_fan(wc_fan,trans_obj,'idx_ping',idx_p(ip),'curr_disp',curr_disp,'idx_r',idx_r,'fandir',fandir,'idx_beam',idx_beam);
                 disp_ping_wc_fan(wc_fan_cfar,trans_obj,'idx_ping',idx_p(ip),'mask',detection_mask(:,ipp,:),'curr_disp',curr_disp,'idx_r',idx_r,'fandir',fandir,'idx_beam',idx_beam);
                 disp_ping_wc_fan(wc_fan_cfar_pc,trans_obj,'idx_ping',idx_p(ip),'mask',detection_mask_pc(:,ipp,:),'curr_disp',curr_disp,'idx_r',idx_r,'fandir',fandir,'idx_beam',idx_beam);
-                %             disp_ping_wc_fan(wc_fan_cfar_pc_3D,trans_obj,'idx_ping',idx_ping(ip),'mask',detection_mask_3D(:,ipp,:),'curr_disp',curr_disp,'idx_r',idx_r,'idx_beam',idx_beam);
                 pause(0.5);
             end
         end
-    end
 
-    output_struct.feature_struct.E = [output_struct.feature_struct.E E.WC];
-    output_struct.feature_struct.N = [output_struct.feature_struct.N N.WC];
-    output_struct.feature_struct.H = [output_struct.feature_struct.H H.WC];
-    output_struct.feature_struct.zone = [output_struct.feature_struct.zone zone.WC];
-    output_struct.feature_struct.alongdist = [output_struct.feature_struct.alongdist ald];
-    output_struct.feature_struct.acrossdist = [output_struct.feature_struct.acrossdist acd];
-    output_struct.feature_struct.range = [output_struct.feature_struct.range rr];
-    output_struct.feature_struct.time = [output_struct.feature_struct.time tt];
-    output_struct.feature_struct.idx_r = [output_struct.feature_struct.idx_r iSample'];
-    output_struct.feature_struct.idx_beam = [output_struct.feature_struct.idx_beam idx_beam(iBeam)'];
-    output_struct.feature_struct.idx_ping = [output_struct.feature_struct.idx_ping iPing'];
-    output_struct.feature_struct.sv = [output_struct.feature_struct.sv sv'];
+    output_struct.feature_struct.E = [output_struct.feature_struct.E E];
+    output_struct.feature_struct.N = [output_struct.feature_struct.N N];
+    output_struct.feature_struct.H = [output_struct.feature_struct.H H];
+    output_struct.feature_struct.zone = [output_struct.feature_struct.Zone Zone];
+    output_struct.feature_struct.alongdist = [output_struct.feature_struct.AlongDist ald];
+    output_struct.feature_struct.acrossdist = [output_struct.feature_struct.AcrossDist acd];
+    output_struct.feature_struct.range = [output_struct.feature_struct.Range rr];
+    output_struct.feature_struct.time = [output_struct.feature_struct.Time tt];
+    output_struct.feature_struct.idx_r = [output_struct.feature_struct.Idx_r iSample'];
+    output_struct.feature_struct.idx_beam = [output_struct.feature_struct.Idx_beam idx_beam(iBeam)'];
+    output_struct.feature_struct.idx_ping = [output_struct.feature_struct.Idx_ping iPing'];
+    output_struct.feature_struct.sv = [output_struct.feature_struct.Sv sv'];
 
     if up_bar
         set(p.Results.load_bar_comp.progress_bar, 'Minimum',0, 'Maximum',num_ite, 'Value',ui);
@@ -262,7 +256,7 @@ if ~isempty(x) && debug_disp
     title('Point Cloud Clusters before 3D clustering');
     xlabel('Along distance');
     ylabel('Across distance');
-    clim([thr_sv thr_sv+30]);
+    %clim([thr_sv thr_sv+30]);
 end
 
 ClusterID = data_3D_clustering(x,y,z,'Gx',Gx,'Gy',Gy,'Gz',Gz,'N_3D',N_3D,'load_bar_comp',load_bar_comp);
