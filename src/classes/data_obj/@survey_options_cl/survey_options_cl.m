@@ -45,6 +45,7 @@ classdef survey_options_cl < matlab.mixin.Copyable
         AngleMax= init_input_params({'AngleMax'});
         ExportSlicedTransects = init_input_params({'ExportSlicedTransects'});
         ExportRegions  = init_input_params({'ExportRegions'});
+        ExportFMResultsPerFreq = init_input_params({'Export_Fm_results_per_freq'});
         RunInt = init_input_params({'RunInt'});
     end
 

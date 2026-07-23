@@ -621,18 +621,16 @@ for isn = 1:length(snaps)
                 end
 
                 if ~isnan(min(regCellInt_r.Sample_S,[],'all','omitnan'))&&~isnan(min(regCellInt_r.Ping_S,[],'all','omitnan'))
-                    start_d = trans_obj_tr.get_transceiver_depth(min(regCellInt_r.Sample_S,[],'all','omitnan'),...
-                        min(regCellInt_r.Ping_S,[],'all','omitnan'),ceil(mean(idx_beam,'all','omitnan')));
+                    start_d = trans_obj_tr.TransceiverDepth(min(regCellInt_r.Ping_S,[],'all','omitnan'));
                 else
                     start_d = 0;
                 end
 
                 if ~isnan(min(regCellInt_r.Sample_S,[],'all','omitnan'))&&~isnan(max(regCellInt_r.Ping_E,[],'all','omitnan'))
-                    finish_d = trans_obj_tr.get_transceiver_depth(min(regCellInt_r.Sample_S,[],'all','omitnan'),...
-                        max(regCellInt_r.Ping_S,[],'all','omitnan'),ceil(mean(idx_beam,'all','omitnan')));
+                    finish_d = trans_obj_tr.TransceiverDepth(max(regCellInt_r.Ping_S,[],'all','omitnan'));
                 else
                     finish_d = 0;
-                end
+                end    
 
                 surv_out_obj.regionsIntegrated.snapshot(i_reg) = snap_num;
                 surv_out_obj.regionsIntegrated.stratum{i_reg} = strat_name;
@@ -961,6 +959,52 @@ if curr_options_struct.ExportRegions>0&&~isempty(reg_descr_table)
         end
     end
     writetable(reg_descr_table,outputFileXLS);
+end
+
+if surv_input_obj.Options.ExportFMResultsPerFreq.Value
+    main_path = whereisEcho();
+    path = append(main_path,'\echo_results\');
+    output_2D = layer.EchoIntStruct.output_2D{1}{1};
+    outputFileMat = generate_valid_filename(sprintf('%s%s',str_fname,'_FM_results_per_freq.mat'));
+    save(outputFileMat,'-struct','output_2D')
+    
+    jsonString = jsonencode(output_2D);
+    output_txt = generate_valid_filename(sprintf('%s%s',str_fname,'_FM_results_per_freq.txt'));
+    writematrix(jsonString,output_txt)
+    output_netcdf = generate_valid_filename(sprintf('%s%s',str_fname,'_FM_results_per_freq.nc'));
+    if exist(output_netcdf,'file')
+        delete(output_netcdf)
+    end
+
+    fields = fieldnames(output_2D); 
+    for iif = 1:length(fields)
+        DimName1 = sprintf('rdim_%s',fields{iif});
+        DimName2 = sprintf('cdim_%s',fields{iif});
+        if isa(output_2D.(fields{iif}),'string')
+            nccreate(output_netcdf,fields{iif},'Dimensions',{DimName1,size(output_2D.(fields{iif}),1),DimName2, size(output_2D.(fields{iif}),2)},'Datatype','string','Format','netcdf4');
+            ncwrite(output_netcdf,fields{iif},output_2D.(fields{iif}));
+        else
+            if ~strcmp(fields{iif},'r_fm')
+                if ~iscell(output_2D.(fields{iif}))
+                    nccreate(output_netcdf,fields{iif},'Dimensions',{DimName1,size(output_2D.(fields{iif}),1),DimName2, size(output_2D.(fields{iif}),2)},'Format','netcdf4');
+                    ncwrite(output_netcdf,fields{iif},output_2D.(fields{iif}));
+                else
+                    if ~isempty(output_2D.(fields{iif}))
+                        s3 = size(output_2D.(fields{iif}){3},2);
+                        emptyIndices = find(cellfun('isempty',output_2D.(fields{iif})));
+                        if ~isempty(emptyIndices)
+                            output_2D.(fields{iif})(emptyIndices) = {zeros(1,s3)};
+                        end
+                        nccreate(output_netcdf,fields{iif},'Dimensions',{DimName1,size(output_2D.(fields{iif}),1),DimName2, size(output_2D.(fields{iif}),2)*s3},'Format','netcdf4');
+                        ncwrite(output_netcdf,fields{iif},cell2mat(output_2D.(fields{iif})));
+                    else
+                        nccreate(output_netcdf,fields{iif},'Dimensions',{DimName1,size(output_2D.(fields{iif}),1),DimName2, size(output_2D.(fields{iif}),2)},'Format','netcdf4');
+                        ncwrite(output_netcdf,fields{iif},cell2mat(output_2D.(fields{iif})));
+                    end
+                end
+            end
+        end
+    end
 end
 
 
