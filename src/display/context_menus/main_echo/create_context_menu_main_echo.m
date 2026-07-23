@@ -51,6 +51,7 @@ uimenu(display_3D,'Label','Remove this transect from 3D display',               
 tools_menu = uimenu(context_menu,'Label','Tools');
 uimenu(tools_menu,'Label','Correct this transect position based on cable angle and towbody depth','Callback',{@correct_pos_angle_depth_sector_cback,main_figure});
 uimenu(tools_menu,'Label','Plot Sv echogram using user chosen frequency bounds (FM transducers)','Callback',{@echogram_freq_red_FM,main_figure});
+uimenu(tools_menu,'Label','Layer detector (Urmy et al.)','MenuSelectedFcn',{@run_urmy_layer_detector,main_figure});
 
 % Bad Pings
 bt_menu = uimenu(context_menu,'Label','Bad Pings');

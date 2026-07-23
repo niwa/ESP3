@@ -39,7 +39,7 @@ for ilu=1:length(name)
         case 'denoised'
             tmp = input_param_cl('Name','denoised','Value',true,'Default_value',true,'Value_range',[true false],...
                 'Precision','%d','Validation_fcn',@(x) islogical(x),'Disp_name','Denoised data','Tooltipstring','Apply algorithm on denoised data','Units','');
-        case 'snr_filt'
+		case 'snr_filt'
             tmp = input_param_cl('Name','snr_filt','Value',true,'Default_value',true,'Value_range',[true false],...
                 'Precision','%.0f','Validation_fcn',@(x) islogical(x),'Disp_name','Filter SNR','Tooltipstring','Apply filter to the SNR (size as defined for the noise power estimation)','Units','');
         case 'cluster_tags'

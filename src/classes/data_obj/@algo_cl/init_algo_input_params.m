@@ -21,7 +21,7 @@ switch obj.Name
             'h_filt' 'v_filt' 'shift_bot' 'rm_outliers_method' 'interp_method' 'denoised'});
     case 'BottomDetectionV2'
         obj.Input_params = init_input_params({'r_min' 'r_max' 'thr_bottom' 'thr_backstep'...
-            'thr_echo' 'thr_cum' 'shift_bot' 'rm_outliers_method' 'interp_method' 'denoised'});
+            'thr_echo' 'thr_cum' 'shift_bot' 'rm_outliers_method' 'interp_method' 'denoised' 'PBBD_PF'});
     case 'DropOuts'
         obj.Input_params = init_input_params({'r_min' 'r_max' 'thr_sv' 'thr_sv_max' 'gate_dB'});
     case 'MBecho'
