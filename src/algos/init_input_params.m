@@ -39,7 +39,10 @@ for ilu=1:length(name)
         case 'denoised'
             tmp = input_param_cl('Name','denoised','Value',true,'Default_value',true,'Value_range',[true false],...
                 'Precision','%d','Validation_fcn',@(x) islogical(x),'Disp_name','Denoised data','Tooltipstring','Apply algorithm on denoised data','Units','');
-		case 'snr_filt'
+        case 'Export_Fm_results_per_freq'
+           tmp = input_param_cl('Name','Export_Fm_results_per_freq','Value',false,'Default_value',false,'Value_range',[true false],...
+                'Precision','%d','Validation_fcn',@(x) islogical(x),'Disp_name','Export results per freq','Tooltipstring','Export FM echo-results per freq','Units','');
+        case 'snr_filt'
             tmp = input_param_cl('Name','snr_filt','Value',true,'Default_value',true,'Value_range',[true false],...
                 'Precision','%.0f','Validation_fcn',@(x) islogical(x),'Disp_name','Filter SNR','Tooltipstring','Apply filter to the SNR (size as defined for the noise power estimation)','Units','');
         case 'cluster_tags'
